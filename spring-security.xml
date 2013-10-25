@@ -13,11 +13,7 @@
    						http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<context:annotation-config />
-	<!--  Mocked object!!!  -->
-    <bean id="userDaoMock" name="userDaoMock" class="org.mockito.Mockito" factory-method="mock">
-        <constructor-arg value="src.ddpsc.database.user.UserDao"/>
-    </bean>
-    
+
 	<!-- This is where we configure Spring-Security -->
 	<security:http auto-config="false" use-expressions="true"
 		access-denied-page="/auth/denied" entry-point-ref="authenticationEntryPoint">
@@ -25,7 +21,7 @@
 		<security:intercept-url pattern="/auth/login"
 			access="permitAll" />
 		<security:intercept-url pattern="/admin"
-			access="hasRole('ROLE_ADMIN')" />
+			access="hasRole('ROLE_ADMIN')" /> 
 		<security:intercept-url pattern="/admin/*"
 			access="hasRole('ROLE_ADMIN')" />
 		<security:intercept-url pattern="/userarea"
@@ -65,7 +61,15 @@
 		id="passwordEncoder" />
 	<security:authentication-manager alias="authenticationManager">
 	</security:authentication-manager>
-	
+		
+	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" />  
+	<bean id="authSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/PhenoFront" />
+		<property name="username" value="root" />
+		<property name="password" value="password" />
+	</bean>
 
     
 </beans>

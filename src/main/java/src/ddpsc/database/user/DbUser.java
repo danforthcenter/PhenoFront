@@ -1,12 +1,16 @@
 package src.ddpsc.database.user;
 
+import java.util.ArrayList;
+
+import src.ddpsc.database.experiment.Experiment;
+import src.ddpsc.exceptions.ExperimentNotAllowedException;
+
 /**
  * Our User class. Used for storing user information from the database. Users may access the userarea and
  * are expected (but not required) to have a group. The user may then view different experiments belonging
  * to that group.
  * 
- * If the group does not exist, as in, it is NULL, then the user will not be found. 
- * TODO: Fix this. Possible solution, add a nogroup group.
+ * If the group does not exist, mark it as empty. There is a group in the database titled empty owned by admin.
  * 
  * @field String
  *            username
@@ -27,8 +31,15 @@ public class DbUser {
 	private DbGroup group;
 	private String authority;
 	private int userId;
+	private ArrayList<Experiment> allowedExperiments;
+	private Experiment activeExperiment;
+	private static Experiment TEST_EXPERIMENT;
 
 	public DbUser() {
+		TEST_EXPERIMENT = new Experiment();
+		TEST_EXPERIMENT.setDatabaseName("LemnaTest");
+		TEST_EXPERIMENT.setExperimentId(1); 
+		TEST_EXPERIMENT.setExperimentName("LemnaTest");
 	}
 
 	/**
@@ -126,7 +137,45 @@ public class DbUser {
 				+ ", enabled=" + enabled + ", group=" + group + ", authority="
 				+ authority + ", userId=" + userId + "]";
 	}
+	
+	public ArrayList<Experiment> getAllowedExperiments() {
+		// TODO PLEASE ACTUALLY SETUP THE EXPERIMENTS CLASSES
+		if (this.allowedExperiments == null){
+			this.allowedExperiments = new ArrayList<Experiment>();
+			this.allowedExperiments.add(TEST_EXPERIMENT);
+			
+		}
+		System.err.println("Warning: using a statically set experiment list.");
+		return this.allowedExperiments;
+	}
+	public void setActiveExperiment(Experiment active) throws ExperimentNotAllowedException{
+		if (this.allowedExperiments.contains(active)){
+			this.activeExperiment = active;
+		} else{
+			throw new ExperimentNotAllowedException("Experiment is not allowed or does not exist.");
+		}
+	}
+	/**
+	 * Will probably be null unless you call setActiveExperiment first
+	 * 10-17-13 -- Experiments unimplemented
+	 * @return
+	 */
+	public Experiment getActiveExperiment(){
+		return this.activeExperiment;
+	}
 
+	public void setAllowedExperiments(ArrayList<Experiment> experiments){
+		this.allowedExperiments = experiments;
+	}
+	
+	public Experiment getExperimentByExperimentName(String experimentName) throws ExperimentNotAllowedException{
+		for (Experiment experiment : this.allowedExperiments) {
+			if (experiment.getExperimentName().equals(experimentName)){
+				return experiment;
+			}
+		}
+		throw new ExperimentNotAllowedException("Experiment is not allowed or does not exist.");
+	}
 	
 
 }

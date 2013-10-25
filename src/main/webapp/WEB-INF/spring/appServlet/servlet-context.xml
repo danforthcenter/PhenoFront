@@ -26,12 +26,23 @@
 	
 	
 	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" />  
+	
+	<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" />  
+	
     	
  	<!-- declare datasource bean -->  
  	<beans:bean id="dataSource"  
   		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
   		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
   		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LemnaTest" />  
+  		<beans:property name="username" value="shill" />  
+  		<beans:property name="password" value="" />  
+ 	</beans:bean>  
+ 	
+ 	<beans:bean id="experimentSource"  
+  		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
+  		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
+  		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LTSystem" />  
   		<beans:property name="username" value="shill" />  
   		<beans:property name="password" value="" />  
  	</beans:bean>  
