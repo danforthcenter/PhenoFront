@@ -17,9 +17,8 @@ public class ExperimentDaoImpl implements ExperimentDao{
 	@Override
 	public ArrayList<Experiment> findAll() {
 		// TODO Fill in SQL 
-		String sql = "SELECT lt.name, "
-				   + "lt.id, "
-				   + "u.user_id "
+		String sql = "SELECT lt.id, "
+				   + "lt.name, "
 				   + "FROM ltdbs AS db ";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);

@@ -169,13 +169,14 @@ public class DbUser {
 	}
 	
 	public Experiment getExperimentByExperimentName(String experimentName) throws ExperimentNotAllowedException{
-		for (Experiment experiment : this.allowedExperiments) {
+		for (Experiment experiment : this.getAllowedExperiments()) {
 			if (experiment.getExperimentName().equals(experimentName)){
 				return experiment;
 			}
 		}
 		throw new ExperimentNotAllowedException("Experiment is not allowed or does not exist.");
 	}
+
 	
 
 }

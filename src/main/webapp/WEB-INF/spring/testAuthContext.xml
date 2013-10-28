@@ -54,7 +54,7 @@
 
 	<bean id="customAuthenticationSuccessHandler"
 		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler"
-		p:defaultTargetUrl="/userarea" />
+		p:defaultTargetUrl="/selectexperiment" />
 
 	<bean id="authenticationEntryPoint"
 		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"

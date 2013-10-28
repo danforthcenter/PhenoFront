@@ -1,0 +1,12 @@
+TOOOO DOOOOO:
+
+Load the actual experiment results. A user must go through the login process to actually select a database
+and stuff. If a user is authenticated and DOES NOT have a selected database, they should be immediately redirected or notified of this.
+
+Write tool to view data and start on that watering tool. 
+
+Write more tests for the login process.
+
+Write tests for the results process and watering process.
+
+

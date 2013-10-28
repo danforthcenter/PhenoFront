@@ -25,7 +25,11 @@ import src.ddpsc.database.tile.TileRowMapper;
 //Note: when the interface is removed it breaks. don't remove the interface, just suck it up and use it.
 public class SnapshotDaoImpl implements SnapshotDao {
 	@Autowired  
-	DataSource dataSource;  
+	DataSource dataSource;  //maybe not autowire
+	
+	public void setDataSource(DataSource dataSource){
+		this.dataSource = dataSource; //O:
+	}
 	
 	/**
 	 * Utility function for creating a snapshot query.

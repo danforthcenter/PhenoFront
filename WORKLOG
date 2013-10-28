@@ -1,0 +1,7 @@
+Implemented sessions. Users are now stored in a session as soon as they are logged in. Actions that need
+this information must be in the userarea controller.
+
+Selected experiment was also built, and it wires the datasource manually. The information is hardcoded in the
+config java file and the experiment name is appended to it.
+
+If it throws a 500 error it means that it still has the user authentication token or whatever but it hasn't loaded the datasource. When this happens a user should be immiately redirect or notified of this event.

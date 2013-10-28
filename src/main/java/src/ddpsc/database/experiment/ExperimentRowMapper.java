@@ -33,6 +33,8 @@ class ExperimentExtractor implements ResultSetExtractor<Experiment> {
 	public Experiment extractData(ResultSet resultSet) throws SQLException,
 			DataAccessException {
 		Experiment exp = new Experiment();
+		exp.setExperimentId(resultSet.getInt(0));
+		exp.setExperimentName(resultSet.getString(1));
 		return exp;
 	}	
 }

@@ -89,7 +89,7 @@ public class AuthenticationTestSuite {
 						post("/j_spring_security_check").param("j_username",
 								username).param("j_password", "password"))
 				.andExpect(status().is(HttpStatus.FOUND.value()))
-				.andExpect(redirectedUrl("/userarea")).andReturn().getRequest();
+				.andExpect(redirectedUrl("/selectexperiment")).andReturn().getRequest();
 
 		HttpSession session = req.getSession();
 		// maybe forwarded idk
