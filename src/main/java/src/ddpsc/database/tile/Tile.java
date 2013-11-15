@@ -1,5 +1,7 @@
 package src.ddpsc.database.tile;
 
+import java.util.List;
+
 public class Tile {
 	private String cameraLabel;
 	private int rawImageOid; //maybe just go fetch the path
@@ -94,6 +96,15 @@ public class Tile {
 	}
 	public void setFrame(int frame) {
 		this.frame = frame;
+	}
+	public static String toDelimited(List<Tile> tiles, String delimiter) {
+		// TODO Auto-generated method stub
+		String fin = "";
+		for (Tile tile : tiles) {
+			fin += tile.cameraLabel + "_" + tile.rawImageOid  + delimiter;
+		}
+		fin = fin.substring(0, fin.length());
+		return fin;
 	}
 	
 	

@@ -18,5 +18,7 @@ public interface SnapshotDao {
 	public List<Snapshot> findWithTileAfterTimestamp(Timestamp timestamp);
 	public List<Snapshot> findSnapshotBetweenTimes(Timestamp before, Timestamp after);
 	public List<Snapshot> findWithTileBetweenTimes(Timestamp before, Timestamp after);
+	public List<Snapshot> findWithTileLastNEntries(int n);
+	public List<Snapshot> findSnapshotLastNEntries(int n);
 	public void setDataSource(DataSource dataSource);
 }

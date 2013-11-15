@@ -16,7 +16,6 @@ public class ExperimentDaoImpl implements ExperimentDao{
 
 	@Override
 	public ArrayList<Experiment> findAll() {
-		// TODO Fill in SQL 
 		String sql = "SELECT lt.id, "
 				   + "lt.name, "
 				   + "FROM ltdbs AS db ";

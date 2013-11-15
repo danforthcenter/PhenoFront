@@ -22,12 +22,13 @@ public class Snapshot {
     private float weightAfter;
     private float waterAmount;
     private boolean completed;
+    private String measurementLabel;
     private int id;
     private List<Tile> tiles;
 	public Snapshot(){ }
 	public Snapshot(String plantBarcode, String carTag, Timestamp timeStamp,
 			float weightBefore, float weightAfter, float waterAmount,
-			boolean completed, int id) {
+			boolean completed, int id, String measurementLabel) {
 		super();
 		this.plantBarcode = plantBarcode;
 		this.carTag = carTag;
@@ -36,7 +37,11 @@ public class Snapshot {
 		this.weightAfter = weightAfter;
 		this.waterAmount = waterAmount;
 		this.completed = completed;
+		this.measurementLabel = measurementLabel;
 		this.id = id;
+	}
+	public String getMeasurementLabel() {
+		return measurementLabel;
 	}
 	public String getPlantBarcode() {
 		return plantBarcode;
@@ -102,13 +107,29 @@ public class Snapshot {
 	public void setTile(Tile tile, int idx){
 		this.tiles.set(idx, tile);
 	}
+	
 	@Override
 	public String toString() {
 		return "Snapshot [plantBarcode=" + plantBarcode + ", carTag=" + carTag
 				+ ", timeStamp=" + timeStamp + ", weightBefore=" + weightBefore
 				+ ", weightAfter=" + weightAfter + ", waterAmount="
-				+ waterAmount + ", completed=" + completed + ", id=" + id
+				+ waterAmount + ", completed=" + completed
+				+ ", measurementLabel=" + measurementLabel + ", id=" + id
 				+ ", tiles=" + tiles + "]";
+	}
+	public void setMeasurementLabel(String measurementLabel) {
+		this.measurementLabel = measurementLabel;
+	}
+	/**
+	 * Another version of toString, except instead of to a pure string it returns a CSV formatted string including labels on the first line.
+	 * @return
+	 */
+	public String csvWriter() {
+		// TODO Auto-generated method stub
+		String rep = "id,plant barcode,car tag,timestamp,weight before, weight after,water amount,completed,measurement label,tiles\n";
+		System.out.println(tiles);
+		String data = id+","+plantBarcode+","+carTag+","+timeStamp+","+weightBefore+","+weightAfter+","+waterAmount+","+completed+","+measurementLabel+","+Tile.toDelimited(tiles,";")+"\n";
+		return (rep + data);
 	}
 	
 	

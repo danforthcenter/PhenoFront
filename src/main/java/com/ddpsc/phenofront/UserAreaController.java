@@ -1,15 +1,19 @@
 package com.ddpsc.phenofront;
-import java.text.DateFormat;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
-import java.util.Random;
 
-import javax.sql.DataSource;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 
+import net.lingala.zip4j.exception.ZipException;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,12 +21,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import src.ddpsc.config.ExperimentConfig;
 import src.ddpsc.database.experiment.Experiment;
@@ -32,6 +36,8 @@ import src.ddpsc.database.snapshot.SnapshotDaoImpl;
 import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
+import src.ddpsc.results.Tester;
+import src.ddpsc.results.ZippedResultsUtil;
 
 /**
  * Controller responsible for handling users.
@@ -44,6 +50,11 @@ import src.ddpsc.exceptions.ExperimentNotAllowedException;
 public class UserAreaController {
 		@Autowired
 		UserDao ud;
+		
+		//added for filestreaming
+		@Autowired
+		ServletContext servletContext;
+		
 		//important lol
 		SnapshotDao sd = new SnapshotDaoImpl();
 		
@@ -65,6 +76,14 @@ public class UserAreaController {
 			return "select";
 		}
 		
+		/**
+		 * Handles the experiment selection. Expects the user to be authentciated and a part of the SessionModel. It then
+		 * will manually create a Snapshot datasource and assign it to the session.
+		 * 
+		 * @param user
+		 * @param experimentName
+		 * @return
+		 */
 		@RequestMapping(value ="/selection", method=RequestMethod.POST)
 		public @ResponseBody ResponseEntity<String> loadExperimentAction(
 					@ModelAttribute("user") DbUser user,
@@ -82,7 +101,7 @@ public class UserAreaController {
 			} catch (ExperimentNotAllowedException e) {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
-			}
+			} 
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
 	
@@ -93,14 +112,13 @@ public class UserAreaController {
 			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		    String name = auth.getName(); //get logged in username	 
 		    model.addAttribute("username", name);
-		    Date date = new Date();
-			DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
-			String formattedDate = dateFormat.format(date);
-			model.addAttribute("date", date );
+		    DateTime date = new DateTime();
+			model.addAttribute("date", date.toString("YYYY-mm-dd HH:MM:SS") );
 			model.addAttribute("snapper", snapper );
 
 			return "userarea";
 		}
+		
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)
 		public String visualizeAction(Locale locale, Model model) {
 			//Consider using jqplotter, open source plotting tool
@@ -115,9 +133,47 @@ public class UserAreaController {
 		
 		@RequestMapping(value = "/userarea/results", method = RequestMethod.GET)
 		public String resultsAction(Locale locale, Model model) {
-			return "results";
+			DateMidnight todayMidnight = new DateMidnight();
+			ArrayList<Snapshot> snapshots = (ArrayList<Snapshot>) sd.findWithTileLastNEntries(50);
+			model.addAttribute("date", todayMidnight.toString("EEEE, MMMM dd, YYYY"));
+			model.addAttribute("snapshots", snapshots );
+			return "userarea-results";
 		}
 		
+		
+		@RequestMapping(value = "/userarea/stream/{id}")
+	    public void hellostreamer(HttpServletResponse response, @ModelAttribute("user") DbUser user, @PathVariable("id") int snapshotId) throws IOException  {
+			System.out.println("enjoy your stream");
+	        response.setHeader("Transfer-Encoding", "chunked");     
+	        response.setHeader("Content-type", "text/plain");
+	        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshot" + snapshotId + ".zip\"");
+	        //TODO: Investigate saving snapshot queries in memory for one iteration.
+	        ArrayList<Snapshot> snapshots = new ArrayList<Snapshot>(1);
+	        snapshots.add(sd.findWithTileBySnapshotId(snapshotId));
+	      
+	        ZippedResultsUtil.ZipSnapshots(response.getOutputStream(), snapshots, user.getActiveExperiment());	    
+	        response.flushBuffer();
+	    }
+		
+		//TODO: Cleanup so we don't have to throw an exception, we are toplevel, we should HANDLE the exception.
+		@RequestMapping(value ="/userarea/fetchimage/{id}", method = RequestMethod.GET)
+		public @ResponseBody byte[]  fetchImageAction(@PathVariable("id") int snapshotId) throws IOException{
+			
+			System.out.println(snapshotId);
+			//before this is done we need to actually build the resource
+			//good test
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			//Thread threadedFilestream
+			//we need a better naming scheme (badly!), the name will be the same as the download, so maybe make everything .zip
+			//our client should have a spinning mouse before we start building the image. that shit takes a while.
+			InputStream in = servletContext.getResourceAsStream("/resources/image_sets/A.zip");
+		    return IOUtils.toByteArray(in);
+		//	return new ResponseEntity<String>("urigoeshere", HttpStatus.OK);
+		}
 		@RequestMapping(value = "/userarea/status", method = RequestMethod.GET)
 		public String statusAction(Locale locale, Model model) {
 			return "status";

@@ -3,7 +3,7 @@ package src.ddpsc.database.experiment;
 import java.util.ArrayList;
 
 /**
- * TODO: research how to go from experiment name => datasource
+ * Data abstraction object for Experiments. These are represented in the LemnaTec database as lt_dbs.
  * @author shill
  *
  */

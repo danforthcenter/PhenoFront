@@ -1,16 +1,13 @@
 package com.ddpsc.phenofront;
 
-import java.sql.Time;
+
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,12 +32,12 @@ public class TestController {
 	 */
 	@RequestMapping(value = "/oldhomelol", method = RequestMethod.GET)
 	public String homeAction(Locale locale, Model model) {
-		
-		Date date = new Date();
-		DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
-		
-		String formattedDate = dateFormat.format(date);
-		model.addAttribute("serverTime", formattedDate );
+		LocalTime local = new LocalTime(); //just time
+		DateTime date = new DateTime(); //gets datetime for NOW
+		Timestamp ts = new Timestamp(date.getMillis());
+		System.out.println(ts);
+	//	String formattedDate = dateFormat.format(date);
+		model.addAttribute("serverTime", date.toString("EEEE, MMMM dd, yyyy H:mm:ss aa") );
 		//name of the jsp
 		return "home";
 	}
@@ -50,14 +47,14 @@ public class TestController {
 		if (sd.equals(null)){
 			System.out.println("fukin null mang");
 		}
-		Calendar c = Calendar.getInstance();
-		c.set(2013, 9, 1);
-		Timestamp ts = new Timestamp(c.getTimeInMillis());
+	//	Calendar c = Calendar.getInstance();
+	//	c.set(2013, 9, 1);
+	//	Timestamp ts = new Timestamp(c.getTimeInMillis());
 		//Snapshot result = sd.findWithTileBySnapshotId(32035);
-		List<Snapshot> results = sd.findSnapshotAfterTimestamp(ts);
+	//	List<Snapshot> results = sd.findSnapshotAfterTimestamp(ts);
 		Random rand = new Random(System.currentTimeMillis());
 		model.addAttribute("random", rand.nextInt());
-		model.addAttribute("test_result", results);
+	//	model.addAttribute("test_result", results);
 		return "info";
 	}
 	
@@ -74,33 +71,33 @@ public class TestController {
 		if (sd.equals(null)){
 			System.out.println("fukin null mang");
 		}
-		GregorianCalendar cal = new GregorianCalendar(2013, 8, 25); //java has downs
-		long millis = cal.getTimeInMillis();
-		System.out.println(millis);
-		Timestamp ts = new Timestamp(millis);
+	//	GregorianCalendar cal = new GregorianCalendar(2013, 8, 25); //java has downs
+	//	long millis = cal.getTimeInMillis();
+	//	System.out.println(millis);
+	//	Timestamp ts = new Timestamp(millis);
 		//Snapshot result = sd.findWithTileBySnapshotId(32035);
-		List<Snapshot> results = sd.findWithTileAfterTimestamp(ts);
+	//	List<Snapshot> results = sd.findWithTileAfterTimestamp(ts);
 		Random rand = new Random(System.currentTimeMillis());
 		model.addAttribute("random", rand.nextInt());
-		model.addAttribute("test_result", results);
+	//	model.addAttribute("test_result", results);
 		return "info";
 	}
 	
 	@RequestMapping(value="/betweenimage", method = RequestMethod.GET)
 	public String betweenDateImageTestAction(Locale locale, Model model) {
 
-		GregorianCalendar cal = new GregorianCalendar(2013, 8, 24); //java has downs
-		long millis = cal.getTimeInMillis();
-		Timestamp after = new Timestamp(millis);
+	//	GregorianCalendar cal = new GregorianCalendar(2013, 8, 24); //java has downs
+	//	long millis = cal.getTimeInMillis();
+	//	Timestamp after = new Timestamp(millis);
 		
-		cal = new GregorianCalendar(2013, 8, 25); //java has downs
-		millis = cal.getTimeInMillis();
-		Timestamp before = new Timestamp(millis);
+	//	cal = new GregorianCalendar(2013, 8, 25); //java has downs
+	//	millis = cal.getTimeInMillis();
+	//	Timestamp before = new Timestamp(millis);
 		//Snapshot result = sd.findWithTileBySnapshotId(32035);
-		List<Snapshot> results = sd.findWithTileBetweenTimes(before,after);
+	//	List<Snapshot> results = sd.findWithTileBetweenTimes(before,after);
 		Random rand = new Random(System.currentTimeMillis());
 		model.addAttribute("random", rand.nextInt());
-		model.addAttribute("test_result", results);
+	//	model.addAttribute("test_result", results);
 		return "info";
 	}
 	
@@ -110,9 +107,9 @@ public class TestController {
 		if (sd.equals(null)){
 			System.out.println("fukin null mang");
 		}
-		Calendar c = Calendar.getInstance();
-		c.set(2013, 9, 1);
-		Timestamp ts = new Timestamp(c.getTimeInMillis());
+	//	Calendar c = Calendar.getInstance();
+	//	c.set(2013, 9, 1);
+	//	Timestamp ts = new Timestamp(c.getTimeInMillis());
 		Snapshot result = sd.findWithTileBySnapshotId(32035);
 		Random rand = new Random(System.currentTimeMillis());
 		model.addAttribute("random", rand.nextInt());

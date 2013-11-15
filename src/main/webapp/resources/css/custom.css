@@ -16,6 +16,24 @@
 .navbar-inverse .navbar-nav>.dropdown>a:hover .caret { border-top-color: #FFFFFF}
 .navbar-inverse .navbar-nav>.dropdown>a .caret { border-bottom-color: #999999}
 .navbar-inverse .navbar-nav>.dropdown>a:hover .caret { border-bottom-color: #FFFFFF}
+/*jQuery UI DateTimePicker*/
+.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+.ui-timepicker-div dl { text-align: left; }
+.ui-timepicker-div dl dt { float: left; clear:left; padding: 0 0 0 5px; }
+.ui-timepicker-div dl dd { margin: 0 10px 10px 45%; }
+.ui-timepicker-div td { font-size: 90%; }
+.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; }
+
+.ui-timepicker-rtl{ direction: rtl; }
+.ui-timepicker-rtl dl { text-align: right; padding: 0 5px 0 0; }
+.ui-timepicker-rtl dl dt{ float: right; clear: right; }
+.ui-timepicker-rtl dl dd { margin: 0 45% 10px 10px; }
+
+.ui-widget-header{
+	background-color: #047A3C;
+	border-color: #000;
+}
+/*Custom css*/
 body { background-image:url("../images/light_grey_floral_motif.png") }
 
 .btn{
@@ -25,4 +43,35 @@ body { background-image:url("../images/light_grey_floral_motif.png") }
 
 .large{
 	width:100%;
+}
+
+#results-table{
+	word-wrap: break-word;
+	font-size: 14px;
+}
+#results-table th{
+	font-size: 13px;
+}
+
+.table-header{
+	float: left;
+}
+.no-pad{
+	padding: 0px;
+}
+
+.btn-secondary{
+	background-color: #417604;	
+}
+
+.btn-tertiary{
+	background-color: #760441;
+}
+.btn-quartenary{
+	background-color: #390476;
+}
+.sorter{
+	cursor:pointer;
+	color:  #7A0441;
+	text-decoration: underline;
 }

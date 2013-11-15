@@ -2,11 +2,15 @@ TOOOO DOOOOO:
 
 Load the actual experiment results. A user must go through the login process to actually select a database
 and stuff. If a user is authenticated and DOES NOT have a selected database, they should be immediately redirected or notified of this.
-
+	--Need to create a sorting tool, prob will use jquery mobile library
+	--Sending data chunked via filestreams
+	--Look into saving queries into a SessionMember, viewing data and then immediately querying it again seems like a waste. If this could stay in memory for even one state transfer then it could save us a lot of IO time.
+	--Try and get an initial build onto the server.
 Write tool to view data and start on that watering tool. 
+	--Figure out the queries
 
 Write more tests for the login process.
 
-Write tests for the results process and watering process.
+Write tests for the results process and zipping process.
 
-
+Migrate all views to more descriptive names or folders

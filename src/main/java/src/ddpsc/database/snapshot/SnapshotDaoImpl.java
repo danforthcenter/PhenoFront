@@ -25,7 +25,7 @@ import src.ddpsc.database.tile.TileRowMapper;
 //Note: when the interface is removed it breaks. don't remove the interface, just suck it up and use it.
 public class SnapshotDaoImpl implements SnapshotDao {
 	@Autowired  
-	DataSource dataSource;  //maybe not autowire
+	DataSource dataSource;
 	
 	public void setDataSource(DataSource dataSource){
 		this.dataSource = dataSource; //O:
@@ -145,6 +145,22 @@ public class SnapshotDaoImpl implements SnapshotDao {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		tileList = jdbcTemplate.query(sql, new TileRowMapper());
 		return tileList;
+	}
+	
+	@Override
+	public List<Snapshot> findWithTileLastNEntries(int n) {
+		List<Snapshot> snapshotList = this.findSnapshotLastNEntries(n);
+		for (Snapshot snapshot : snapshotList) {
+			snapshot.setTiles(this.findTiles(snapshot.getId()));
+		}
+		return snapshotList;
+	}
+
+	@Override
+	public List<Snapshot> findSnapshotLastNEntries(int n) {
+		String sql = "Select * from snapshot ORDER BY time_stamp DESC LIMIT " + n;
+		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
+		return snapshotList;
 	}
 
 	

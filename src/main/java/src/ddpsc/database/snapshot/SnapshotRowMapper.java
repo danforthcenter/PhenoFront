@@ -45,7 +45,8 @@ class SnapshotExtractor implements ResultSetExtractor<Snapshot> {
 		// wateramount completed
 		snapshot.setId(resultSet.getInt(1)); // why not 0 wtf?
 		snapshot.setPlantBarcode(resultSet.getString(4));
-		snapshot.setCarTag(resultSet.getString(8));
+		snapshot.setCarTag(resultSet.getString(9));
+		snapshot.setMeasurementLabel(resultSet.getString(10));
 		snapshot.setTimeStamp(resultSet.getTimestamp(11));
 		snapshot.setWeightBefore(resultSet.getFloat(12));
 		snapshot.setWeightAfter(resultSet.getFloat(13));
