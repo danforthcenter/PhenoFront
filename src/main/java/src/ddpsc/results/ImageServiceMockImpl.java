@@ -20,7 +20,7 @@ import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileFileLTSystemUtil;
 
-
+//TODO: Remove this and create a better ImageService implementation.
 public class ImageServiceMockImpl implements ImageService {
 	static String mockPath = "/Users/shill/Documents/JSEE_workspace/PhenoFront/bin/bayer2rgb/testimgs/";
 	static String img1 = "duckweed.jpg";
@@ -95,7 +95,6 @@ public class ImageServiceMockImpl implements ImageService {
 	 */
 	@Override
 	public OutputStream rawToImage(InputStream is) {
-		// TODO Auto-generated method stub
 		//take raw input stream, c
 		return null;
 	}
@@ -103,7 +102,6 @@ public class ImageServiceMockImpl implements ImageService {
 	@Override
 	public InputStream zipToRaw(InputStream is) throws ZipException,
 			IOException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

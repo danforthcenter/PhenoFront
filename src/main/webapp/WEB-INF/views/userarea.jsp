@@ -9,10 +9,10 @@
 			<h1>Welcome back ${ username }!</h1>
 			<img src="<c:url value="/resources/images/placeholder.png"/>"></img>
 			<div class="pull-right">
-			<table class="jumbotron">
-				<tr><td>Last logged on</td><td>Jun-1-2013</td></tr>
-				<tr><td>Group</td><td>Bioinformatics Core</td></tr>
-				<tr><td>Data usage</td><td>121.55GB/250GB</td></tr>
+			<table class="jumbotron status-table">
+				<tr><td>Last logged on: </td><td>Jun-1-2013</td></tr>
+				<tr><td>Group: </td><td>Bioinformatics Core</td></tr>
+				<tr><td>Data usage: </td><td>121.55GB/250GB</td></tr>
 			</table>
 			<h3>Current Jobs</h3>
 			<li>Arabidopsis Jun-13-2013</li>

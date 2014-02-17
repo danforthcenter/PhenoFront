@@ -140,10 +140,17 @@ public class UserAreaController {
 			return "userarea-results";
 		}
 		
-		
+		/**
+		 * Method for getting a snapshot and all associated images in a chunked manner. That is, a stream which will 
+		 * allow for a more responsive feeling download and for all image conversions to be done on the fly.
+		 * 
+		 * @param response
+		 * @param user
+		 * @param snapshotId
+		 * @throws IOException
+		 */
 		@RequestMapping(value = "/userarea/stream/{id}")
-	    public void hellostreamer(HttpServletResponse response, @ModelAttribute("user") DbUser user, @PathVariable("id") int snapshotId) throws IOException  {
-			System.out.println("enjoy your stream");
+	    public void streamSnapshot(HttpServletResponse response, @ModelAttribute("user") DbUser user, @PathVariable("id") int snapshotId) throws IOException  {
 	        response.setHeader("Transfer-Encoding", "chunked");     
 	        response.setHeader("Content-type", "text/plain");
 	        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshot" + snapshotId + ".zip\"");
@@ -154,8 +161,12 @@ public class UserAreaController {
 	        ZippedResultsUtil.ZipSnapshots(response.getOutputStream(), snapshots, user.getActiveExperiment());	    
 	        response.flushBuffer();
 	    }
-		
-		//TODO: Cleanup so we don't have to throw an exception, we are toplevel, we should HANDLE the exception.
+		/**
+		 * Another dumb proof of concept method.
+		 * @param snapshotId
+		 * @return
+		 * @throws IOException
+		 */
 		@RequestMapping(value ="/userarea/fetchimage/{id}", method = RequestMethod.GET)
 		public @ResponseBody byte[]  fetchImageAction(@PathVariable("id") int snapshotId) throws IOException{
 			
@@ -167,9 +178,6 @@ public class UserAreaController {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			//Thread threadedFilestream
-			//we need a better naming scheme (badly!), the name will be the same as the download, so maybe make everything .zip
-			//our client should have a spinning mouse before we start building the image. that shit takes a while.
 			InputStream in = servletContext.getResourceAsStream("/resources/image_sets/A.zip");
 		    return IOUtils.toByteArray(in);
 		//	return new ResponseEntity<String>("urigoeshere", HttpStatus.OK);

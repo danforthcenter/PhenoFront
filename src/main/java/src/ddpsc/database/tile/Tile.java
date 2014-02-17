@@ -98,7 +98,6 @@ public class Tile {
 		this.frame = frame;
 	}
 	public static String toDelimited(List<Tile> tiles, String delimiter) {
-		// TODO Auto-generated method stub
 		String fin = "";
 		for (Tile tile : tiles) {
 			fin += tile.cameraLabel + "_" + tile.rawImageOid  + delimiter;

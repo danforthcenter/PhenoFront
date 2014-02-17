@@ -125,7 +125,6 @@ public class Snapshot {
 	 * @return
 	 */
 	public String csvWriter() {
-		// TODO Auto-generated method stub
 		String rep = "id,plant barcode,car tag,timestamp,weight before, weight after,water amount,completed,measurement label,tiles\n";
 		System.out.println(tiles);
 		String data = id+","+plantBarcode+","+carTag+","+timeStamp+","+weightBefore+","+weightAfter+","+waterAmount+","+completed+","+measurementLabel+","+Tile.toDelimited(tiles,";")+"\n";

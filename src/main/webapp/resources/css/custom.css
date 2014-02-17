@@ -36,6 +36,10 @@
 /*Custom css*/
 body { background-image:url("../images/light_grey_floral_motif.png") }
 
+.status-table td{
+	padding-right: 10px;
+}
+
 .btn{
 	background-color:#047A3C;
 	color: #FFF;

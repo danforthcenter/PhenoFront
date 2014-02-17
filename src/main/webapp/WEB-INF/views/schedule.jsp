@@ -24,7 +24,7 @@
 			    <label for="endDate">End Date</label>
 			    <input class="form-control" type ="date"></input>
 			 </div>
-			 <input type="submit" class="btn">button</input>
+			 <input type="submit" class="btn"></input>
 			</form>
 		</div>
 	</div>

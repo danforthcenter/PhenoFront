@@ -75,7 +75,6 @@ public final class ZippedResultsUtil {
 	public static void getTileArchive(Tile tile){
 		String root = "/Users/shill/Documents/JSEE_workspace/PhenoFront/bin/test/"; //make better at some point
 		String path = root + "blob" + tile.getRawImageOid();
-		//TODO try and open and unzip the file, get raw, convert, then stream image O:
 	}
 
 }

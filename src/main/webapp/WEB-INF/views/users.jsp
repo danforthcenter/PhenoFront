@@ -6,7 +6,7 @@
 	<jsp:body>
 	<div class="container">
 		<div class="jumbotron">
-			<h1>Manage da userz</h1>
+			<h1>User Management</h1>
 			<table class="table table-striped">
 					<tr>
 						<th>Username</th>

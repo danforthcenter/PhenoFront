@@ -207,7 +207,6 @@ public class UserDaoImpl implements UserDao{
 
 	@Override
 	public void removeGroup(DbGroup user) {
-		// TODO: Auto-generated method stub
 		
 	}
 
