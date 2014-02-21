@@ -64,7 +64,7 @@
         	<groupId>org.springframework.security</groupId>
         	<artifactId>spring-security-web</artifactId>
         	<version>3.2.0.M1</version>
-        	<scope>runtime</scope>
+        	<scope>compile</scope>
         	
  	  	</dependency>
  	  	<!-- stuff added to make it compile -->
@@ -170,13 +170,13 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
 			<version>${org.slf4j-version}</version>
-			<scope>runtime</scope>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>${org.slf4j-version}</version>
-			<scope>runtime</scope>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
@@ -200,7 +200,7 @@
 					<artifactId>jmxri</artifactId>
 				</exclusion>
 			</exclusions>
-			<scope>runtime</scope>
+			<scope>compile</scope>
 		</dependency>
 		<!-- IO Tools -->
 		<dependency>
