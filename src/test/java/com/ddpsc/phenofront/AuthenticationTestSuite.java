@@ -40,7 +40,7 @@ import src.ddpsc.database.user.UserDao;
 @ContextConfiguration(locations = {
 		"file:src/main/webapp/WEB-INF/spring/testAuthContext.xml",
 		"file:src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml" })
-public class AuthenticationTestSuite {
+public class AuthenticationTestSuite extends TestUtility {
 
 	private MockMvc mockMvc;
 
@@ -65,8 +65,7 @@ public class AuthenticationTestSuite {
 	 */
 	@Before
 	public void setUp() {
-		tu = new TestUtility();
-		tu.UserTestUtility();
+		UserTestUtility();
 		this.mockMvc = webAppContextSetup(this.webappContext).addFilter(
 				this.springSecurityFilter, "/*").build();
 	}
@@ -82,7 +81,7 @@ public class AuthenticationTestSuite {
 	public void correctLoginTest() throws Exception {
 		// prob wont work but i hope?
 		String username = "user";
-		when(userDaoMock.findByUsername(username)).thenReturn(tu.FIRST_USER);
+		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
 		MockHttpServletRequest req = mockMvc
 				.perform(
@@ -109,7 +108,7 @@ public class AuthenticationTestSuite {
 	public void badPasswordLoginTest() throws Exception {
 		// prob wont work but i hope?
 		String username = "user";
-		when(userDaoMock.findByUsername(username)).thenReturn(tu.FIRST_USER);
+		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
 		MockHttpServletRequest req = mockMvc
 				.perform(
@@ -131,7 +130,7 @@ public class AuthenticationTestSuite {
 	@Test
 	public void badLoginUserAreaTest() throws Exception {
 		String username = "user";
-		when(userDaoMock.findByUsername(username)).thenReturn(tu.FIRST_USER);
+		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
 		MockHttpServletRequest req = mockMvc
 				.perform(

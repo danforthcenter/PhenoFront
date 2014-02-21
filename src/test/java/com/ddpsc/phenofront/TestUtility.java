@@ -7,12 +7,14 @@ import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import src.ddpsc.database.user.DbGroup;
 import src.ddpsc.database.user.DbUser;
 /**
- * Utility class that contains various data instantiation.
+ * Utility abstract class that contains various data instantiation.
+ * 
+ * Test suites should extend this class to get the general test data.
  * 
  * @author shill
  */
 
-public final class TestUtility {
+public abstract class TestUtility {
 	/**
 	 * user 1 is called testuser1 and belongs to group one, also owns group 1
 	 * user 2 is called testuser2 and belongs to group one, does not own a group.
