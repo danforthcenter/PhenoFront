@@ -5,7 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
- * LOAD CONFIG FROM CONFIG CONFIG CONFIG LOL
+ * This class doesn't really do anything yet so we probably shouldn't use it.
+ * 
+ * Purpose of this class is to create an interface for configurating the experiment selection.
+ * 
  * @author shill
  *
  */

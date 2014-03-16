@@ -93,6 +93,7 @@ public class UserAreaController {
 			if (username.equals("anonymousUser")){
 				return new ResponseEntity<String>("Error: Not allowed.", HttpStatus.FORBIDDEN);
 			}
+			/*
 			try {
 				Experiment experiment = user.getExperimentByExperimentName(experimentName);
 				user.setActiveExperiment(experiment);
@@ -102,19 +103,20 @@ public class UserAreaController {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
 			} 
+			*/
+			System.out.println("Connected to Phenotyper1");
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
 	
 		@RequestMapping(value = "/userarea", method = RequestMethod.GET)
 		public String homeAction(Locale locale, Model model, @ModelAttribute("user") DbUser user) {
 			//sd should be wired up once we are in the userarea
-			Snapshot snapper = sd.findWithTileBySnapshotId(32035);
+			
 			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		    String name = auth.getName(); //get logged in username	 
 		    model.addAttribute("username", name);
 		    DateTime date = new DateTime();
 			model.addAttribute("date", date.toString("YYYY-mm-dd HH:MM:SS") );
-			model.addAttribute("snapper", snapper );
 
 			return "userarea";
 		}
