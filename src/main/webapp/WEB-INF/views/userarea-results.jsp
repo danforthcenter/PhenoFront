@@ -6,7 +6,7 @@
 	<jsp:body>
 	<div class="container">
 		<div class="jumbotron" style="padding-left:30px; padding-right:30px;">
-			<h1>Results</h1>
+			<h1>Recent Entries</h1>
 			<h3>${ date }</h3>
 			<div class="table-responsive">
 				<table class="table table-striped table-condensed table-bordered" id="results-table">

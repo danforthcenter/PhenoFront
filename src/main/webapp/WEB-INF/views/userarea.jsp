@@ -7,15 +7,11 @@
 	<div class="container">
 		<div class="jumbotron">
 			<h1>Welcome back ${ username }!</h1>
-			<img src="<c:url value="/resources/images/placeholder.png"/>"></img>
-			<div class="pull-right">
-			<table class="jumbotron status-table">
-				<tr><td>Last logged on: </td><td>Jun-1-2013</td></tr>
-				<tr><td>Group: </td><td>Bioinformatics Core</td></tr>
-				<tr><td>Data usage: </td><td>121.55GB/250GB</td></tr>
-			</table>
-			<h3>Current Jobs</h3>
-			<li>Arabidopsis Jun-13-2013</li>
+			This page is deprecated 
+			<img style="width:50%;" class="col-md-6" src="<c:url value="/resources/images/phenotyper3.jpg"/>"></img>
+			<div class="pull-right col-md-6">
+				Login to begin, if you do not have an account, contact an administrator.
+			
 			</div>
 		</div>
 	</div>

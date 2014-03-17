@@ -93,7 +93,6 @@ public class UserAreaController {
 			if (username.equals("anonymousUser")){
 				return new ResponseEntity<String>("Error: Not allowed.", HttpStatus.FORBIDDEN);
 			}
-			/*
 			try {
 				Experiment experiment = user.getExperimentByExperimentName(experimentName);
 				user.setActiveExperiment(experiment);
@@ -103,8 +102,6 @@ public class UserAreaController {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
 			} 
-			*/
-			System.out.println("Connected to Phenotyper1");
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
 	
@@ -118,7 +115,7 @@ public class UserAreaController {
 		    DateTime date = new DateTime();
 			model.addAttribute("date", date.toString("YYYY-mm-dd HH:MM:SS") );
 
-			return "userarea";
+			return "results";
 		}
 		
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)

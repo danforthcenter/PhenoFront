@@ -44,6 +44,9 @@ body { background-image:url("../images/light_grey_floral_motif.png") }
 	background-color:#047A3C;
 	color: #FFF;
 }
+.jumbotron{
+	min-height: 600px;
+}
 
 .large{
 	width:100%;

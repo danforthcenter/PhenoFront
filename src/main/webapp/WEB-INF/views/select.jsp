@@ -33,7 +33,7 @@ $(document).ready(function(){
 			url: '<c:url context="/phenofront" value="/selection" />',
 			data: $(this).serialize(),
 			success: function(data){
-				window.location.href = '<c:url context="/phenofront" value="/userarea"/>';
+				window.location.href = '<c:url context="/phenofront" value="/userarea/results"/>';
 			},
 			error: function(xhr, status, error) {
 				form.find('.result').removeClass('hidden alert alert-success');
