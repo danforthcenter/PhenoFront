@@ -1,6 +1,7 @@
 package com.ddpsc.phenofront;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -13,6 +14,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -135,6 +139,49 @@ public class UserAreaController {
 			DateMidnight todayMidnight = new DateMidnight();
 			ArrayList<Snapshot> snapshots = (ArrayList<Snapshot>) sd.findWithTileLastNEntries(50);
 			model.addAttribute("date", todayMidnight.toString("EEEE, MMMM dd, YYYY"));
+			model.addAttribute("snapshots", snapshots );
+			return "userarea-results";
+		}
+		/**
+		 * Expects the date to be returned with the format of 
+		 * 
+		 * Then returns a list of new snapshots to display to the page.
+		 * @param locale
+		 * @param model
+		 * @param before return only snapshots before this date
+		 * @param after return only snapshots after this date
+		 * @return
+		 */
+		@RequestMapping(value = "/userarea/filterresults", method = RequestMethod.GET)
+		public String filterResultsAction(Locale locale, Model model, @RequestParam("before") String before,
+										   @RequestParam("after") String after) {
+			DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+			//if they are not empty...
+			ArrayList<Snapshot> snapshots;
+			if (! before.equals("") && ! after.equals("")){
+				DateTime dBefore = formatter.parseDateTime(before);	
+				Timestamp tsBefore = new Timestamp(dBefore.getMillis());
+
+				DateTime dAfter = formatter.parseDateTime(after);
+				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimes(tsBefore, tsAfter);
+				model.addAttribute("date", "Before: " + before +" After: " + after );
+			}
+			else if (! after.equals("") ){
+				DateTime dAfter = formatter.parseDateTime(after);
+				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotAfterTimestamp(tsAfter);
+				model.addAttribute("date", "After: " + after );
+
+			}
+			else{
+				//get here then we know after is empty and before is active
+				DateTime dBefore = formatter.parseDateTime(before);	
+				Timestamp tsThreeBefore = new Timestamp(dBefore.minusDays(3).getMillis());
+				Timestamp tsBefore = new Timestamp(dBefore.getMillis());
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimes(tsBefore, tsThreeBefore);
+				model.addAttribute("date", "Before: " + before +" After: " + tsThreeBefore );	
+			}
 			model.addAttribute("snapshots", snapshots );
 			return "userarea-results";
 		}
