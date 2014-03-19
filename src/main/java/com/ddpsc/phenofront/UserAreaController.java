@@ -40,6 +40,7 @@ import src.ddpsc.database.snapshot.SnapshotDaoImpl;
 import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
+import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.results.Tester;
 import src.ddpsc.results.ZippedResultsUtil;
 
@@ -105,6 +106,10 @@ public class UserAreaController {
 			} catch (ExperimentNotAllowedException e) {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
+			} catch (MalformedConfigException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return new ResponseEntity<String>("Database is not configured correctly.", HttpStatus.BAD_REQUEST);
 			} 
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
