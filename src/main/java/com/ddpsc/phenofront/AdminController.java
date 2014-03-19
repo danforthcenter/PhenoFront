@@ -31,10 +31,16 @@ import src.ddpsc.exceptions.UserNotFoundException;
 public class AdminController {
 	@Autowired
 	UserDao ud;
-	@RequestMapping(value = "", method= RequestMethod.GET)
-	public String homeAction(){
-		//displays dumbhome page
-		return "jobrequests";
+	/**
+     * Exact same as user action. remove and point this action at the other 
+     */
+    @RequestMapping(value = "", method= RequestMethod.GET)
+	public String homeAction(Model model){
+		ArrayList<DbGroup> groups = ud.findAllGroups();
+        ArrayList<DbUser> users = ud.findAllUsers();
+        model.addAttribute("users", users);
+        model.addAttribute("groups", groups);
+        return "users";
 		
 	}
 	/**
