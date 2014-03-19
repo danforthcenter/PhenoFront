@@ -37,9 +37,9 @@ public class DbUser {
 
 	public DbUser() {
 		TEST_EXPERIMENT = new Experiment();
-		TEST_EXPERIMENT.setDatabaseName("LemnaTest");
+		TEST_EXPERIMENT.setDatabaseName("Phenotyping1");
 		TEST_EXPERIMENT.setExperimentId(1); 
-		TEST_EXPERIMENT.setExperimentName("LemnaTest");
+		TEST_EXPERIMENT.setExperimentName("Phenotyping1");
 	}
 
 	/**
