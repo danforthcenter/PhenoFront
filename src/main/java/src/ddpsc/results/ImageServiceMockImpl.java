@@ -70,7 +70,7 @@ public class ImageServiceMockImpl implements ImageService {
 			Bayer2Rgb.convertRawImage( entryStream , tile.getWidth(), tile.getHeight(), out);
 		}
 		if (tile.getDataFormat() == 6){
-			//not implemented
+			FlouUtil.flou2Png( entryStream, out);
 		}
 
 	}

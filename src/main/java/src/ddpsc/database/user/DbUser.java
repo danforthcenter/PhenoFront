@@ -38,7 +38,7 @@ public class DbUser {
 
 	public DbUser() {
 		PHENOTYPING1 = new Experiment();
-		PHENOTYPING1.setDatabaseName("Phenotyping1");
+		PHENOTYPING1.setExperimentName("Phenotyping1");
 		PHENOTYPING1.setExperimentId(1); 
 		TEST_EXPERIMENT = new Experiment();
 		TEST_EXPERIMENT.setExperimentName("LemnaTest");
@@ -144,8 +144,8 @@ public class DbUser {
 	public ArrayList<Experiment> getAllowedExperiments() {
 		if (this.allowedExperiments == null){
 			this.allowedExperiments = new ArrayList<Experiment>();
-			this.allowedExperiments.add(TEST_EXPERIMENT);
 			this.allowedExperiments.add(PHENOTYPING1);
+			this.allowedExperiments.add(TEST_EXPERIMENT);
 
 			
 		}
