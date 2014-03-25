@@ -41,7 +41,6 @@ import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
-import src.ddpsc.results.Tester;
 import src.ddpsc.results.ZippedResultsUtil;
 
 /**
@@ -205,7 +204,7 @@ public class UserAreaController {
 	        response.setHeader("Transfer-Encoding", "chunked");     
 	        response.setHeader("Content-type", "text/plain");
 	        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshot" + snapshotId + ".zip\"");
-	        //TODO: Investigate saving snapshot queries in memory for one iteration.
+	        //TODO: Investigate saving snapshot queries in memory for one iteration. or bucket ?
 	        ArrayList<Snapshot> snapshots = new ArrayList<Snapshot>(1);
 	        snapshots.add(sd.findWithTileBySnapshotId(snapshotId));
 	      

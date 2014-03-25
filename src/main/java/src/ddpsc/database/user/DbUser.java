@@ -34,12 +34,19 @@ public class DbUser {
 	private ArrayList<Experiment> allowedExperiments;
 	private Experiment activeExperiment;
 	private static Experiment TEST_EXPERIMENT;
+	private static Experiment PHENOTYPING1;
+
 
 	public DbUser() {
 		TEST_EXPERIMENT = new Experiment();
-		TEST_EXPERIMENT.setDatabaseName("Phenotyping1");
+		TEST_EXPERIMENT.setDatabaseName("LemnaTest");
 		TEST_EXPERIMENT.setExperimentId(1); 
-		TEST_EXPERIMENT.setExperimentName("Phenotyping1");
+		TEST_EXPERIMENT.setExperimentName("LemnaTest");
+		
+		PHENOTYPING1 = new Experiment();
+		PHENOTYPING1.setDatabaseName("Phenotyping1");
+		PHENOTYPING1.setExperimentId(2); 
+		PHENOTYPING1.setExperimentName("Phenotyping1");
 	}
 
 	/**
@@ -143,6 +150,8 @@ public class DbUser {
 		if (this.allowedExperiments == null){
 			this.allowedExperiments = new ArrayList<Experiment>();
 			this.allowedExperiments.add(TEST_EXPERIMENT);
+			this.allowedExperiments.add(PHENOTYPING1);
+
 			
 		}
 		System.err.println("Warning: using a statically set experiment list: " + TEST_EXPERIMENT );

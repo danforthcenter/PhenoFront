@@ -49,8 +49,8 @@ public final class ZippedResultsUtil {
 			archive.flush(); // keep responsive
 			for (Tile tile : snapshot.getTiles()) {
 				// right now we have a png listed, but... this could change
-				if( tile.getDataFormat() != 1){
-					System.err.println("WARNING: Only printing out vis image.");
+				if( tile.getDataFormat() == 6){
+					System.err.println("WARNING: Ignoring FLOU images.");
 					continue;
 				}
 				String imgName = "snapshot" + snapshot.getId() + "/"
@@ -58,11 +58,10 @@ public final class ZippedResultsUtil {
 						+ tile.getRawImageOid() + ".png";
 				ZipEntry imgEntry = new ZipEntry(imgName);
 				archive.putNextEntry(imgEntry);
-			
 				try{
 					ImageServiceMockImpl.tileWriter(tile, archive, new DateTime(snapshot.getTimeStamp()), experiment);
 				} catch(Exception e){
-					System.out.println(tile);
+					System.err.println(tile);
 					e.printStackTrace();
 				}
 				archive.flush(); // keep responsive

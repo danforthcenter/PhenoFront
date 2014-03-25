@@ -70,8 +70,9 @@ public final class Bayer2Rgb {
 	
 	
 	/**
+	 * Returns a png of the converted bayer raw image. The output is in RGB space.
 	 * @see convertRawImage
-	 * @param is	Open InputStream to read the raw image from. Closes the InputStream on completion. Leaves output open.
+	 * @param is Open InputStream to read the raw image from. Closes the InputStream on completion. Leaves output open.
 	 * @param width
 	 * @param height
 	 * @param out

@@ -59,10 +59,20 @@ public class ImageServiceMockImpl implements ImageService {
 	 */
 	public static void tileWriter(Tile tile, OutputStream out, DateTime date, Experiment experiment) throws ZipException, IOException{
 		String filename = TileFileLTSystemUtil.getTileFilename(tile, date, experiment);
+		System.out.println(filename);
 		ZipFile zipFile = new ZipFile(filename);
 		FileHeader entry = zipFile.getFileHeader("data");
 		InputStream entryStream = zipFile.getInputStream(entry);
-		Bayer2Rgb.convertRawImage( entryStream , tile.getWidth(), tile.getHeight(), out);
+		if (tile.getDataFormat() == 0){
+			NirUtil.Nir2Png(entryStream, out);
+		}
+		if (tile.getDataFormat() == 1){
+			Bayer2Rgb.convertRawImage( entryStream , tile.getWidth(), tile.getHeight(), out);
+		}
+		if (tile.getDataFormat() == 6){
+			//not implemented
+		}
+
 	}
 
 	
