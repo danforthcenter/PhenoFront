@@ -36,17 +36,13 @@ public class DbUser {
 	private static Experiment TEST_EXPERIMENT;
 	private static Experiment PHENOTYPING1;
 
-
 	public DbUser() {
-		TEST_EXPERIMENT = new Experiment();
-		TEST_EXPERIMENT.setDatabaseName("LemnaTest");
-		TEST_EXPERIMENT.setExperimentId(1); 
-		TEST_EXPERIMENT.setExperimentName("LemnaTest");
-		
 		PHENOTYPING1 = new Experiment();
 		PHENOTYPING1.setDatabaseName("Phenotyping1");
-		PHENOTYPING1.setExperimentId(2); 
-		PHENOTYPING1.setExperimentName("Phenotyping1");
+		PHENOTYPING1.setExperimentId(1); 
+		TEST_EXPERIMENT = new Experiment();
+		TEST_EXPERIMENT.setExperimentName("LemnaTest");
+		TEST_EXPERIMENT.setExperimentId(2); 
 	}
 
 	/**
@@ -146,7 +142,6 @@ public class DbUser {
 	}
 	
 	public ArrayList<Experiment> getAllowedExperiments() {
-		// TODO PLEASE ACTUALLY SETUP THE EXPERIMENTS CLASSES
 		if (this.allowedExperiments == null){
 			this.allowedExperiments = new ArrayList<Experiment>();
 			this.allowedExperiments.add(TEST_EXPERIMENT);
