@@ -2,14 +2,10 @@ package com.ddpsc.phenofront;
 
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
 import org.joda.time.DateTime;
-import org.joda.time.LocalTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,7 +28,6 @@ public class TestController {
 	 */
 	@RequestMapping(value = "/oldhomelol", method = RequestMethod.GET)
 	public String homeAction(Locale locale, Model model) {
-		LocalTime local = new LocalTime(); //just time
 		DateTime date = new DateTime(); //gets datetime for NOW
 		Timestamp ts = new Timestamp(date.getMillis());
 		System.out.println(ts);

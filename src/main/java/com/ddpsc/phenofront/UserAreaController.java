@@ -8,13 +8,10 @@ import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
-import net.lingala.zip4j.exception.ZipException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
-import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,7 +89,6 @@ public class UserAreaController {
 		public @ResponseBody ResponseEntity<String> loadExperimentAction(
 					@ModelAttribute("user") DbUser user,
 					@RequestParam("experimentName") String experimentName){
-			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (username.equals("anonymousUser")){
 				return new ResponseEntity<String>("Error: Not allowed.", HttpStatus.FORBIDDEN);

@@ -1,23 +1,16 @@
 package src.ddpsc.results;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
 
 import org.joda.time.DateTime;
 
 import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.tile.Tile;
-import src.ddpsc.database.tile.TileFileLTSystemUtil;
 
 public final class ZippedResultsUtil {
 	/**
@@ -49,10 +42,6 @@ public final class ZippedResultsUtil {
 			archive.flush(); // keep responsive
 			for (Tile tile : snapshot.getTiles()) {
 				// right now we have a png listed, but... this could change
-				if( tile.getDataFormat() == 6){
-					System.err.println("WARNING: Ignoring FLOU images.");
-					continue;
-				}
 				String imgName = "snapshot" + snapshot.getId() + "/"
 						+ tile.getCameraLabel() + "_" + snapshot.getId() + "_"
 						+ tile.getRawImageOid() + ".png";
