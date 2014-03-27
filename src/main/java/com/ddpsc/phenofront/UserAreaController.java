@@ -38,7 +38,7 @@ import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
-import src.ddpsc.results.ZippedResultsUtil;
+import src.ddpsc.results.ResultsBuilder;
 
 /**
  * Controller responsible for handling users.
@@ -203,8 +203,8 @@ public class UserAreaController {
 	        //TODO: Investigate saving snapshot queries in memory for one iteration. or bucket ?
 	        ArrayList<Snapshot> snapshots = new ArrayList<Snapshot>(1);
 	        snapshots.add(sd.findWithTileBySnapshotId(snapshotId));
-	      
-	        ZippedResultsUtil.ZipSnapshots(response.getOutputStream(), snapshots, user.getActiveExperiment());	    
+	        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment());
+	        results.writeZipArchive();
 	        response.flushBuffer();
 	    }
 		/**

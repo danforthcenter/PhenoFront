@@ -146,10 +146,8 @@ public class DbUser {
 			this.allowedExperiments = new ArrayList<Experiment>();
 			this.allowedExperiments.add(PHENOTYPING1);
 			this.allowedExperiments.add(TEST_EXPERIMENT);
-
-			
 		}
-		System.err.println("Warning: using a statically set experiment list: " + TEST_EXPERIMENT );
+		System.err.println("Warning: using a statically set experiment list");
 		return this.allowedExperiments;
 	}
 	public void setActiveExperiment(Experiment active) throws ExperimentNotAllowedException{

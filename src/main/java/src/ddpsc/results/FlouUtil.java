@@ -65,7 +65,6 @@ public class FlouUtil {
 	    	shorts[n/2] = (short) ( shorts[n/2] | (short) (0xff) & bytes[n]);
 	    	shorts[n/2] *= 4; //14 bit image, need to shift by 2 bits.
 	    }
-	    
 	    return shorts;
 	}
 }

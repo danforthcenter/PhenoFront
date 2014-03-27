@@ -30,6 +30,7 @@ public final class ZippedResultsUtil {
 	 * @throws IOException
 	 * @see ImageService Snapshot Tile
 	 */
+	/*
 	public static void ZipSnapshots(OutputStream out,
 			ArrayList<Snapshot> snapshots, Experiment experiment) throws IOException {
 		ZipOutputStream archive = new ZipOutputStream(out);
@@ -59,10 +60,7 @@ public final class ZippedResultsUtil {
 		archive.finish();
 		// don't call close, whoever calls us should close
 	}
-	
-	public static void getTileArchive(Tile tile){
-		String root = "/Users/shill/Documents/JSEE_workspace/PhenoFront/bin/test/"; //make better at some point
-		String path = root + "blob" + tile.getRawImageOid();
-	}
+	*/
+
 
 }

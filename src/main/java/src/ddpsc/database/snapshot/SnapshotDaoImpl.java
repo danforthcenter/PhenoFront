@@ -2,6 +2,7 @@ package src.ddpsc.database.snapshot;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -85,13 +86,21 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	
 	/**
 	 * Gets a set of snapshots and their images that occur after a timestamp.
+	 * Only return snapshots which have tiles
 	 * 
 	 */
 	@Override
 	public List<Snapshot> findWithTileAfterTimestamp(Timestamp timestamp){
 		List<Snapshot> snapshotList = this.findSnapshotAfterTimestamp(timestamp);
-		for (Snapshot snapshot : snapshotList) {
-			snapshot.setTiles(this.findTiles(snapshot.getId()));
+		Iterator<Snapshot> it = snapshotList.iterator();
+		while(it.hasNext()){
+			Snapshot current = it.next();
+			List<Tile> curTiles = this.findTiles(current.getId());
+			if (curTiles.size() == 0){
+				it.remove();
+			} else{
+				current.setTiles(curTiles);
+			}
 		}
 		return snapshotList;
 	}
@@ -122,8 +131,15 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	@Override
 	public List<Snapshot> findWithTileBetweenTimes(Timestamp before, Timestamp after){
 		List<Snapshot> snapshotList = this.findSnapshotBetweenTimes(before, after);
-		for (Snapshot snapshot : snapshotList) {
-			snapshot.setTiles(this.findTiles(snapshot.getId()));
+		Iterator<Snapshot> it = snapshotList.iterator();
+		while(it.hasNext()){
+			Snapshot current = it.next();
+			List<Tile> curTiles = this.findTiles(current.getId());
+			if (curTiles.size() == 0){
+				it.remove();
+			} else{
+				current.setTiles(curTiles);
+			}
 		}
 		return snapshotList;
 	}
@@ -150,8 +166,15 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	@Override
 	public List<Snapshot> findWithTileLastNEntries(int n) {
 		List<Snapshot> snapshotList = this.findSnapshotLastNEntries(n);
-		for (Snapshot snapshot : snapshotList) {
-			snapshot.setTiles(this.findTiles(snapshot.getId()));
+		Iterator<Snapshot> it = snapshotList.iterator();
+		while(it.hasNext()){
+			Snapshot current = it.next();
+			List<Tile> curTiles = this.findTiles(current.getId());
+			if (curTiles.size() == 0){
+				it.remove();
+			} else{
+				current.setTiles(curTiles);
+			}
 		}
 		return snapshotList;
 	}
