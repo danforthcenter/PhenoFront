@@ -143,9 +143,10 @@ public class UserAreaController {
 			return "userarea-results";
 		}
 		/**
-		 * Expects the date to be returned with the format of 
+		 * Expects the date to be returned with the format of MM/dd/yyyy HH:mm. 
+		 * Only returns image snapshots.
 		 * 
-		 * Then returns a list of new snapshots to display to the page.
+		 * returns a list of new image snapshots to display to the page.
 		 * @param locale
 		 * @param model
 		 * @param before return only snapshots before this date
@@ -164,13 +165,13 @@ public class UserAreaController {
 
 				DateTime dAfter = formatter.parseDateTime(after);
 				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimes(tsBefore, tsAfter);
+				snapshots = (ArrayList<Snapshot>) sd.findWithTileBetweenTimes(tsBefore, tsAfter);
 				model.addAttribute("date", "Before: " + before +" After: " + after );
 			}
 			else if (! after.equals("") ){
 				DateTime dAfter = formatter.parseDateTime(after);
 				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findSnapshotAfterTimestamp(tsAfter);
+				snapshots = (ArrayList<Snapshot>) sd.findWithTileAfterTimestamp(tsAfter);
 				model.addAttribute("date", "After: " + after );
 
 			}
@@ -179,7 +180,7 @@ public class UserAreaController {
 				DateTime dBefore = formatter.parseDateTime(before);	
 				Timestamp tsThreeBefore = new Timestamp(dBefore.minusDays(3).getMillis());
 				Timestamp tsBefore = new Timestamp(dBefore.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimes(tsBefore, tsThreeBefore);
+				snapshots = (ArrayList<Snapshot>) sd.findWithTileBetweenTimes(tsBefore, tsThreeBefore);
 				model.addAttribute("date", "Before: " + before +" After: " + tsThreeBefore );	
 			}
 			model.addAttribute("snapshots", snapshots );
