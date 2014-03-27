@@ -165,13 +165,15 @@ public class UserAreaController {
 
 				DateTime dAfter = formatter.parseDateTime(after);
 				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findWithTileBetweenTimes(tsBefore, tsAfter);
+				//slow
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimesImageJobs(tsBefore, tsAfter);
 				model.addAttribute("date", "Before: " + before +" After: " + after );
 			}
 			else if (! after.equals("") ){
 				DateTime dAfter = formatter.parseDateTime(after);
 				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findWithTileAfterTimestamp(tsAfter);
+				//slow filter manually
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotAfterTimestampImageJobs(tsAfter);
 				model.addAttribute("date", "After: " + after );
 
 			}
@@ -180,7 +182,8 @@ public class UserAreaController {
 				DateTime dBefore = formatter.parseDateTime(before);	
 				Timestamp tsThreeBefore = new Timestamp(dBefore.minusDays(3).getMillis());
 				Timestamp tsBefore = new Timestamp(dBefore.getMillis());
-				snapshots = (ArrayList<Snapshot>) sd.findWithTileBetweenTimes(tsBefore, tsThreeBefore);
+				//slow
+				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimesImageJobs(tsBefore, tsThreeBefore);
 				model.addAttribute("date", "Before: " + before +" After: " + tsThreeBefore );	
 			}
 			model.addAttribute("snapshots", snapshots );

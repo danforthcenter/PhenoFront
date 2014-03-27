@@ -14,7 +14,14 @@ import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileRowMapper;
 /**
  * This class is responsible for building snapshot queries. Each user request should be defined in here.
- * No insertions should be made as the postgresql database will be read only.
+ * No insertions should be made as the postgresql database will be read only. 
+ * 
+ * Each query typically has three types:
+ * 
+ * standard (findBySnapshot) - Only returns snapshots, no tile information is returned and no additional filtering is done.
+ * withTile - Returns each snapshot with the associated tiles. If there are no tiles it is not included.
+ * 		 This is a slow method.
+ * imageJobs - Returns each snapshot if and only if it is an image job.
  * 
  * There should be an external tool that adds entries to servlet-context.xml and wires up the dataSources.
  * This class should figure out dynamically which dataSource to connect to.
@@ -122,7 +129,7 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	}
 	
 	/**
-	 * Includes tile data to the snapshots.
+	 * Includes tile data to the snapshots. Note, this is SLOW (tile lo
 	 * 
 	 * @param before
 	 * @param after
@@ -162,7 +169,9 @@ public class SnapshotDaoImpl implements SnapshotDao {
 		tileList = jdbcTemplate.query(sql, new TileRowMapper());
 		return tileList;
 	}
-	
+	/**
+	 * Finds all snapshots including tiles for the last N-entries in the database.
+	 */
 	@Override
 	public List<Snapshot> findWithTileLastNEntries(int n) {
 		List<Snapshot> snapshotList = this.findSnapshotLastNEntries(n);
@@ -182,6 +191,29 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	@Override
 	public List<Snapshot> findSnapshotLastNEntries(int n) {
 		String sql = "Select * from snapshot ORDER BY time_stamp DESC LIMIT " + n;
+		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
+		return snapshotList;
+	}
+	
+	@Override
+	public List<Snapshot> findSnapshotAfterTimestampImageJobs(
+			Timestamp timestamp) {
+		String sql = "Select * from snapshot WHERE time_stamp > '" + timestamp +"' AND water_amount = -1";
+		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
+		return snapshotList;
+	}
+
+	@Override
+	public List<Snapshot> findSnapshotBetweenTimesImageJobs(Timestamp before,
+			Timestamp after) {
+		String sql = "Select * from snapshot WHERE time_stamp > '" + after +"' and time_stamp <'" + before +"' AND water_amount = -1";
+		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
+		return snapshotList;
+	}
+
+	@Override
+	public List<Snapshot> findWithTileLastNEntriesImageJobs(int n) {
+		String sql = "Select * from snapshot WHERE water_amount = -1 ORDER BY time_stamp DESC LIMIT " + n;
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
