@@ -121,13 +121,18 @@ public class Snapshot {
 		this.measurementLabel = measurementLabel;
 	}
 	/**
-	 * Another version of toString, except instead of to a pure string it returns a CSV formatted string including labels on the first line.
+	 * Another version of toString, except instead of to a pure string it returns a CSV formatted string including labels on the first line. Does not handle null tiles.
 	 * @return
 	 */
 	public String csvWriter() {
 		String rep = "id,plant barcode,car tag,timestamp,weight before, weight after,water amount,completed,measurement label,tiles\n";
 		System.out.println(tiles);
-		String data = id+","+plantBarcode+","+carTag+","+timeStamp+","+weightBefore+","+weightAfter+","+waterAmount+","+completed+","+measurementLabel+","+Tile.toDelimited(tiles,";")+"\n";
+		String data;
+		try{
+			data = id+","+plantBarcode+","+carTag+","+timeStamp+","+weightBefore+","+weightAfter+","+waterAmount+","+completed+","+measurementLabel+","+Tile.toDelimited(tiles,";")+"\n";
+		} catch(NullPointerException e){
+			data = id+","+plantBarcode+","+carTag+","+timeStamp+","+weightBefore+","+weightAfter+","+waterAmount+","+completed+","+measurementLabel+"\n";
+		}
 		return (rep + data);
 	}
 	

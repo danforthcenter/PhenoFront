@@ -40,6 +40,7 @@ public class CustomAuthenticationManager implements AuthenticationManager {
 			user = userDao.findByUsername(auth.getName());
 		} catch (Exception e) {
 			logger.error("User does not exist: " + auth.getName());
+			e.printStackTrace();
 			throw new BadCredentialsException("User does not exist: " + auth.getName());
 		}
 

@@ -1,5 +1,7 @@
 package src.ddpsc.database.snapshot;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,125 +11,139 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileRowMapper;
+
 /**
- * This class is responsible for building snapshot queries. Each user request should be defined in here.
- * No insertions should be made as the postgresql database will be read only. 
+ * This class is responsible for building snapshot queries. Each user request
+ * should be defined in here. No insertions should be made as the postgresql
+ * database will be read only.
  * 
  * Each query typically has three types:
  * 
- * standard (findBySnapshot) - Only returns snapshots, no tile information is returned and no additional filtering is done.
- * withTile - Returns each snapshot with the associated tiles. If there are no tiles it is not included.
- * 		 This is a slow method.
- * imageJobs - Returns each snapshot if and only if it is an image job.
+ * standard (findBySnapshot) - Only returns snapshots, no tile information is
+ * returned and no additional filtering is done. withTile - Returns each
+ * snapshot with the associated tiles. If there are no tiles it is not included.
+ * This is a slow method. imageJobs - Returns each snapshot if and only if it is
+ * an image job.
  * 
- * There should be an external tool that adds entries to servlet-context.xml and wires up the dataSources.
- * This class should figure out dynamically which dataSource to connect to.
+ * There should be an external tool that adds entries to servlet-context.xml and
+ * wires up the dataSources. This class should figure out dynamically which
+ * dataSource to connect to.
  * 
  * @author shill
- *
+ * 
  */
 
-//Note: when the interface is removed it breaks. don't remove the interface, just suck it up and use it.
+// Note: when the interface is removed it breaks. don't remove the interface,
+// just suck it up and use it.
 public class SnapshotDaoImpl implements SnapshotDao {
-	@Autowired  
+	@Autowired
 	DataSource dataSource;
-	
-	public void setDataSource(DataSource dataSource){
-		this.dataSource = dataSource; //O:
+
+	public void setDataSource(DataSource dataSource) {
+		this.dataSource = dataSource; // O:
 	}
-	
+
 	/**
 	 * Utility function for creating a snapshot query.
+	 * 
 	 * @param sql
 	 * @return
 	 */
-	public List<Snapshot> snapshotQueryWrapper(String sql){
-		List<Snapshot> snapshotList = new ArrayList<Snapshot>();  
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);  
-		snapshotList = jdbcTemplate.query(sql, new SnapshotRowMapper());  
-		return snapshotList;  
+	public List<Snapshot> snapshotQueryWrapper(String sql) {
+		List<Snapshot> snapshotList = new ArrayList<Snapshot>();
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		snapshotList = jdbcTemplate.query(sql, new SnapshotRowMapper());
+		return snapshotList;
 	}
-	
+
 	/**
 	 * Gets a snapshot without it's associated images.
 	 */
 	@Override
 	public Snapshot findBySnapshotId(int id) {
-		String sql = "select * from snapshot where id= " + id;  
+		String sql = "select * from snapshot where id= " + id;
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
-		return snapshotList.get(0);  
+		return snapshotList.get(0);
 	}
-	
+
 	/**
-	 * Finds the snapshot by the snapshot id, also loads all Tiles (images) associated
-	 * to that ID as well.
+	 * Finds the snapshot by the snapshot id, also loads all Tiles (images)
+	 * associated to that ID as well.
+	 * 
 	 * @param id
 	 * @return
 	 */
 	@Override
-	public Snapshot findWithTileBySnapshotId(int id){
+	public Snapshot findWithTileBySnapshotId(int id) {
 		Snapshot result = this.findBySnapshotId(id);
 		result.setTiles(this.findTiles(id));
 		return result;
 	}
-	
+
 	/**
-	 * Gets a set of snapshots that occured after timestamp. It's probably important to note that
-	 * if you are using a java Calendar implementation that months start at 0, and days start at 1.
+	 * Gets a set of snapshots that occured after timestamp. It's probably
+	 * important to note that if you are using a java Calendar implementation
+	 * that months start at 0, and days start at 1.
 	 * 
 	 * @see GregorianCalendar, Timestamp
-	 *
-	 * @param Timestamp timestamp
+	 * 
+	 * @param Timestamp
+	 *            timestamp
 	 * 
 	 */
 	@Override
-	public List<Snapshot> findSnapshotAfterTimestamp(Timestamp timestamp){
-		String sql = "Select * from snapshot WHERE time_stamp > '" + timestamp +"'";
+	public List<Snapshot> findSnapshotAfterTimestamp(Timestamp timestamp) {
+		String sql = "Select * from snapshot WHERE time_stamp > '" + timestamp
+				+ "'";
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
-	
-	
+
 	/**
 	 * Gets a set of snapshots and their images that occur after a timestamp.
 	 * Only return snapshots which have tiles
 	 * 
 	 */
 	@Override
-	public List<Snapshot> findWithTileAfterTimestamp(Timestamp timestamp){
-		List<Snapshot> snapshotList = this.findSnapshotAfterTimestamp(timestamp);
+	public List<Snapshot> findWithTileAfterTimestamp(Timestamp timestamp) {
+		List<Snapshot> snapshotList = this
+				.findSnapshotAfterTimestamp(timestamp);
 		Iterator<Snapshot> it = snapshotList.iterator();
-		while(it.hasNext()){
+		while (it.hasNext()) {
 			Snapshot current = it.next();
 			List<Tile> curTiles = this.findTiles(current.getId());
-			if (curTiles.size() == 0){
+			if (curTiles.size() == 0) {
 				it.remove();
-			} else{
+			} else {
 				current.setTiles(curTiles);
 			}
 		}
 		return snapshotList;
 	}
-	
-	
+
 	/**
 	 * Finds snapshots without associated tiles between before and after.
 	 * 
-	 * @param Timestamp before
-	 * @param Timestamp after
+	 * @param Timestamp
+	 *            before
+	 * @param Timestamp
+	 *            after
 	 * 
 	 * @return List<Snapshot
 	 */
 	@Override
-	public List<Snapshot> findSnapshotBetweenTimes(Timestamp before, Timestamp after){
-		String sql = "Select * from snapshot WHERE time_stamp > '" + after +"' and time_stamp <'" + before +"'";
+	public List<Snapshot> findSnapshotBetweenTimes(Timestamp before,
+			Timestamp after) {
+		String sql = "Select * from snapshot WHERE time_stamp > '" + after
+				+ "' and time_stamp <'" + before + "'";
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
-	
+
 	/**
 	 * Includes tile data to the snapshots. Note, this is SLOW (tile lo
 	 * 
@@ -136,28 +152,32 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	 * @return List<Snapshot>
 	 */
 	@Override
-	public List<Snapshot> findWithTileBetweenTimes(Timestamp before, Timestamp after){
-		List<Snapshot> snapshotList = this.findSnapshotBetweenTimes(before, after);
+	public List<Snapshot> findWithTileBetweenTimes(Timestamp before,
+			Timestamp after) {
+		List<Snapshot> snapshotList = this.findSnapshotBetweenTimes(before,
+				after);
 		Iterator<Snapshot> it = snapshotList.iterator();
-		while(it.hasNext()){
+		while (it.hasNext()) {
 			Snapshot current = it.next();
 			List<Tile> curTiles = this.findTiles(current.getId());
-			if (curTiles.size() == 0){
+			if (curTiles.size() == 0) {
 				it.remove();
-			} else{
+			} else {
 				current.setTiles(curTiles);
 			}
 		}
 		return snapshotList;
 	}
-	
+
 	/**
-	 * Method used for getting tile information, mirror class as in the TileDaoImpl
+	 * Method used for getting tile information, mirror class as in the
+	 * TileDaoImpl
+	 * 
 	 * @param snapshotId
 	 * @return
 	 */
-	public List<Tile> findTiles(int snapshotId){
-		String sql= "SELECT tiled_image.camera_label, "
+	public List<Tile> findTiles(int snapshotId) {
+		String sql = "SELECT tiled_image.camera_label, "
 				+ "tile.raw_image_oid, tile.raw_null_image_oid, "
 				+ "tile.dataformat, tile.width, tile.height, "
 				+ "tile.rotate_flip_type, tile.frame "
@@ -169,19 +189,21 @@ public class SnapshotDaoImpl implements SnapshotDao {
 		tileList = jdbcTemplate.query(sql, new TileRowMapper());
 		return tileList;
 	}
+
 	/**
-	 * Finds all snapshots including tiles for the last N-entries in the database.
+	 * Finds all snapshots including tiles for the last N-entries in the
+	 * database.
 	 */
 	@Override
 	public List<Snapshot> findWithTileLastNEntries(int n) {
 		List<Snapshot> snapshotList = this.findSnapshotLastNEntries(n);
 		Iterator<Snapshot> it = snapshotList.iterator();
-		while(it.hasNext()){
+		while (it.hasNext()) {
 			Snapshot current = it.next();
 			List<Tile> curTiles = this.findTiles(current.getId());
-			if (curTiles.size() == 0){
+			if (curTiles.size() == 0) {
 				it.remove();
-			} else{
+			} else {
 				current.setTiles(curTiles);
 			}
 		}
@@ -190,15 +212,17 @@ public class SnapshotDaoImpl implements SnapshotDao {
 
 	@Override
 	public List<Snapshot> findSnapshotLastNEntries(int n) {
-		String sql = "Select * from snapshot ORDER BY time_stamp DESC LIMIT " + n;
+		String sql = "Select * from snapshot ORDER BY time_stamp DESC LIMIT "
+				+ n;
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
-	
+
 	@Override
 	public List<Snapshot> findSnapshotAfterTimestampImageJobs(
 			Timestamp timestamp) {
-		String sql = "Select * from snapshot WHERE time_stamp > '" + timestamp +"' AND water_amount = -1";
+		String sql = "Select * from snapshot WHERE time_stamp > '" + timestamp
+				+ "' AND water_amount = -1";
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
@@ -206,17 +230,120 @@ public class SnapshotDaoImpl implements SnapshotDao {
 	@Override
 	public List<Snapshot> findSnapshotBetweenTimesImageJobs(Timestamp before,
 			Timestamp after) {
-		String sql = "Select * from snapshot WHERE time_stamp > '" + after +"' and time_stamp <'" + before +"' AND water_amount = -1";
+		String sql = "Select * from snapshot WHERE time_stamp > '" + after
+				+ "' and time_stamp <'" + before + "' AND water_amount = -1";
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
 
 	@Override
 	public List<Snapshot> findWithTileLastNEntriesImageJobs(int n) {
-		String sql = "Select * from snapshot WHERE water_amount = -1 ORDER BY time_stamp DESC LIMIT " + n;
+		String sql = "Select * from snapshot WHERE water_amount = -1 ORDER BY time_stamp DESC LIMIT "
+				+ n;
 		List<Snapshot> snapshotList = snapshotQueryWrapper(sql);
 		return snapshotList;
 	}
 
-	
+	/**
+	 * Function for returning a list of snapshots to be processed. Allows for
+	 * custom queries. For measurementLabel, will match case-insensitive regular
+	 * expressions. For id_tag, will search regular expressions except that it
+	 * enforces that the parameter anchors the start of the string. Accepts null
+	 * parameters, if a parameter is null it is ignored in the query.
+	 * 
+	 * @return List<Snapshot> list of snapshots which match the query.
+	 */
+	@Override
+	public List<Snapshot> findSnapshotCustomQueryImageJobs(
+			final Timestamp after, final Timestamp before,
+			final String plantBarcode, final String measurementLabel) {
+		List<Snapshot> snapshotList = new ArrayList<Snapshot>();
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		if (before == null && after != null) {
+			// all after after
+			String sql = "SELECT * from snapshot WHERE time_stamp >= ? and "
+					+ "id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
+			snapshotList = jdbcTemplate.query(sql,
+					new PreparedStatementSetter() {
+						@Override
+						public void setValues(PreparedStatement ps)
+								throws SQLException {
+							ps.setTimestamp(1, after);
+							ps.setString(2, plantBarcode == null ? ""
+									: plantBarcode);
+							ps.setString(3, measurementLabel == null ? ""
+									: measurementLabel);
+						}
+					}, new SnapshotRowMapper());
+		} else if (before != null && after == null) {
+			String sql = "SELECT * from snapshot WHERE time_stamp <= ? and "
+					+ "id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
+			snapshotList = jdbcTemplate.query(sql,
+					new PreparedStatementSetter() {
+						@Override
+						public void setValues(PreparedStatement ps)
+								throws SQLException {
+							ps.setTimestamp(1, before);
+							ps.setString(2, plantBarcode == null ? ""
+									: plantBarcode);
+							ps.setString(3, measurementLabel == null ? ""
+									: measurementLabel);
+						}
+					}, new SnapshotRowMapper());
+			// all before
+		} else if (before != null && after != null) {
+			// all between
+			String sql = "SELECT * from snapshot WHERE time_stamp >= ? AND time_stamp <= ? and "
+					+ "id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
+			snapshotList = jdbcTemplate.query(sql,
+					new PreparedStatementSetter() {
+						@Override
+						public void setValues(PreparedStatement ps)
+								throws SQLException {
+							ps.setTimestamp(1, after);
+							ps.setTimestamp(2, before);
+							ps.setString(3, plantBarcode == null ? ""
+									: plantBarcode);
+							ps.setString(4, measurementLabel == null ? ""
+									: measurementLabel);
+							System.out.println(ps);
+						}
+					}, new SnapshotRowMapper());
+
+		} else {
+			// ignore timestamp
+			String sql = "SELECT * from snapshot WHERE"
+					+ "id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
+			snapshotList = jdbcTemplate.query(sql,
+					new PreparedStatementSetter() {
+						@Override
+						public void setValues(PreparedStatement ps)
+								throws SQLException {
+							ps.setString(1, plantBarcode == null ? ""
+									: plantBarcode);
+							ps.setString(2, measurementLabel == null ? ""
+									: measurementLabel);
+						}
+					}, new SnapshotRowMapper());
+		}
+		return snapshotList;
+	}
+
+	public List<Snapshot> findWithTileCustomQueryImageJobs(Timestamp after,
+			Timestamp before, String plantBarcode, String measurementLabel) {
+		List<Snapshot> snapshotList = this.findSnapshotCustomQueryImageJobs(
+				after, before, plantBarcode, measurementLabel);
+		Iterator<Snapshot> it = snapshotList.iterator();
+		while (it.hasNext()) {
+			Snapshot current = it.next();
+			List<Tile> curTiles = this.findTiles(current.getId());
+			if (curTiles.size() == 0) {
+				it.remove();
+			} else {
+				current.setTiles(curTiles);
+			}
+		}
+		return snapshotList;
+	}
+
 }

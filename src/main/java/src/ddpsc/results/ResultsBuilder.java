@@ -63,6 +63,8 @@ public class ResultsBuilder {
 	 * 
 	 * Currently threads handle all exceptions, including zip exceptions (which would mean corrupted or something)
 	 * It is possible that these need to be handled and logged, in which case a listener should be implemented.
+	 * 
+	 * To handle null tiles, it simply returns. That is snapshots with no tiles associated with it.
 	 * TODO: Implement listener
 	 * @param tiles
 	 * @param datetime
@@ -71,6 +73,9 @@ public class ResultsBuilder {
 	 * @throws IOException 
 	 */
 	public void processImages(ArrayList<Tile> tiles, DateTime datetime, Experiment experiment, String namePrefix) throws IOException {
+		if (tiles == null){
+			return;
+		}
 		for (Tile tile : tiles) {
 			PipedInputStream is = new PipedInputStream();
 			OutputStream threadStream = new PipedOutputStream(is);
@@ -79,7 +84,6 @@ public class ResultsBuilder {
 					+ tile.getRawImageOid() + ".png";
 			this.threadStreams.put(imgName, is);
 			
-			//does not handle any ZipExceptions from reading data, they simply would not exist.
 			// no logging happens, nothing. This is something that needs to be discussed and addressed.
 			new ImageProcessor(group, "name", threadStream, tile, datetime, experiment).start();
 		}
@@ -103,14 +107,18 @@ public class ResultsBuilder {
 			archive.putNextEntry(new ZipEntry(entryName));
 			archive.write(snapshot.csvWriter().getBytes());
 			archive.flush(); // keep responsive
-			System.err.println("WARNING: casting to ZipOutputStream, may fail");
-			
+			this.threadStreams.clear(); //reset
 			this.processImages((ArrayList<Tile>) snapshot.getTiles(), new DateTime(snapshot.getTimeStamp()), this.experiment, prefixName);
 			for(String key : this.threadStreams.keySet()){
-				ZipEntry entry = new ZipEntry(key);
-				archive.putNextEntry(entry);
-				archive.write(IOUtils.toByteArray(this.threadStreams.get(key)));	
-				archive.flush();
+				try{
+					ZipEntry entry = new ZipEntry(key);
+					archive.putNextEntry(entry);
+					archive.write(IOUtils.toByteArray(this.threadStreams.get(key)));	
+					archive.flush();
+				} catch(java.util.zip.ZipException e){
+					//WHY
+					System.err.println(e.getMessage());
+				}
 			}
 			try {
 				synchronized (this.group) {
@@ -152,24 +160,28 @@ class ImageProcessor extends Thread{
 		this.os = os;
 		this.tile = tile;
 	}
+	
 	@Override
 	public void run(){
 		String filename = TileFileLTSystemUtil.getTileFilename(this.tile, this.date, this.experiment);
 		try{
 			if (tile.getDataFormat() == 0){
-				this.imageService.nir2Png(filename, this.os);
+				this.imageService.nir2Png(filename, this.os );
 			}
 			else if (tile.getDataFormat() == 1){
-				this.imageService.vis2Png( filename, this.os);
+				this.imageService.vis2Png( filename, this.os );
 			}
 			else if (tile.getDataFormat() == 6){
-				this.imageService.flou2Png( filename, this.os);
+				this.imageService.flou2Png( filename, this.os );
 			}
 			this.os.flush();
 		} catch (ZipException e){
 			e.printStackTrace();
 		} catch(IOException e){
 			e.printStackTrace();
+		} catch(NullPointerException e){
+			e.printStackTrace();
+			System.err.println("Tile does not exist on file system: " + filename);
 		}
 		try{
 			//recovers from zip exception

@@ -1,6 +1,5 @@
 package com.ddpsc.phenofront;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -8,7 +7,6 @@ import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
@@ -36,6 +34,7 @@ import src.ddpsc.database.snapshot.SnapshotDao;
 import src.ddpsc.database.snapshot.SnapshotDaoImpl;
 import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
+import src.ddpsc.exceptions.ActiveKeyException;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.results.ResultsBuilder;
@@ -56,7 +55,6 @@ public class UserAreaController {
 		@Autowired
 		ServletContext servletContext;
 		
-		//important lol
 		SnapshotDao sd = new SnapshotDaoImpl();
 		
 		protected static Logger logger = Logger.getLogger("controller");
@@ -134,6 +132,12 @@ public class UserAreaController {
 			return "schedule";
 		}
 		
+		/**
+		 * Primary action of user area. Shows the most recent 50 entries.
+		 * @param locale
+		 * @param model
+		 * @return
+		 */
 		@RequestMapping(value = "/userarea/results", method = RequestMethod.GET)
 		public String resultsAction(Locale locale, Model model) {
 			DateMidnight todayMidnight = new DateMidnight();
@@ -142,6 +146,117 @@ public class UserAreaController {
 			model.addAttribute("snapshots", snapshots );
 			return "userarea-results";
 		}
+		/**
+		 *  Sends the user to the query builder page, where they build a custom snapshot query.
+		 *  Upon submission, a key is provided to the user which validates their download (for use with wget and other command line tools)
+		 *  These keys are stored in memory.
+		 */
+		@RequestMapping(value = "/userarea/querybuilder", method = RequestMethod.GET)
+		public String queryBuilderAction(Locale locale, Model model,  @ModelAttribute("user") DbUser user){
+			// this is for testing remove please shit works
+			String downloadKey;
+			try {
+				downloadKey = DownloadManager.generateRandomKey(user);
+				System.out.println("new key " + downloadKey);
+			} catch (ActiveKeyException e) {
+				downloadKey = DownloadManager.getKey(user);
+				System.out.println("old key" + downloadKey);
+			}
+			model.addAttribute("downloadKey", downloadKey);
+			model.addAttribute("activeExperiment", user.getActiveExperiment().getExperimentName());
+			return "userarea-querybuilder";
+		}
+		/**
+		 * This action handles mass downloading of images. Downloads expect a valid downloadKey which is stored in the
+		 * system properties files. Manually setups experiment.
+		 * @param locale
+		 * @param model
+		 * @return
+		 * @throws IOException 
+		 * @throws ExperimentNotAllowedException 
+		 */
+		@RequestMapping(value = "/massdownload", method = RequestMethod.GET)
+		public void massDownloadAction(HttpServletResponse response, Locale locale, Model model,
+																	 @RequestParam(value = "before", required = false) String before,
+																	 @RequestParam(value = "after", required = false) String after,
+																	 @RequestParam(value = "activeExperiment", required = false) String activeExperiment,
+																	 @RequestParam(value = "plantBarcode", required = false) String plantBarcode,
+																	 @RequestParam(value = "measurementLabel", required = false) String measurementLabel,
+																	 @RequestParam(value = "downloadKey", required = true) String downloadKey) throws IOException, ExperimentNotAllowedException {
+			DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+			//error handling
+			if (downloadKey == null){
+				response.sendError(403, "Permission denied.");  
+				response.flushBuffer();
+		        return;
+			}
+			if (System.getProperty(downloadKey) != null){
+				System.out.println("download key " + System.getProperty(downloadKey) + " " + System.getProperty(System.getProperty(downloadKey)));
+			}
+			if(System.getProperty(System.getProperty(downloadKey)) != null){
+			    response.sendError(403, "User already has an active download. Terminate to continue.");   
+				response.flushBuffer();
+			    return;
+			}
+			DbUser user = ud.findByUsername(System.getProperty(downloadKey));
+			//check permissions and setup experiment for anonymous users
+			ArrayList<Experiment> experiments = user.getAllowedExperiments();
+			for (Experiment experiment : experiments) {
+				if (experiment.getExperimentName().equals(activeExperiment)){
+					user.setActiveExperiment(experiment);
+					try {
+						sd.setDataSource(new ExperimentConfig().dataSource(experiment.getExperimentName()));
+					} catch (MalformedConfigException e) {
+						e.printStackTrace();
+						response.sendError(400, "Bad experiment configuration");   
+						response.flushBuffer();
+					}
+					break;
+				}
+			}
+			if(user.getActiveExperiment() == null){
+			    response.sendError(403, "Invalid experiment selection");   
+				response.flushBuffer();
+			    return;
+			}
+			//setup query
+			ArrayList<Snapshot> snapshots;
+			Timestamp tsBefore = null;
+			Timestamp tsAfter = null;
+			if (! before.equals("") ){
+				DateTime dBefore = formatter.parseDateTime(before);	
+				tsBefore = new Timestamp(dBefore.getMillis());
+			}
+			if (! after.equals("") ){
+				DateTime dAfter = formatter.parseDateTime(after);	
+				tsAfter = new Timestamp(dAfter.getMillis());
+			}
+			plantBarcode = "^" + plantBarcode;
+			
+			snapshots = (ArrayList<Snapshot>) sd.findWithTileCustomQueryImageJobs(tsAfter, tsBefore, plantBarcode, measurementLabel);
+			//process snapshots
+			try {
+				DownloadManager.setKeyActive(downloadKey);
+		        response.setHeader("Transfer-Encoding", "chunked");     
+		        response.setHeader("Content-type", "text/plain");
+		        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+		        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment());
+		        results.writeZipArchive();
+				response.flushBuffer();
+				DownloadManager.setKeyInactive(downloadKey);
+			}
+			catch (ActiveKeyException e) {
+				e.printStackTrace();
+			} 
+			catch(Exception e){
+				e.printStackTrace();
+				response.sendError(403, "User already has an active download. Terminate to continue.");   
+				response.flushBuffer();
+			}
+			return;
+		}
+		
+		
 		/**
 		 * Expects the date to be returned with the format of MM/dd/yyyy HH:mm. 
 		 * Only returns image snapshots.
@@ -165,7 +280,6 @@ public class UserAreaController {
 
 				DateTime dAfter = formatter.parseDateTime(after);
 				Timestamp tsAfter = new Timestamp(dAfter.getMillis());
-				//slow
 				snapshots = (ArrayList<Snapshot>) sd.findSnapshotBetweenTimesImageJobs(tsBefore, tsAfter);
 				model.addAttribute("date", "Before: " + before +" After: " + after );
 			}
@@ -211,29 +325,10 @@ public class UserAreaController {
 	        results.writeZipArchive();
 	        response.flushBuffer();
 	    }
-		/**
-		 * Another dumb proof of concept method.
-		 * @param snapshotId
-		 * @return
-		 * @throws IOException
-		 */
-		@RequestMapping(value ="/userarea/fetchimage/{id}", method = RequestMethod.GET)
-		public @ResponseBody byte[]  fetchImageAction(@PathVariable("id") int snapshotId) throws IOException{
-			
-			System.out.println(snapshotId);
-			//before this is done we need to actually build the resource
-			//good test
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			InputStream in = servletContext.getResourceAsStream("/resources/image_sets/A.zip");
-		    return IOUtils.toByteArray(in);
-		//	return new ResponseEntity<String>("urigoeshere", HttpStatus.OK);
-		}
+
 		@RequestMapping(value = "/userarea/status", method = RequestMethod.GET)
 		public String statusAction(Locale locale, Model model) {
 			return "status";
-		}
+		}		
+
 }

@@ -7,11 +7,16 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferUShort;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import javax.imageio.ImageIO;
+
 import org.apache.commons.io.IOUtils;
+
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.FileHeader;
@@ -32,13 +37,16 @@ public class ImageServiceImpl implements ImageService{
 	
 	/**
 	 * Converts the passed image to a png format. Expects the string to be prebuilt with the 
-	 * LTFileSystem conversion.
+	 * LTFileSystem conversion. If a file does not exist return.
 	 * 
 	 * @throws ZipException 
 	 * 
 	 */
 	@Override
 	public void nir2Png(String filename, OutputStream out) throws IOException, ZipException {
+		if (! new File(filename).exists()){
+			throw new FileNotFoundException(filename + " is not found.");
+		}
 		InputStream in = readZipImageEntry(filename);
 		byte[] bytes = IOUtils.toByteArray(in);
 		in.close();
@@ -64,6 +72,10 @@ public class ImageServiceImpl implements ImageService{
 	 */
 	@Override
 	public void flou2Png(String filename, OutputStream out) throws IOException, ZipException{
+		//I feel like there was a reason to silently erro before, I don't know why that was.
+		if (! new File(filename).exists()){
+			throw new FileNotFoundException(filename + " is not found.");
+		}
 		InputStream in = readZipImageEntry(filename);
 		byte[] bytes = IOUtils.toByteArray(in);
 		in.close();
@@ -85,6 +97,9 @@ public class ImageServiceImpl implements ImageService{
 	 */
 	@Override
 	public void vis2Png(String filename, OutputStream out) throws IOException, ZipException {
+		if (! new File(filename).exists()){
+			throw new FileNotFoundException(filename + " is not found.");
+		}
 		Bayer2Rgb.convertRawImage(readZipImageEntry(filename), VISWIDTH, VISHEIGHT, out);
 	}
 	
@@ -103,6 +118,8 @@ public class ImageServiceImpl implements ImageService{
 	
 	/**
 	 * Utility function that converts an array of bytes to an array of shorts, does not bias for signed integers.
+	 * Moves the final 14 bit array by 1 bit to the left, would move by 2 (max possibility) but that can interfere
+	 * with the sign bit. To avoid this we just let the first bit "exist". 
 	 * (THANKS JAVA)
 	 * @param bytes
 	 * @return
@@ -111,9 +128,9 @@ public class ImageServiceImpl implements ImageService{
 		short[] shorts = new short[bytes.length/2];	   
 	    for (int n = 0; n < bytes.length; n += 2){
 	    	shorts[n/2] = (short) (bytes[n + 1]);
-	    	shorts[n/2] = (short) ( shorts[n/2] << (byte) 8);
-	    	shorts[n/2] = (short) ( shorts[n/2] | (short) (0xff) & bytes[n]);
-	    	shorts[n/2] *= 4; //14 bit image, need to shift by 2 bits.
+	    	shorts[n/2] = (short) ( (short) shorts[n/2] << (byte) 8);
+	    	shorts[n/2] = (short) ( (short) shorts[n/2] | (short) (0xff) & bytes[n]);
+	    	shorts[n/2] = (short) (shorts[n/2] << 1); //14 bit image, moving by 1 bit to generally brighten the image and avoid error with sign bit
 	    } 
 	    return shorts;
 	}
