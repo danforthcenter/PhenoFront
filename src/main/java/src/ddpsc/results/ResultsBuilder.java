@@ -98,14 +98,9 @@ public class ResultsBuilder {
 	 */
 	public void writeZipArchive() throws IOException{
 		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
-
+		
 		for (Snapshot snapshot : snapshots) {
-			String entryName = "snapshot" + snapshot.getId() + "/snapshot"
-					+ snapshot.getId() + ".csv";
-			String prefixName = "snapshot" + snapshot.getId() + "/snapshot"
-					+ snapshot.getId() + "/";
-			archive.putNextEntry(new ZipEntry(entryName));
-			archive.write(snapshot.csvWriter().getBytes());
+			String prefixName = "snapshot" + snapshot.getId() + "/";
 			archive.flush(); // keep responsive
 			this.threadStreams.clear(); //reset
 			this.processImages((ArrayList<Tile>) snapshot.getTiles(), new DateTime(snapshot.getTimeStamp()), this.experiment, prefixName);
@@ -129,6 +124,14 @@ public class ResultsBuilder {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+		//adds csv file
+		String rep = "id,plant barcode,car tag,timestamp,weight before, weight after,water amount,completed,measurement label,tiles\n";
+		String entryName = "SnapshotInfo.csv";
+		archive.putNextEntry(new ZipEntry(entryName));
+		archive.write(rep.getBytes());
+		for (Snapshot snapshot : snapshots) {
+			archive.write(snapshot.csvWriterNoHead().getBytes());
 		}
 		archive.finish();
 	}

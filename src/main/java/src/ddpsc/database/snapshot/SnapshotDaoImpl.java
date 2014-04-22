@@ -313,7 +313,7 @@ public class SnapshotDaoImpl implements SnapshotDao {
 		} else {
 			// ignore timestamp
 			String sql = "SELECT * from snapshot WHERE"
-					+ "id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
+					+ " id_tag ~ ? and measurement_label ~* ? and completed = 't' AND water_amount = -1";
 			snapshotList = jdbcTemplate.query(sql,
 					new PreparedStatementSetter() {
 						@Override

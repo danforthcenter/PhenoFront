@@ -2,34 +2,22 @@
 <%@ page session="false"%>
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags"%>
 <tags:userarea-template>
-	<jsp:attribute name="active">Results</jsp:attribute>
+	<jsp:attribute name="active">Batch Download</jsp:attribute>
 	<jsp:body>
 	<div class="container">
 		<div class="jumbotron"
-				style="padding-left: 30px; padding-right: 30px;">
-					<p>
-										
-				
-				<p>
-										
-				
-				<p>
-										
-				
-				<p>
-					
-					
-				
-				<p>
-					
-				
-				<p>
+				style="padding-left: 30px; padding-right: 30px;">				
+				<p style="min-height:00px">
 					<!-- I suck -->
 					 
-				
+				<h2>Image Batch Download</h2>
 				<p>
 					 Enter information in the fields to refine your snapshots. All fields are optional.
 					 </p>
+					 <span class="help-block">
+					 	If you are downloading to a server with wget, use --output-document FILENAME.zip to save it to give it a reasonable name. Results are 
+					 	in an uncompressed ZIP archive.
+					 </span>
 					 <form role="form" id ="query-builder" class="select-data" method="GET"
 					action="<c:url context="/phenofront" value="/massdownload" />">
 					  	<div class="form-group">

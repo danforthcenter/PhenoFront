@@ -40,6 +40,9 @@
 				<li 
 					<c:if test = "${ active == 'Results'}">class = "active"</c:if>
 					><a href="<c:url context="/phenofront/userarea" value="/results"/>">Results</a></li>
+				<li 
+					<c:if test = "${ active == 'Batch Download'}">class = "active"</c:if>
+					><a href="<c:url context="/phenofront/userarea" value="/querybuilder"/>">Batch Download</a></li>
 				<!-- 
 				<li 
 					<c:if test = "${ active == 'Status'}">class = "active"</c:if>

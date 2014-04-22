@@ -192,6 +192,11 @@ public class UserAreaController {
 			}
 			if (System.getProperty(downloadKey) != null){
 				System.out.println("download key " + System.getProperty(downloadKey) + " " + System.getProperty(System.getProperty(downloadKey)));
+			} else{
+				//property is null so we can't do anything?
+				response.sendError(400, "Invalid download key");   
+				response.flushBuffer();
+				return;
 			}
 			if(System.getProperty(System.getProperty(downloadKey)) != null){
 			    response.sendError(403, "User already has an active download. Terminate to continue.");   
@@ -244,11 +249,9 @@ public class UserAreaController {
 		        results.writeZipArchive();
 				response.flushBuffer();
 				DownloadManager.setKeyInactive(downloadKey);
-			}
-			catch (ActiveKeyException e) {
+			} catch (ActiveKeyException e) {
 				e.printStackTrace();
-			} 
-			catch(Exception e){
+			} catch(Exception e){
 				e.printStackTrace();
 				response.sendError(403, "User already has an active download. Terminate to continue.");   
 				response.flushBuffer();
