@@ -44,6 +44,9 @@ body { background-image:url("../images/light_grey_floral_motif.png") }
 	background-color:#047A3C;
 	color: #FFF;
 }
+.checkbox{
+	font-size:14px;
+}
 .jumbotron{
 	min-height: 600px;
 }

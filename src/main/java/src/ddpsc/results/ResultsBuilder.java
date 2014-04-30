@@ -1,5 +1,6 @@
 package src.ddpsc.results;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,10 +46,16 @@ public class ResultsBuilder {
 	private Experiment experiment;
 	private HashMap<String, InputStream> threadStreams;
 	private ThreadGroup group;
+	private boolean vis;
+	private boolean nir;
+	private boolean fluo;
 
 	public ResultsBuilder(OutputStream out, ArrayList<Snapshot> snapshots,
-			Experiment experiment) {
+			Experiment experiment, boolean vis, boolean nir, boolean fluo) {
 		//new DateTime(snapshot.getTimeStamp())
+		this.vis = vis;
+		this.nir = nir;
+		this.fluo = fluo;
 		this.requestStream = out;
 		this.snapshots = snapshots;
 		this.experiment = experiment;
@@ -65,7 +72,8 @@ public class ResultsBuilder {
 	 * It is possible that these need to be handled and logged, in which case a listener should be implemented.
 	 * 
 	 * To handle null tiles, it simply returns. That is snapshots with no tiles associated with it.
-	 * TODO: Implement listener
+	 * 
+	 * TODO: Implement listener that monitors progress
 	 * @param tiles
 	 * @param datetime
 	 * @param experiment
@@ -77,17 +85,19 @@ public class ResultsBuilder {
 			return;
 		}
 		for (Tile tile : tiles) {
-			PipedInputStream is = new PipedInputStream();
-			OutputStream threadStream = new PipedOutputStream(is);
-			String imgName = namePrefix 
-					+ tile.getCameraLabel() + "_"
-					+ tile.getRawImageOid() + ".png";
-			this.threadStreams.put(imgName, is);
-			
-			// no logging happens, nothing. This is something that needs to be discussed and addressed.
-			new ImageProcessor(group, "name", threadStream, tile, datetime, experiment).start();
+			//assert that this file is allowed
+			if ((tile.getDataFormat() == 0 && this.nir) || (tile.getDataFormat() == 1 && this.vis) || (tile.getDataFormat() == 6 && this.fluo)){
+				PipedInputStream is = new PipedInputStream();
+				OutputStream threadStream = new PipedOutputStream(is);
+				String imgName = namePrefix 
+						+ tile.getCameraLabel() + "_"
+						+ tile.getRawImageOid() + ".png";
+				this.threadStreams.put(imgName, is);
+				
+				// no logging happens, nothing. This is something that needs to be discussed and addressed.
+				new ImageProcessor(group, "name", threadStream, tile, datetime, experiment, this.vis, this.nir, this.fluo).start();
+			}
 		}
-
 	}
 	
 	/**
@@ -149,14 +159,20 @@ class ImageProcessor extends Thread{
 	private ImageService imageService;
 	private DateTime date;
 	private Experiment experiment;
-
-	public ImageProcessor(ThreadGroup group, String name, OutputStream os, Tile tile, DateTime date, Experiment experiment){
+	private boolean nir;
+	private boolean vis;
+	private boolean fluo;
+	//TODO: Remove Image types from the processor
+	public ImageProcessor(ThreadGroup group, String name, OutputStream os, Tile tile, DateTime date, Experiment experiment, boolean vis, boolean nir, boolean fluo){
 		super(group, name);
 		this.imageService = new ImageServiceImpl();
 		this.os = os;
 		this.tile = tile;
 		this.date = date;
 		this.experiment = experiment;
+		this.vis = vis;
+		this.nir = nir;
+		this.fluo = fluo;
 	}
 	public ImageProcessor(String name, OutputStream os, Tile tile){
 		super(name);
@@ -168,30 +184,34 @@ class ImageProcessor extends Thread{
 	public void run(){
 		String filename = TileFileLTSystemUtil.getTileFilename(this.tile, this.date, this.experiment);
 		try{
-			if (tile.getDataFormat() == 0){
+			if (tile.getDataFormat() == 0 && this.nir){
 				this.imageService.nir2Png(filename, this.os );
 			}
-			else if (tile.getDataFormat() == 1){
+			else if (tile.getDataFormat() == 1 && this.vis){
 				this.imageService.vis2Png( filename, this.os );
 			}
-			else if (tile.getDataFormat() == 6){
+			else if (tile.getDataFormat() == 6 && this.fluo){
 				this.imageService.flou2Png( filename, this.os );
 			}
 			this.os.flush();
 		} catch (ZipException e){
 			e.printStackTrace();
-		} catch(IOException e){
-			e.printStackTrace();
+		} catch(FileNotFoundException e){
+			System.err.println("File not found: " + filename);
 		} catch(NullPointerException e){
 			e.printStackTrace();
 			System.err.println("Tile does not exist on file system: " + filename);
-		}
-		try{
-			//recovers from zip exception
-			this.os.close();
-		}
-		catch (IOException e){
+		} catch(IOException e){
 			e.printStackTrace();
-		} 
+			System.err.println("IOException in Thread group.");
+		}
+		//if some previous exception is thrown we need to know so that we can close the threads stream
+		try {
+			os.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 }

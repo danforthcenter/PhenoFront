@@ -29,7 +29,7 @@ public class UserDaoImpl implements UserDao{
 				   + "us.authority, "
 				   + "u.username AS owner, "
 				   + "gr.group_name, "
-				   + "u.user_id "
+				   + "us.user_id "
 				   + "FROM users AS us, groups AS gr "
 				   + "JOIN users AS u ON u.user_id = gr.owner_id "
 				   + "WHERE us.username =  '" + username + "' "

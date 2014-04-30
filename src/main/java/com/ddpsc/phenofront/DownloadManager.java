@@ -16,6 +16,11 @@ import src.ddpsc.exceptions.ActiveKeyException;
  * use any more keys. A key will not be added if the user already has a download
  * in progress
  * 
+ * http://stackoverflow.com/questions/3679260/how-can-you-tell-if-the-user-hit-cancel-during-a-download-from-a-java-servlet
+ * Deprecating this class until that is handled
+ * 
+ * 
+ * 
  * @author shill
  * 
  */
@@ -27,22 +32,17 @@ public class DownloadManager {
 	 *             If the user already has an active key, an exception is
 	 *             thrown.
 	 */
-	public static String generateRandomKey(DbUser user)
-			throws ActiveKeyException {
-		if (System.getProperty(user.getUsername()) == null) {
+	public static String generateRandomKey(DbUser user){
 			Random rand = new Random(System.currentTimeMillis());
 			String theDigest = Long.toString(rand.nextLong());
 			System.setProperty(theDigest, user.getUsername());
 			return theDigest;
-		} else {
-			throw new ActiveKeyException("Key already in use for: "
-					+ user.getUsername());
-		}
+		
 	}
 
 	/**
 	 * Sets the key to active.
-	 * 
+	 * @deprecated
 	 * @param key
 	 * @return Returns the user which now has an active key.
 	 * @throws ActiveKeyException
@@ -65,7 +65,7 @@ public class DownloadManager {
 	/**
 	 * Sets the key for the given user as inactive. Removes the key from the system.
 	 * If the key does not exist then it returns nothing and silently continues.
-	 * 
+	 * @deprecated
 	 * @param key
 	 * @return
 

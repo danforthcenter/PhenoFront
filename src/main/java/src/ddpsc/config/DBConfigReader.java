@@ -64,10 +64,8 @@ public final class DBConfigReader {
 				throw new MalformedConfigException("One or more of the required fields are missing. Check your LTdatabase config file.");
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

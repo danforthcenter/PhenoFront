@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
+import src.ddpsc.authentication.CustomAuthenticationManager;
 import src.ddpsc.config.ExperimentConfig;
 import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.snapshot.Snapshot;
@@ -34,7 +36,6 @@ import src.ddpsc.database.snapshot.SnapshotDao;
 import src.ddpsc.database.snapshot.SnapshotDaoImpl;
 import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
-import src.ddpsc.exceptions.ActiveKeyException;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.results.ResultsBuilder;
@@ -99,9 +100,7 @@ public class UserAreaController {
 			} catch (ExperimentNotAllowedException e) {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
-			} catch (MalformedConfigException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (MalformedConfigException e) {				e.printStackTrace();
 				return new ResponseEntity<String>("Database is not configured correctly.", HttpStatus.BAD_REQUEST);
 			} 
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
@@ -155,13 +154,7 @@ public class UserAreaController {
 		public String queryBuilderAction(Locale locale, Model model,  @ModelAttribute("user") DbUser user){
 			// this is for testing remove please shit works
 			String downloadKey;
-			try {
-				downloadKey = DownloadManager.generateRandomKey(user);
-				System.out.println("new key " + downloadKey);
-			} catch (ActiveKeyException e) {
-				downloadKey = DownloadManager.getKey(user);
-				System.out.println("old key" + downloadKey);
-			}
+			downloadKey = DownloadManager.generateRandomKey(user);
 			model.addAttribute("downloadKey", downloadKey);
 			model.addAttribute("activeExperiment", user.getActiveExperiment().getExperimentName());
 			return "userarea-querybuilder";
@@ -182,7 +175,12 @@ public class UserAreaController {
 																	 @RequestParam(value = "activeExperiment", required = false) String activeExperiment,
 																	 @RequestParam(value = "plantBarcode", required = false) String plantBarcode,
 																	 @RequestParam(value = "measurementLabel", required = false) String measurementLabel,
-																	 @RequestParam(value = "downloadKey", required = true) String downloadKey) throws IOException, ExperimentNotAllowedException {
+																	 @RequestParam(value = "downloadKey", required = true) String downloadKey,
+																	 @RequestParam(value = "vis", defaultValue = "false") boolean vis,
+																	 @RequestParam(value = "nir", defaultValue = "false") boolean nir,
+																	 @RequestParam(value = "fluo", defaultValue = "false") boolean fluo) throws IOException, ExperimentNotAllowedException {
+			//TODO: reimplement 1 download per user limit
+			
 			DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
 			//error handling
 			if (downloadKey == null){
@@ -190,19 +188,14 @@ public class UserAreaController {
 				response.flushBuffer();
 		        return;
 			}
-			if (System.getProperty(downloadKey) != null){
-				System.out.println("download key " + System.getProperty(downloadKey) + " " + System.getProperty(System.getProperty(downloadKey)));
-			} else{
+			if (System.getProperty(downloadKey) == null){
+
 				//property is null so we can't do anything?
 				response.sendError(400, "Invalid download key");   
 				response.flushBuffer();
 				return;
 			}
-			if(System.getProperty(System.getProperty(downloadKey)) != null){
-			    response.sendError(403, "User already has an active download. Terminate to continue.");   
-				response.flushBuffer();
-			    return;
-			}
+		
 			DbUser user = ud.findByUsername(System.getProperty(downloadKey));
 			//check permissions and setup experiment for anonymous users
 			ArrayList<Experiment> experiments = user.getAllowedExperiments();
@@ -237,25 +230,16 @@ public class UserAreaController {
 				tsAfter = new Timestamp(dAfter.getMillis());
 			}
 			plantBarcode = "^" + plantBarcode;
-			
-			snapshots = (ArrayList<Snapshot>) sd.findWithTileCustomQueryImageJobs(tsAfter, tsBefore, plantBarcode, measurementLabel);
-			//process snapshots
-			try {
-				DownloadManager.setKeyActive(downloadKey);
-		        response.setHeader("Transfer-Encoding", "chunked");     
-		        response.setHeader("Content-type", "text/plain");
-		        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
-		        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment());
-		        results.writeZipArchive();
-				response.flushBuffer();
-				DownloadManager.setKeyInactive(downloadKey);
-			} catch (ActiveKeyException e) {
-				e.printStackTrace();
-			} catch(Exception e){
-				e.printStackTrace();
-				response.sendError(403, "User already has an active download. Terminate to continue.");   
-				response.flushBuffer();
-			}
+						
+	        response.setHeader("Transfer-Encoding", "chunked");     
+	        response.setHeader("Content-type", "text/plain");
+	        //TODO: Add filename option
+	        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+			response.flushBuffer();
+	        snapshots = (ArrayList<Snapshot>) sd.findWithTileCustomQueryImageJobs(tsAfter, tsBefore, plantBarcode, measurementLabel);
+	        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), nir, vis, fluo);
+	        results.writeZipArchive();
+			response.flushBuffer();			
 			return;
 		}
 		
@@ -321,11 +305,18 @@ public class UserAreaController {
 	        response.setHeader("Transfer-Encoding", "chunked");     
 	        response.setHeader("Content-type", "text/plain");
 	        response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshot" + snapshotId + ".zip\"");
-	        //TODO: Investigate saving snapshot queries in memory for one iteration. or bucket ?
 	        ArrayList<Snapshot> snapshots = new ArrayList<Snapshot>(1);
 	        snapshots.add(sd.findWithTileBySnapshotId(snapshotId));
-	        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment());
-	        results.writeZipArchive();
+	        //no magic
+	        boolean vis = true;
+	        boolean nir = true;
+	        boolean fluo = true;
+	        try{
+		        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo);
+		        results.writeZipArchive();
+	        } catch( IOException e){
+	        	System.err.println("Download was probably cancelled.");
+	        }
 	        response.flushBuffer();
 	    }
 
@@ -333,5 +324,54 @@ public class UserAreaController {
 		public String statusAction(Locale locale, Model model) {
 			return "status";
 		}		
+		/**
+		 * Profile editing request. Interface for users changing their password, managing downloads, people in their group,
+		 * metadata etc...
+		 * So far only password is implemented.
+		 * @param model
+		 * @return
+		 */
+		@RequestMapping(value = "/userarea/profile", method= RequestMethod.GET)
+		public String profileAction(Model model){
 
+			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			if (username.equals("anonymousUser")){
+				model.addAttribute("message", "Error: Not logged in.");
+				return "error";
+			}
+			DbUser user = ud.findByUsername(username);
+			model.addAttribute("user", user);
+	        model.addAttribute("group", user.getGroup());
+	        return "userarea-profile";	
+		}
+		/**
+		 * This is the active user's method of changing the password. It does not require the old password. Encoding
+		 * is done here with standard encoder. It is arguable that this functionality should not be at the controller layer.
+		 * 
+		 * @author shill
+		 * @param oldpass
+		 * @param newpass
+		 * @return
+		 */
+		@RequestMapping(value = "/userarea/profile/changepass", method=RequestMethod.POST)
+		public @ResponseBody ResponseEntity<String> changePasswordAction(@RequestParam("oldpass") String oldPass,
+														 @RequestParam("newpass") String newPass,
+														 @RequestParam("validate") String validate){
+			if (!newPass.equals(validate)){
+				return new ResponseEntity<String>("Passwords do not match!", HttpStatus.BAD_REQUEST);
+			}
+			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			if (username.equals("anonymousUser")){
+				return new ResponseEntity<String>("Not logged in.", HttpStatus.BAD_REQUEST);
+			}
+			DbUser user = ud.findByUsername(username);
+			if (CustomAuthenticationManager.validateCredentials(user, oldPass) == false){
+				return new ResponseEntity<String>("Current password is incorrect.", HttpStatus.BAD_REQUEST);
+			}
+			StandardPasswordEncoder se = new StandardPasswordEncoder();
+			String pass = se.encode(newPass);
+			user.setPassword(pass);
+			ud.changePassword(user);
+			return new ResponseEntity<String>("Success!", HttpStatus.OK);
+		}
 }

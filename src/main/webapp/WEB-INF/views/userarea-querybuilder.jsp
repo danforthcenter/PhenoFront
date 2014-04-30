@@ -36,6 +36,27 @@
 							<label for="before">Snapshots Before:</label>
 							<input type="text" class="form-control" name="before"
 							title="Click the box to choose a date." id="before" />
+						</div>
+						<div class="form-group">
+							<label>Image types to download</label>
+							<div class="checkbox">
+							  <label>
+							  	<input type="checkbox" name="fluo" value="true" checked>
+								Fluorescent Images
+							  </label>
+							</div>
+							<div class="checkbox">
+							  <label>
+							  	<input type="checkbox" name="nir" value="true" checked>
+								Near Infrared Images
+							  </label>
+							</div>
+							<div class="checkbox">
+							  <label>
+							  	<input type="checkbox" name="vis" value="true" checked>
+								Visible Light Images Images
+							  </label>
+							</div>
 							<input type="hidden" name="downloadKey" value="${ downloadKey }">
 					  	</div>
 					  	<div class="result hidden"></div>

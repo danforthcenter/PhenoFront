@@ -55,6 +55,19 @@ public class CustomAuthenticationManager implements AuthenticationManager {
 		throw new BadCredentialsException("Passwords do not match!");
 
 	}
+	/**
+	 * Utility function for things that want to check password matching outside
+	 * of the security contexts
+	 * 
+	 * @param user
+	 * @param credentials
+	 * @return
+	 */
+	public static boolean validateCredentials(DbUser user, String credentials){
+		return (new StandardPasswordEncoder().matches((CharSequence) credentials,
+				user.getPassword()));
+	}
+	
 	  
 	 /**
 	  * Retrieves the correct ROLE type depending on the access level, where access level is an Integer.
