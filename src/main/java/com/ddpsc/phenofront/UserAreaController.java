@@ -115,8 +115,7 @@ public class UserAreaController {
 		    model.addAttribute("username", name);
 		    DateTime date = new DateTime();
 			model.addAttribute("date", date.toString("YYYY-mm-dd HH:MM:SS") );
-
-			return "results";
+			return "userarea-results";
 		}
 		
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)

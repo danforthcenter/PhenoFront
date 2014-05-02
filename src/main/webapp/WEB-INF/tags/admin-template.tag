@@ -24,12 +24,6 @@
 		<div class="collapse navbar-collapse">
 			<ul class="nav navbar-nav">
 				<li 
-					<c:if test = "${ active == 'Job Requests'}">class = "active"</c:if> 
-					><a href="<c:url context="/phenofront/admin" value="/"/>">Job Requests</a></li>
-				<li 
-					<c:if test = "${ active == 'Active Jobs'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/admin" value="/activejobs"/>">Active Jobs</a></li>
-				<li 
 					<c:if test = "${ active == 'User Management'}">class = "active"</c:if>
 					><a href="<c:url context="/phenofront/admin" value="/users"/>">User Management</a></li>
 				<li 

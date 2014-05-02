@@ -54,7 +54,7 @@
 							<div class="checkbox">
 							  <label>
 							  	<input type="checkbox" name="vis" value="true" checked>
-								Visible Light Images Images
+								Visible Light Images
 							  </label>
 							</div>
 							<input type="hidden" name="downloadKey" value="${ downloadKey }">
