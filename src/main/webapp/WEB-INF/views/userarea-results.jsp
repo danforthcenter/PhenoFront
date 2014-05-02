@@ -17,7 +17,6 @@
 						<th direction="true" col="0" class="sorter">Car Tag</th>
 						<th direction="true" col="0" class="sorter">Completed</th>
 						<th>Images</th>
-						<th>Select</th>
 					</tr>
 					
 					<c:forEach var='snapshot' items='${ snapshots }'>
