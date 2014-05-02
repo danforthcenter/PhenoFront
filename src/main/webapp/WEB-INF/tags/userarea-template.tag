@@ -22,7 +22,7 @@
 				<span class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="#">PhenoFront</a>
+			<a class="navbar-brand" href="<c:url context="/phenofront/userarea" value="/results"/>">PhenoFront</a>
 		</div>
 		<div class="collapse navbar-collapse">
 			<ul class="nav navbar-nav">
@@ -47,10 +47,11 @@
 				<li 
 					<c:if test = "${ active == 'Status'}">class = "active"</c:if>
 					><a href="<c:url context="/phenofront/userarea" value="/status"/>">Job Status</a></li>
+				-->
 				<li 
 					<c:if test = "${ active == 'Profile'}">class = "active"</c:if>
 					><a href="<c:url context= "/phenofront/userarea" value="/profile"/>">Profile</a></li>
-				-->
+				
 				<li><a href="<c:url value="/j_spring_security_logout"/>">Log-out</a></li>
 			</ul>
 		</div>
