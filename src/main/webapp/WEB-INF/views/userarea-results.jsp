@@ -14,9 +14,6 @@
 						<th direction="true" col="0" class="sorter">Plant Barcode</th>
 						<th direction="true" col="0" class="sorter">Time Stamp</th>
 						<th direction="true" col="0" class="sorter">Measurement Label</th>
-						<th direction="true" col="0" class="sorter">Weight Before</th>
-						<th direction="true" col="0" class="sorter">Weight After</th>
-						<th direction="true" col="0" class="sorter">Water Amount</th>
 						<th direction="true" col="0" class="sorter">Car Tag</th>
 						<th direction="true" col="0" class="sorter">Completed</th>
 						<th>Images</th>
@@ -29,9 +26,6 @@
 							<td>${ snapshot.plantBarcode }</td>
 							<td>${ snapshot.timeStamp }</td>
 							<td>${ snapshot.measurementLabel }</td>
-							<td>${ snapshot.weightBefore }</td>
-							<td>${ snapshot.weightAfter }</td>
-							<td>${ snapshot.waterAmount }</td>
 							<td>${ snapshot.carTag }</td>
 							<td>${ snapshot.completed }</td>
 							<td><a class="single-set" href = "<c:url context="/phenofront/userarea" value="/stream" />/${ snapshot.id }" download>Download</a></td>

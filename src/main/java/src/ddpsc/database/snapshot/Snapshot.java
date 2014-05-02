@@ -170,7 +170,7 @@ public class Snapshot {
 	 * Same as csvWriter except it excludes the header line.
 	 * @return
 	 */
-	public String csvWriterNoHead() {
+	public String csvWriterWithWeights() {
 		System.out.println(tiles);
 		String data;
 		try {
@@ -182,6 +182,25 @@ public class Snapshot {
 			data = id + "," + plantBarcode + "," + carTag + "," + timeStamp
 					+ "," + weightBefore + "," + weightAfter + ","
 					+ waterAmount + "," + completed + "," + measurementLabel
+					+ "\n";
+		}
+		return (data);
+	}
+	
+	/**
+	 * Same as csvWriter except it excludes the header line.
+	 * @return
+	 */
+	public String csvWriterNoHead() {
+		System.out.println(tiles);
+		String data;
+		try {
+			data = id + "," + plantBarcode + "," + carTag + "," + timeStamp
+					+ completed + "," + measurementLabel
+					+ "," + Tile.toDelimited(tiles, ";") + "\n";
+		} catch (NullPointerException e) {
+			data = id + "," + plantBarcode + "," + carTag + "," + timeStamp
+					 + "," + completed + "," + measurementLabel
 					+ "\n";
 		}
 		return (data);
