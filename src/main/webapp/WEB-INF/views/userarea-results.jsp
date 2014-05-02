@@ -29,7 +29,6 @@
 							<td>${ snapshot.carTag }</td>
 							<td>${ snapshot.completed }</td>
 							<td><a class="single-set" href = "<c:url context="/phenofront/userarea" value="/stream" />/${ snapshot.id }" download>Download</a></td>
-							<td><input type="checkbox"/></td>
 						</tr>
 					</c:forEach>	
 				</table>

@@ -100,7 +100,8 @@ public class UserAreaController {
 			} catch (ExperimentNotAllowedException e) {
 				logger.warn("Experiment does not exist or is not allowed.");
 				return new ResponseEntity<String>("Experiment is not allowed or does not exist.", HttpStatus.BAD_REQUEST);
-			} catch (MalformedConfigException e) {				e.printStackTrace();
+			} catch (MalformedConfigException e) {				
+				e.printStackTrace();
 				return new ResponseEntity<String>("Database is not configured correctly.", HttpStatus.BAD_REQUEST);
 			} 
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
@@ -149,6 +150,8 @@ public class UserAreaController {
 			String downloadKey;
 			downloadKey = DownloadManager.generateRandomKey(user);
 			model.addAttribute("downloadKey", downloadKey);
+			System.out.println(user);
+			System.out.println(user.getActiveExperiment().getExperimentName());
 			model.addAttribute("activeExperiment", user.getActiveExperiment().getExperimentName());
 			return "userarea-querybuilder";
 		}
@@ -325,15 +328,13 @@ public class UserAreaController {
 		 * @return
 		 */
 		@RequestMapping(value = "/userarea/profile", method= RequestMethod.GET)
-		public String profileAction(Model model){
-
+		public String profileAction(Model model, @ModelAttribute("user") DbUser user){
+			System.out.println(user);
 			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (username.equals("anonymousUser")){
 				model.addAttribute("message", "Error: Not logged in.");
 				return "error";
 			}
-			DbUser user = ud.findByUsername(username);
-			model.addAttribute("user", user);
 	        model.addAttribute("group", user.getGroup());
 	        return "userarea-profile";	
 		}
