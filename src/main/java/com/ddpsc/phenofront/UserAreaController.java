@@ -15,7 +15,6 @@ import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -27,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.ModelAndView;
 
 import src.ddpsc.authentication.CustomAuthenticationManager;
 import src.ddpsc.config.ExperimentConfig;
@@ -105,18 +105,12 @@ public class UserAreaController {
 			} 
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
-	
 		@RequestMapping(value = "/userarea", method = RequestMethod.GET)
-		public String homeAction(Locale locale, Model model, @ModelAttribute("user") DbUser user) {
-			//sd should be wired up once we are in the userarea
-			
-			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		    String name = auth.getName(); //get logged in username	 
-		    model.addAttribute("username", name);
-		    DateTime date = new DateTime();
-			model.addAttribute("date", date.toString("YYYY-mm-dd HH:MM:SS") );
-			return "userarea-results";
-		}
+	    public ModelAndView homeAction() {
+	            return new ModelAndView("redirect:" + "/userarea/results");
+
+	    }
+		
 		
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)
 		public String visualizeAction(Locale locale, Model model) {
