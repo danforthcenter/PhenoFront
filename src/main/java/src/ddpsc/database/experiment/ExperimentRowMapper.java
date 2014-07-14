@@ -26,6 +26,7 @@ public class ExperimentRowMapper implements RowMapper<Experiment> {
  * Inner class responsible for mapping table columns to fields in our database.
  * If a new field is added, this must be updated.
  * 
+ * 
  * @author shill
  *
  */
@@ -33,7 +34,8 @@ class ExperimentExtractor implements ResultSetExtractor<Experiment> {
 	public Experiment extractData(ResultSet resultSet) throws SQLException,
 			DataAccessException {
 		Experiment exp = new Experiment();
-		exp.setExperimentId(resultSet.getInt(0));
+	//	exp.setExperimentId(resultSet.getInt(0));
+		
 		exp.setExperimentName(resultSet.getString(1));
 		return exp;
 	}	

@@ -9,16 +9,22 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+/**
+ * Implements query to fetch experiment tables from database
+ * 
+ * @author shill
+ *
+ */
 public class ExperimentDaoImpl implements ExperimentDao{
 	@Autowired 
 	DataSource experimentSource;
 	protected static Logger logger = Logger.getLogger("service");
+	protected static String systemFilter = "System"; 
 
 	@Override
 	public ArrayList<Experiment> findAll() {
-		String sql = "SELECT lt.id, "
-				   + "lt.name, "
-				   + "FROM ltdbs AS db ";
+		String sql = "SELECT datname FROM pg_database " +
+					 "WHERE datistemplate = false AND datname != 'postgres' AND datname !='bacula'";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
 		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());

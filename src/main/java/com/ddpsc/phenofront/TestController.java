@@ -2,6 +2,7 @@ package com.ddpsc.phenofront;
 
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
@@ -12,6 +13,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import src.ddpsc.database.experiment.Experiment;
+import src.ddpsc.database.experiment.ExperimentDao;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.snapshot.SnapshotDao;
 
@@ -23,6 +26,9 @@ public class TestController {
 	
 	@Autowired  
 	SnapshotDao sd;  
+	
+	@Autowired
+	ExperimentDao ed;
 	/**
 	 * Simply selects the home view to render by returning its name.
 	 */
@@ -31,9 +37,17 @@ public class TestController {
 		DateTime date = new DateTime(); //gets datetime for NOW
 		Timestamp ts = new Timestamp(date.getMillis());
 		System.out.println(ts);
+		ArrayList<Experiment> experiments = ed.findAll();
+		System.out.println(experiments);
 	//	String formattedDate = dateFormat.format(date);
 		model.addAttribute("serverTime", date.toString("EEEE, MMMM dd, yyyy H:mm:ss aa") );
 		//name of the jsp
+		return "home";
+	}
+	@RequestMapping(value="/getexperiments", method = RequestMethod.GET)
+	public String getExperimentsAction(){
+		ArrayList<Experiment> experiments = ed.findAll();
+		System.out.println(experiments);
 		return "home";
 	}
 	

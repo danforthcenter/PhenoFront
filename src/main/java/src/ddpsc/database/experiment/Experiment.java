@@ -10,18 +10,19 @@ package src.ddpsc.database.experiment;
  *
  */
 public class Experiment {
+	@Deprecated
 	private int experimentId;
 	private String experimentName;
 	private String databaseName;
 	
 	public Experiment(){}
 
+	@Deprecated
 	public int getExperimentId() {
-		return experimentId;
+		return 0;
 	}
-
+	@Deprecated 
 	public void setExperimentId(int experimentId) {
-		this.experimentId = experimentId;
 	}
 
 	public String getExperimentName() {

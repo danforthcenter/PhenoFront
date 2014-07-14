@@ -31,6 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
 import src.ddpsc.authentication.CustomAuthenticationManager;
 import src.ddpsc.config.ExperimentConfig;
 import src.ddpsc.database.experiment.Experiment;
+import src.ddpsc.database.experiment.ExperimentDao;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.snapshot.SnapshotDao;
 import src.ddpsc.database.snapshot.SnapshotDaoImpl;
@@ -51,6 +52,9 @@ import src.ddpsc.results.ResultsBuilder;
 public class UserAreaController {
 		@Autowired
 		UserDao ud;
+
+		@Autowired
+		ExperimentDao ed;
 		
 		//added for filestreaming
 		@Autowired
@@ -59,10 +63,14 @@ public class UserAreaController {
 		SnapshotDao sd = new SnapshotDaoImpl();
 		
 		protected static Logger logger = Logger.getLogger("controller");
-
+		/**
+		 * 
+		 * @param model
+		 * @return
+		 */
 		@RequestMapping(value = "/selectexperiment", method=RequestMethod.GET)
 		public String selectAction(Model model){
-	
+			final String systemFilter = "System";
 			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (username.equals("anonymousUser")){
 				model.addAttribute("message", "Error: Not logged in.");
@@ -71,7 +79,15 @@ public class UserAreaController {
 			
 			DbUser user = ud.findByUsername(username);
 			model.addAttribute("user", user);
-			ArrayList<Experiment> experiments = user.getAllowedExperiments();
+			user.setAllowedExperiments(ed.findAll());
+			//for now we are just assuming all databases are public and allowed.
+			// However, we are filtering databases
+			ArrayList<Experiment> experiments = new ArrayList<Experiment>();
+			for (Experiment aExperiment : user.getAllowedExperiments()) {
+				if ( ! aExperiment.getExperimentName().toLowerCase().contains(systemFilter.toLowerCase())){
+					experiments.add(aExperiment);
+				}
+			}
 			model.addAttribute("allowed", experiments );
 			return "select";
 		}
@@ -111,7 +127,6 @@ public class UserAreaController {
 	            return new ModelAndView("redirect:" + "/userarea/results");
 
 	    }
-		
 		
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)
 		public String visualizeAction(Locale locale, Model model) {

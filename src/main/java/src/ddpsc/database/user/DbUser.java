@@ -33,16 +33,12 @@ public class DbUser {
 	private int userId;
 	private ArrayList<Experiment> allowedExperiments;
 	private Experiment activeExperiment;
-	private static Experiment TEST_EXPERIMENT;
-	private static Experiment PHENOTYPING1;
-
+	/**
+	 * Should read from our user database what the experiments allowed are, these are just strings.
+	 * Admins should add databases to the allowed databases as they are created (if this is a feature we want, as initially)
+	 */
 	public DbUser() {
-		PHENOTYPING1 = new Experiment();
-		PHENOTYPING1.setExperimentName("Phenotyping1");
-		PHENOTYPING1.setExperimentId(1); 
-		TEST_EXPERIMENT = new Experiment();
-		TEST_EXPERIMENT.setExperimentName("LemnaTest");
-		TEST_EXPERIMENT.setExperimentId(2); 
+		this.allowedExperiments = new ArrayList<Experiment>();
 	}
 
 	/**
@@ -60,6 +56,7 @@ public class DbUser {
 	public DbUser(String username, String password, boolean enabled,
 			String authority, DbGroup group) {
 		super();
+		this.allowedExperiments = new ArrayList<Experiment>();
 		this.username = username;
 		this.password = password;
 		this.enabled = enabled;
@@ -144,8 +141,6 @@ public class DbUser {
 	public ArrayList<Experiment> getAllowedExperiments() {
 		if (this.allowedExperiments == null){
 			this.allowedExperiments = new ArrayList<Experiment>();
-			this.allowedExperiments.add(PHENOTYPING1);
-			this.allowedExperiments.add(TEST_EXPERIMENT);
 		}
 		System.err.println("Warning: using a statically set experiment list");
 		return this.allowedExperiments;
@@ -159,7 +154,6 @@ public class DbUser {
 	}
 	/**
 	 * Will probably be null unless you call setActiveExperiment first
-	 * 10-17-13 -- Experiments unimplemented
 	 * @return
 	 */
 	public Experiment getActiveExperiment(){
