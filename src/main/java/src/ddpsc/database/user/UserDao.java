@@ -17,8 +17,10 @@ public interface UserDao {
 	public DbUser findByUsername(String username);
 	public ArrayList<DbUser> findAllUsers();
 	public void addUser(DbUser user) throws UserException;
+	
 	//maybe user too
 	public void changePassword(DbUser user, String newPassword);
+	
 	/**
 	 * General purpose function for updating the user. Expects every field in user to be instantiated.
 	 * 
@@ -37,7 +39,6 @@ public interface UserDao {
 	public void addGroup(DbGroup group);
 	public ArrayList<DbGroup> findAllGroups();
 	public void updateUsername(DbUser user);
-
 }
 
 

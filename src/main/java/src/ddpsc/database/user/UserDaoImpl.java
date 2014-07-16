@@ -16,13 +16,16 @@ import src.ddpsc.exceptions.UserException;
 import src.ddpsc.exceptions.UserNotFoundException;
 
 @Component
-public class UserDaoImpl implements UserDao{
+public class UserDaoImpl implements UserDao {
+	
 	protected static Logger logger = Logger.getLogger("service");
+	
 	@Autowired 
 	DataSource authSource;
+	
 	@Override
 	public DbUser findByUsername(String username) {
-		String sql = "SELECT us.username, "
+		String getUserCredentials = "SELECT us.username, "
 				   + "us.password, "
 				   + "us.enabled, "
 				   + "us.group_id, "
@@ -34,11 +37,11 @@ public class UserDaoImpl implements UserDao{
 				   + "JOIN users AS u ON u.user_id = gr.owner_id "
 				   + "WHERE us.username =  '" + username + "' "
 				   + "AND gr.group_id = us.group_id";
+		
 
-		List<DbUser> userList = new ArrayList<DbUser>();
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(authSource);
-		userList = jdbcTemplate.query(sql, new UserRowMapper());
-		return ((ArrayList<DbUser>) userList).get(0);
+		List<DbUser> userList = jdbcTemplate.query(getUserCredentials, new UserRowMapper());
+		return userList.get(0);
 	}
 	
 	@Override
@@ -57,10 +60,10 @@ public class UserDaoImpl implements UserDao{
 			throw e;
 		}
 	}
+	
 	/**
 	 * Do not call this method unless the user is an admin.
 	 * Method returns a list of all users. Can be used for user management, such as changing, deleting, updating groups
-	 * 
 	 */
 	@Override
 	public ArrayList<DbUser> findAllUsers(){

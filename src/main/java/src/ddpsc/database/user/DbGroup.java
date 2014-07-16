@@ -12,16 +12,37 @@ package src.ddpsc.database.user;
  *
  */
 public class DbGroup {
-	private int groupId;
-	private String groupName;
-	private DbUser owner;
-	public DbGroup(){}
+	
+	private int		groupId;
+	private String	groupName;
+	private DbUser	owner;
+	
+	
+	public DbGroup() {
+	}
+	
 	public DbGroup(int groupId, String groupName, DbUser owner) {
-		super();
 		this.groupId = groupId;
 		this.groupName = groupName;
 		this.owner = owner;
 	}
+	
+	
+	public boolean isOwner(DbUser query){
+		if(query.getUsername().equals(this.owner)){
+			return true;
+		}
+		else return false;
+	}
+	
+	@Override
+	public String toString() {
+		return "Group [groupId=" + groupId
+				+ ", groupName=" + groupName
+				+ ", owner=" + owner.getUsername() + "]";
+	}
+	
+	
 	public int getGroupId() {
 		return groupId;
 	}
@@ -40,18 +61,4 @@ public class DbGroup {
 	public void setOwner(DbUser owner) {
 		this.owner = owner;
 	}
-	
-	public boolean isOwner(DbUser query){
-		if(query.getUsername().equals(this.owner)){
-			return true;
-		}
-		else return false;
-	}
-	@Override
-	public String toString() {
-		return "Group [groupId=" + groupId + ", groupName=" + groupName
-				+ ", owner=" + owner.getUsername() + "]";
-	}
-	
-
 }
