@@ -70,7 +70,6 @@ public class UserAreaController {
 		 */
 		@RequestMapping(value = "/selectexperiment", method=RequestMethod.GET)
 		public String selectAction(Model model){
-			final String systemFilter = "System";
 			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (username.equals("anonymousUser")){
 				model.addAttribute("message", "Error: Not logged in.");
@@ -81,13 +80,7 @@ public class UserAreaController {
 			model.addAttribute("user", user);
 			user.setAllowedExperiments(ed.findAll());
 			//for now we are just assuming all databases are public and allowed.
-			// However, we are filtering databases
 			ArrayList<Experiment> experiments = new ArrayList<Experiment>();
-			for (Experiment aExperiment : user.getAllowedExperiments()) {
-				if ( ! aExperiment.getExperimentName().toLowerCase().contains(systemFilter.toLowerCase())){
-					experiments.add(aExperiment);
-				}
-			}
 			model.addAttribute("allowed", experiments );
 			return "select";
 		}

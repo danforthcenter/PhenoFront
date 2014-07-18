@@ -17,6 +17,8 @@ import src.ddpsc.exceptions.ExperimentNotAllowedException;
  * @field String
  *            password
  * @field boolean enabled
+ * @field allowedExperiments
+ * 			  Field for potential restrictions to specific databases in the future.
  * @field String
  *            authority Can only be ROLE_ADMIN and ROLE_USER
  * @field DbGroup
@@ -33,10 +35,7 @@ public class DbUser {
 	private int userId;
 	private ArrayList<Experiment> allowedExperiments;
 	private Experiment activeExperiment;
-	/**
-	 * Should read from our user database what the experiments allowed are, these are just strings.
-	 * Admins should add databases to the allowed databases as they are created (if this is a feature we want, as initially)
-	 */
+
 	public DbUser() {
 		this.allowedExperiments = new ArrayList<Experiment>();
 	}
