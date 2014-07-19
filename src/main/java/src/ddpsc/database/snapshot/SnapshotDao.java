@@ -5,44 +5,55 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+
+import src.ddpsc.exceptions.ObjectNotFoundException;
+
 /**
- * Required interface for interacting with the database. Implemented by the
- * corresponding impl Class.
+ * Required interface for interacting with the database. Implemented by the corresponding impl Class.
  * 
- * @author shill
+ * @see SnapshotDaoImpl
+ * 
+ * @author shill, cjmcentee
  * 
  */
-public interface SnapshotDao {
-	public Snapshot findBySnapshotId(int id);
-
-	public Snapshot findWithTileBySnapshotId(int id);
-
-	public List<Snapshot> findSnapshotAfterTimestamp(Timestamp timestamp);
-
-	public List<Snapshot> findSnapshotAfterTimestampImageJobs(
-			Timestamp timestamp);
-
-	public List<Snapshot> findWithTileAfterTimestamp(Timestamp timestamp);
-
-	public List<Snapshot> findSnapshotBetweenTimes(Timestamp before,
-			Timestamp after);
-
-	public List<Snapshot> findSnapshotBetweenTimesImageJobs(Timestamp before,
-			Timestamp after);
-
-	public List<Snapshot> findWithTileBetweenTimes(Timestamp before,
-			Timestamp after);
-
-	public List<Snapshot> findWithTileLastNEntries(int n);
-
-	public List<Snapshot> findWithTileLastNEntriesImageJobs(int n);
-
-	public List<Snapshot> findSnapshotLastNEntries(int n);
-
+public interface SnapshotDao
+{
 	public void setDataSource(DataSource dataSource);
-
-	public List<Snapshot> findSnapshotCustomQueryImageJobs(Timestamp after,
-			Timestamp before, String plantBarcode, String measurementLabel);
-	public List<Snapshot> findWithTileCustomQueryImageJobs(Timestamp after,
-			Timestamp before, String plantBarcode, String measurementLabel);
+	
+	
+	
+	public Snapshot findByID(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
+	
+	public Snapshot findByID_withTiles(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
+	
+	
+	
+	public List<Snapshot> findAfterTimestamp(Timestamp timestamp) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findAfterTimestamp_withTiles(Timestamp timestamp) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findAfterTimestamp_imageJobs(Timestamp timestamp) throws CannotGetJdbcConnectionException;
+	
+	
+	
+	public List<Snapshot> findBetweenTimes(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findBetweenTimes_withTiles(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findBetweenTimes_imageJobs(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
+	
+	
+	
+	public List<Snapshot> findLastN(int n) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findLastN_withTiles(int n) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findLastN_imageJobs(int n) throws CannotGetJdbcConnectionException;
+	
+	
+	
+	public List<Snapshot> findCustomQueryAnyTime_imageJobs(Timestamp startTime, Timestamp endTime, String plantBarcode, String measurementLabel) throws CannotGetJdbcConnectionException;
+	
+	public List<Snapshot> findCustomQueryAnyTime_imageJobs_withTiles(Timestamp startTime, Timestamp endTime, String plantBarcode, String measurementLabel) throws CannotGetJdbcConnectionException;
 }

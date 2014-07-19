@@ -8,6 +8,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -42,7 +43,7 @@ public class ResultsBuilder {
 	 * runtime will be the time of the slowest thread. (vs O(n)) which is fine.
 	 */
 	private OutputStream requestStream;
-	private ArrayList<Snapshot> snapshots;
+	private List<Snapshot> snapshots;
 	private Experiment experiment;
 	private HashMap<String, InputStream> threadStreams;
 	private ThreadGroup group;
@@ -50,7 +51,7 @@ public class ResultsBuilder {
 	private boolean nir;
 	private boolean fluo;
 
-	public ResultsBuilder(OutputStream out, ArrayList<Snapshot> snapshots,
+	public ResultsBuilder(OutputStream out, List<Snapshot> snapshots,
 			Experiment experiment, boolean vis, boolean nir, boolean fluo) {
 		//new DateTime(snapshot.getTimeStamp())
 		this.vis = vis;

@@ -35,6 +35,23 @@ public class DbGroup {
 		else return false;
 	}
 	
+	public String shortDescribe()
+	{
+		return "group " + groupName + " with ID='" + groupId + "'";
+	}
+	
+	public String describe()
+	{
+		StringBuilder groupDescription = new StringBuilder();
+		
+		groupDescription.append("Group ");
+		groupDescription.append(groupName == null ? "<NULL NAME>" : groupName);
+		groupDescription.append("with ID " + groupId + " owned by ");
+		groupDescription.append(owner == null ? "<NULL OWNER>" : (owner.getUsername() == null ? "<NULL OWNER NAME>" : owner.getUsername()));
+		
+		return groupDescription.toString();
+	}
+	
 	@Override
 	public String toString() {
 		return "Group [groupId=" + groupId

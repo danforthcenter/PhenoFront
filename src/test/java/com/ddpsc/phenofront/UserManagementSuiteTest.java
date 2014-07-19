@@ -30,7 +30,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import src.ddpsc.database.user.DbGroup;
 import src.ddpsc.database.user.UserDao;
-import src.ddpsc.exceptions.UserNotFoundException;
+import src.ddpsc.exceptions.ObjectNotFoundException;
 
 
 /**
@@ -98,7 +98,7 @@ public class UserManagementSuiteTest extends TestUtility{
     @Test
     public void changeUsernameSuccessTest() throws Exception {
         when(userDaoMock.findAllUsers()).thenReturn(USERS);
-        when(userDaoMock.findByUserId(2)).thenReturn(SECOND_USER); 
+        when(userDaoMock.findByID(2)).thenReturn(SECOND_USER); 
 
         String username = "uniqueusername";
         String userid = Integer.toString(SECOND_USER.getUserId());
@@ -115,7 +115,7 @@ public class UserManagementSuiteTest extends TestUtility{
     @Test
     public void changeUsernameNotUniqueTest() throws Exception {
         when(userDaoMock.findAllUsers()).thenReturn(USERS); 
-        when(userDaoMock.findByUserId(2)).thenReturn(SECOND_USER); 
+        when(userDaoMock.findByID(2)).thenReturn(SECOND_USER); 
         String username = FIRST_USER.getUsername();
         String orig = SECOND_USER.getUsername(); //for later check
         String userid = Integer.toString(SECOND_USER.getUserId());
@@ -129,7 +129,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void changeAuthoritySuccessTest() throws Exception {
-		when(userDaoMock.findByUserId(1)).thenReturn(FIRST_USER); 
+		when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
     	String newAuth = "ROLE_USER";
     	String userId = Integer.toString( FIRST_USER.getUserId()); 
     	mockMvc.perform(post("/admin/changeauthority").param("authority", newAuth).param("userid", userId))
@@ -142,7 +142,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void changeAuthorityInvalidTest() throws Exception {
-    	when(userDaoMock.findByUserId(1)).thenReturn(FIRST_USER); 
+    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
     	String newAuth = "ROLE_FAKEEEEER";
     	String orig = FIRST_USER.getAuthority(); 
     	String userId = Integer.toString( FIRST_USER.getUserId()); 
@@ -157,7 +157,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void changeGroupSuccessTest() throws Exception{
-    	when(userDaoMock.findByUserId(1)).thenReturn(FIRST_USER); 
+    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
     	when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
     	String userId = Integer.toString( FIRST_USER.getUserId()); 
     	String newGroup = SECOND_USER_GROUP.getGroupName();
@@ -174,7 +174,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void changeGroupNoSuchGroupTest() throws Exception{
-    	when(userDaoMock.findByUserId(1)).thenReturn(FIRST_USER); 
+    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
     	when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
     	String userId = Integer.toString( FIRST_USER.getUserId()); 
     	String newGroup = "Phoenix Suns";
@@ -191,7 +191,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void deleteUserSuccessTest() throws Exception {
-    	when(userDaoMock.findByUserId(1)).thenReturn(FIRST_USER); 
+    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
     	String userId = Integer.toString( FIRST_USER.getUserId()); 
     	mockMvc.perform(post("/admin/removeuser").param("userid", userId))
     		.andExpect(status().isOk());
@@ -205,7 +205,7 @@ public class UserManagementSuiteTest extends TestUtility{
      */
     @Test
     public void deleteUserNoUserFoundTest() throws Exception {
-    	when(userDaoMock.findByUserId(-5)).thenThrow(new UserNotFoundException()); 
+    	when(userDaoMock.findByID(-5)).thenThrow(new ObjectNotFoundException()); 
     	String userId = "-5";
     	mockMvc.perform(post("/admin/removeuser").param("userid", userId))
     		.andExpect(status().isBadRequest());

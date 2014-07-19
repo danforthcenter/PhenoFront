@@ -2,12 +2,13 @@ package com.ddpsc.phenofront;
 
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.experiment.ExperimentDao;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.snapshot.SnapshotDao;
+import src.ddpsc.exceptions.ObjectNotFoundException;
 
 /**
  * Handles requests for tests
@@ -25,7 +27,7 @@ import src.ddpsc.database.snapshot.SnapshotDao;
 public class TestController {
 	
 	@Autowired  
-	SnapshotDao sd;  
+	SnapshotDao sd;
 	
 	@Autowired
 	ExperimentDao ed;
@@ -37,7 +39,7 @@ public class TestController {
 		DateTime date = new DateTime(); //gets datetime for NOW
 		Timestamp ts = new Timestamp(date.getMillis());
 		System.out.println(ts);
-		ArrayList<Experiment> experiments = ed.findAll();
+		List<Experiment> experiments = ed.findAll();
 		System.out.println(experiments);
 	//	String formattedDate = dateFormat.format(date);
 		model.addAttribute("serverTime", date.toString("EEEE, MMMM dd, yyyy H:mm:ss aa") );
@@ -46,7 +48,7 @@ public class TestController {
 	}
 	@RequestMapping(value="/getexperiments", method = RequestMethod.GET)
 	public String getExperimentsAction(){
-		ArrayList<Experiment> experiments = ed.findAll();
+		List<Experiment> experiments = ed.findAll();
 		System.out.println(experiments);
 		return "home";
 	}
@@ -119,7 +121,18 @@ public class TestController {
 	//	Calendar c = Calendar.getInstance();
 	//	c.set(2013, 9, 1);
 	//	Timestamp ts = new Timestamp(c.getTimeInMillis());
-		Snapshot result = sd.findWithTileBySnapshotId(32035);
+		Snapshot result = null;
+		try {
+			result = sd.findByID_withTiles(32035);
+		}
+		catch (CannotGetJdbcConnectionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (ObjectNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Random rand = new Random(System.currentTimeMillis());
 		model.addAttribute("random", rand.nextInt());
 		model.addAttribute("test_result", result);

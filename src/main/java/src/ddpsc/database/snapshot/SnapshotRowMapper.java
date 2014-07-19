@@ -3,8 +3,6 @@ package src.ddpsc.database.snapshot;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -12,38 +10,38 @@ import org.springframework.jdbc.core.RowMapper;
  * implements a spring utility function for this purpose, rather than putting it in it's own file, our application
  * will implement extractors as inner methods.
  * 
- * @throws SQLException
+ * 
  * @see Snapshot
- * @author shill
+ * @see Snapshot.SNAPSHOT_QUERY_VARIABLES
+ * 
+ * @author shill, cjmcentee
  *
  */
 public class SnapshotRowMapper implements RowMapper<Snapshot>{
 
 	@Override
-	public Snapshot mapRow(ResultSet resultSet, int line) throws SQLException {
-		try{
-			SnapshotExtractor userExtractor = new SnapshotExtractor();
-			return userExtractor.extractData(resultSet);
-		}catch (SQLException e){
-			throw e;
-		}
-	}
-}
-/**
- * Inner class responsible for mapping table columns to fields in our database.
- * If a new field is added, this must be updated.
- * 
- * @author shill
- *
- */
-class SnapshotExtractor implements ResultSetExtractor<Snapshot> {  
-	public Snapshot extractData(ResultSet resultSet) throws SQLException,
-			DataAccessException {
+	public Snapshot mapRow(ResultSet resultSet, int line) throws SQLException
+	{
+		// The order of the columns in the database is:
+		//			id
+		//			propagated
+		//			configurationid
+		//			idtag
+		//			colour
+		//			visited
+		//			creator
+		//			comment
+		//			cartag
+		//			measurementlabel
+		//			timestanp
+		//			weightbefore
+		//			weightafter
+		//			wateramount
+		//			completed
+		
 		Snapshot snapshot = new Snapshot();
-		// id propagated configurationid idtag colour visited creator
-		// comment cartag measurementlabel timestanp weightbefore weightafter
-		// wateramount completed
-		snapshot.setId(resultSet.getInt(1)); // why not 0 wtf?
+		
+		snapshot.setId(resultSet.getInt(1)); // Should be 0, TODO: Figure out why not 0
 		snapshot.setPlantBarcode(resultSet.getString(4));
 		snapshot.setCarTag(resultSet.getString(9));
 		snapshot.setMeasurementLabel(resultSet.getString(10));
@@ -54,5 +52,4 @@ class SnapshotExtractor implements ResultSetExtractor<Snapshot> {
 		snapshot.setCompleted(resultSet.getBoolean(15));
 		return snapshot;
 	}
-	
-}  
+} 

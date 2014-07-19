@@ -3,40 +3,38 @@ package src.ddpsc.database.user;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
-public class GroupRowMapper implements RowMapper<DbGroup> {
-	@Override
-	public DbGroup mapRow(ResultSet resultSet, int line) throws SQLException {
-		try{
-			GroupExtractor groupExtractor = new GroupExtractor();
-			return groupExtractor.extractData(resultSet);
-		}catch (SQLException e){
-			throw e;
-		}
-	}
-
-}
 /**
- * Inner class responsible for mapping table columns to fields in our database.
- * If a new field is added, this must be updated.
+ * Maps over each row in a returned query and transforms it into a {@link DbGroup} object.
  * 
- * @author shill
+ * The values in the result set hash map are tied to the query from {@link UserDao.GROUP_QUERY_VARIABLES}.
+ * Reference that static variable for determining what string to use to access data from the result set.
+ * 
+ * @author shill, cjmcentee
  *
  */
-class GroupExtractor implements ResultSetExtractor<DbGroup> {  
-	public DbGroup extractData(ResultSet resultSet) throws SQLException,
-			DataAccessException {
+public class GroupRowMapper implements RowMapper<DbGroup>
+{
+	@Override
+	public DbGroup mapRow(ResultSet resultSet, int line) throws SQLException
+	{
+		// The order and name of the queried variables
+		// 		owner
+		//		owner_id
+		//		group_name
+		//		group_id
+		
 		DbUser owner = new DbUser();
 		DbGroup group = new DbGroup();
-		//owner owner_id group_name group_id
-		owner.setUsername(resultSet.getString(1));
-		owner.setUserId(resultSet.getInt(2));
-		group.setGroupName(resultSet.getString(3));
-		group.setGroupId(resultSet.getInt(4));
+		
+		owner.setUsername(resultSet.getString("owner"));
+		owner.setUserId(resultSet.getInt("owner_id"));
+		
+		group.setGroupName(resultSet.getString("group_name"));
+		group.setGroupId(resultSet.getInt("group_id"));
+		
 		group.setOwner(owner);
 		return group;
-	}	
+	}
 }

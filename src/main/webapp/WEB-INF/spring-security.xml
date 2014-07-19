@@ -74,16 +74,14 @@
 	<!-- authdb config -->
 	<context:component-scan base-package="src.ddpsc.authentication" />
 	
-	
-	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" />  
-	<bean id="authSource"
-		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://localhost:3306/PhenoFront" />
-		<property name="username" value="root" />
-		<property name="password" value="password" />
+	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" >
+		<property name="userDataSource" ref="userDataSource" />
 	</bean>
-
+	
+	<bean id="userDataSource"
+		class="src.ddpsc.config.Config"
+		factory-method="userDatabaseDataSource" />
+	
 
 	<!-- The tag below has no use but Spring Security needs it to autowire the 
 		parent property of org.springframework.security.authentication.ProviderManager. 

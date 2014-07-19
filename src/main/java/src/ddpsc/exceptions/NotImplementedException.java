@@ -1,16 +1,15 @@
 package src.ddpsc.exceptions;
 
-public class NotImplementedException extends Exception {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5517758235406469002L;
-	public NotImplementedException(){
+@SuppressWarnings("serial")
+public class NotImplementedException extends Exception
+{
+	public NotImplementedException()
+	{
 		super("Method not implemented");
 	}
-	
-	public NotImplementedException(String m){
+
+	public NotImplementedException(String m)
+	{
 		super(m);
 	}
 }

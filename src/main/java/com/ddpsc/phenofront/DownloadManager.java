@@ -28,16 +28,19 @@ public class DownloadManager {
 	/**
 	 * 
 	 * @return Returns the key as stored in memory.
-	 * @throws ActiveKeyException
-	 *             If the user already has an active key, an exception is
-	 *             thrown.
+	 * 
+	 * @throws ActiveKeyException	If the user already has an active key, an exception is thrown.
+	 * 
+	 * TODO: Actually throw ActiveKeyException            
 	 */
-	public static String generateRandomKey(DbUser user){
+	public static String generateRandomKey(DbUser user)
+	{
 			Random rand = new Random(System.currentTimeMillis());
+			
 			String theDigest = Long.toString(rand.nextLong());
+			
 			System.setProperty(theDigest, user.getUsername());
 			return theDigest;
-		
 	}
 
 	/**

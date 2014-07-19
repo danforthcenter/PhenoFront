@@ -3,9 +3,12 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:beans="http://www.springframework.org/schema/beans"
 	xmlns:context="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc
+						http://www.springframework.org/schema/mvc/spring-mvc.xsd
+						http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/context
+						http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
 	
@@ -25,29 +28,31 @@
 	<context:component-scan base-package="com.ddpsc.phenofront" />
 	
 	
-	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" />  
+	<!-- declare data source beans -->
+	 
+	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" >
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
 	
-	<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" />  
+	<beans:bean id="dataSource"
+		class="src.ddpsc.config.Config"
+		factory-method="experimentDataSource" >
+		<beans:constructor-arg value="LemnaTest" />
+	</beans:bean>
 	
-    	
- 	<!-- declare datasource bean -->  
- 	<beans:bean id="dataSource"  
-  		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
-  		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
-  		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LemnaTest" />  
-  		<beans:property name="username" value="shill" />  
-  		<beans:property name="password" value="" />  
- 	</beans:bean>  
+	
+	<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >
+		<beans:property name="experimentSource" ref="experimentSource" />
+	</beans:bean>
+	
+	<beans:bean id="experimentSource"
+		class="src.ddpsc.config.Config"
+		factory-method="experimentDataSource" >
+		<beans:constructor-arg value="LTSystem" />
+	</beans:bean>
+    
  	
- 	<beans:bean id="experimentSource"  
-  		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
-  		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
-  		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LTSystem" />  
-  		<beans:property name="username" value="shill" />  
-  		<beans:property name="password" value="" />  
- 	</beans:bean>  
  	
-
  	
 </beans:beans>
 

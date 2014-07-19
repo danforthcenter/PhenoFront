@@ -1,6 +1,8 @@
 package src.ddpsc.database.snapshot;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import src.ddpsc.database.tile.Tile;
@@ -14,6 +16,7 @@ import src.ddpsc.database.tile.Tile;
  */
 
 public class Snapshot {
+	
 	private String plantBarcode;
 	private String carTag;
 	private Timestamp timeStamp;
@@ -41,6 +44,18 @@ public class Snapshot {
 		this.completed = completed;
 		this.measurementLabel = measurementLabel;
 		this.id = id;
+	}
+	
+	public static List<Snapshot> tiledOnly(List<Snapshot> snapshots)
+	{
+		// Remove snapshots with zero tiles
+		List<Snapshot> snapshotsWithTiles = new ArrayList<Snapshot>(snapshots.size());
+		
+		for (Snapshot snapshot : snapshots)
+			if (snapshot.getTiles().size() > 0)
+				snapshotsWithTiles.add(snapshot);
+		
+		return snapshotsWithTiles;
 	}
 
 	public String getMeasurementLabel() {
