@@ -19,7 +19,8 @@ import src.ddpsc.exceptions.ExperimentNotAllowedException;
  * @field String	authority Can only be ROLE_ADMIN and ROLE_USER
  * @field DbGroup	group Group object which this user belongs to.
  * @see {@link DbGroup }
- * @author shill
+ * 
+ * @author shill, cjmcentee
  */
 public class DbUser {
 	

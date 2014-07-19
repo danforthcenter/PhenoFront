@@ -137,19 +137,7 @@ public class UserAreaController
 		user.setAllowedExperiments(allExperiments);
 		
 		// Assume all databases are public and allowed.
-		// However, filter out databases with 'system' in their name
-		final String keywordFilter = "System";
-		ArrayList<Experiment> filteredExperiments = new ArrayList<Experiment>();
-		
-		for (Experiment experiment : user.getAllowedExperiments()) {
-			String experimentName = experiment.getExperimentName().toLowerCase();
-			
-			if ( ! experimentName.contains(keywordFilter.toLowerCase())) {
-				filteredExperiments.add(experiment);
-			}
-		}
-		
-		model.addAttribute("allowed", filteredExperiments);
+		model.addAttribute("allowed", allExperiments);
 		return "select";
 	}
 
