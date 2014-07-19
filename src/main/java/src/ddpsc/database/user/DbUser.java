@@ -32,7 +32,7 @@ public class DbUser {
 	
 	private List<Experiment> allowedExperiments;
 	private Experiment activeExperiment;
-	
+
 	public DbUser()
 	{
 		this.allowedExperiments = new ArrayList<Experiment>();
