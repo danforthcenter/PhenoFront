@@ -33,9 +33,7 @@ public class ExperimentRowMapper implements RowMapper<Experiment> {
 class ExperimentExtractor implements ResultSetExtractor<Experiment> {  
 	public Experiment extractData(ResultSet resultSet) throws SQLException,
 			DataAccessException {
-		Experiment exp = new Experiment();
-	//	exp.setExperimentId(resultSet.getInt(0));
-		
+		Experiment exp = new Experiment();		
 		exp.setExperimentName(resultSet.getString(1));
 		return exp;
 	}	

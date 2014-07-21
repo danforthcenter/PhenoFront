@@ -23,8 +23,7 @@ public class ExperimentDaoImpl implements ExperimentDao{
 
 	@Override
 	public ArrayList<Experiment> findAll() {
-		String sql = "SELECT datname FROM pg_database " +
-					 "WHERE datistemplate = false AND datname != 'postgres' AND datname !='bacula'";
+		String sql = "SELECT name from ltdbs where removed = FALSE";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
 		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());
