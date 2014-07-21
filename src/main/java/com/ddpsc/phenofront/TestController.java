@@ -2,9 +2,9 @@ package com.ddpsc.phenofront;
 
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class TestController {
 		DateTime date = new DateTime(); //gets datetime for NOW
 		Timestamp ts = new Timestamp(date.getMillis());
 		System.out.println(ts);
-		List<Experiment> experiments = ed.findAll();
+		Set<Experiment> experiments = ed.findAll();
 		System.out.println(experiments);
 	//	String formattedDate = dateFormat.format(date);
 		model.addAttribute("serverTime", date.toString("EEEE, MMMM dd, yyyy H:mm:ss aa") );
@@ -48,7 +48,7 @@ public class TestController {
 	}
 	@RequestMapping(value="/getexperiments", method = RequestMethod.GET)
 	public String getExperimentsAction(){
-		List<Experiment> experiments = ed.findAll();
+		Set<Experiment> experiments = ed.findAll();
 		System.out.println(experiments);
 		return "home";
 	}

@@ -1,6 +1,10 @@
 package src.ddpsc.exceptions;
 
-
+/**
+ * Thrown if a configuration file is missing required fields.
+ * 
+ * @author shill, cjmcentee
+ */
 @SuppressWarnings("serial")
 public class MalformedConfigException extends Exception
 {

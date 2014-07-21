@@ -101,7 +101,7 @@ public class UserDaoImpl implements UserDao
 		
 		DbUser user = users.get(0);
 		
-		ensureCompleteness(user); // Throws UserException
+		ensureValidity(user); // Throws UserException
 		
 		log.info("User with username "+ username + " found.");
 		
@@ -139,7 +139,7 @@ public class UserDaoImpl implements UserDao
 		
 		DbUser user = users.get(0);
 		
-		ensureCompleteness(user); // Throws UserException
+		ensureValidity(user); // Throws UserException
 		
 		log.info("User with ID='" + userID + "' found.");
 		
@@ -161,7 +161,7 @@ public class UserDaoImpl implements UserDao
 	{
 		log.info("Attempting to add user " + user.shortDescribe());
 		
-		ensureCompleteness(user); // Throws UserException
+		ensureValidity(user); // Throws UserException
 		
 		if (user.getGroup() == null)
 			addUserNoGroup(user);
@@ -202,7 +202,7 @@ public class UserDaoImpl implements UserDao
 	{
 		log.info("Attempting to add user " + user.shortDescribe() + " without a group.");
 		
-		ensureCompleteness(user); // Throws UserException
+		ensureValidity(user); // Throws UserException
 		
 		String addUser = "INSERT INTO users (username, password, enabled, authority) VALUES "
 				+ "(" 
@@ -303,7 +303,7 @@ public class UserDaoImpl implements UserDao
 		log.info("Attempting update user operation for user with ID=" + oldUser.getUserId() + " adding new user " + newUser.describe());
 		
 		ensureUserExistence(oldUser); // Throws UserNotFoundException
-		ensureCompleteness(newUser); // Throws UserException
+		ensureValidity(newUser); // Throws UserException
 		
 		String updateUser = "UPDATE users "
 				+ "SET user_id='" + newUser.getUserId() + "', "
@@ -731,12 +731,13 @@ public class UserDaoImpl implements UserDao
 	// Helper methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
-	protected void ensureCompleteness(DbUser user) throws UserException
+	protected void ensureValidity(DbUser user) throws UserException
 	{
-		if ( ! user.isComplete()) {
-			String incompleteMessage = "The user " + user.describe() + " is incomplete.";
-			log.error(incompleteMessage);
-			throw new UserException(incompleteMessage);
+		if (user.isInvalid()) {
+			String incompleteMessage = "The user " + user.describe() + " is incomplete or invalid because " + user.InvalidityMessage();
+			UserException exception = new UserException(incompleteMessage);
+			log.error(incompleteMessage, exception);
+			throw exception;
 		}	
 	}
 	

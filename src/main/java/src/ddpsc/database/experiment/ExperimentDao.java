@@ -1,6 +1,6 @@
 package src.ddpsc.database.experiment;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -14,10 +14,10 @@ import org.springframework.jdbc.CannotGetJdbcConnectionException;
  */
 public interface ExperimentDao
 {
-	public List<Experiment> findAll()
+	public Set<Experiment> findAll()
 		throws CannotGetJdbcConnectionException;
 	
-	public Experiment findById(); // arguably useful
+	public Experiment findById();
 	
 	public void setExperimentSource(DataSource experimentSource);
 }

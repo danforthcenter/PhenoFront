@@ -8,7 +8,6 @@ import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
-import src.ddpsc.exceptions.ObjectNotFoundException;
 
 
 /**
@@ -30,6 +29,12 @@ public interface UserDao
 
 	void addUser(DbUser user)
 			throws UserException, CannotGetJdbcConnectionException;
+	
+	void removeUser(DbUser user)
+			throws CannotGetJdbcConnectionException;
+
+	List<DbUser> findAllUsers()
+			throws CannotGetJdbcConnectionException;
 
 	boolean userExists(DbUser user)
 			throws CannotGetJdbcConnectionException;
@@ -39,7 +44,7 @@ public interface UserDao
 
 	void updateUser(DbUser oldUser, DbUser newUser)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
-
+	
 	void changePassword(DbUser user, String password)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 
@@ -52,20 +57,14 @@ public interface UserDao
 	void changeGroup(DbUser user, DbGroup group)
 			throws ObjectNotFoundException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 	
-	void removeUser(DbUser user)
-			throws CannotGetJdbcConnectionException;
-
-	List<DbUser> findAllUsers()
-			throws CannotGetJdbcConnectionException;
-
+	
+	
 	void addGroup(DbGroup group);
 
 	void removeGroup(DbGroup group);
 
 	List<DbGroup> findAllGroups()
 			throws CannotGetJdbcConnectionException;
-
-	void setUserDataSource(DataSource userDataSource);
 
 	boolean groupNameExists(String groupName)
 			throws CannotGetJdbcConnectionException;
@@ -80,6 +79,7 @@ public interface UserDao
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 
 	
-
+	
+	void setUserDataSource(DataSource userDataSource);
 }
 

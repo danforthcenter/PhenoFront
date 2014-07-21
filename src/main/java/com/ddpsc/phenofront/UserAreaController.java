@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
@@ -19,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -58,9 +58,7 @@ import src.ddpsc.results.ResultsBuilder;
 @Controller
 public class UserAreaController
 {
-	private static Logger log = Logger.getLogger("controller");
-	
-	private static final String ANONYMOUS_USER_MESSAGE = "User not logged in.";
+	private static Logger log = Logger.getLogger("service");
 	
 	private static final PasswordEncoder encoder = new StandardPasswordEncoder();
 	
@@ -76,11 +74,7 @@ public class UserAreaController
 	ServletContext servletContext;
 	
 	
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	// User Operations
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
+	
 	/**
 	 * Selects which experiment databases to pull information from.
 	 * 
@@ -90,10 +84,10 @@ public class UserAreaController
 	@RequestMapping(value = "/selectexperiment", method = RequestMethod.GET)
 	public String selectAction(Model model)
 	{
-		String username = CurrentUsername();
+		String username = ControllerHelper.currentUsername();
 		
-		if (IsAnonymous(username)) {
-			model.addAttribute("message", "Error: " + ANONYMOUS_USER_MESSAGE);
+		if (ControllerHelper.isAnonymous(username)) {
+			model.addAttribute("message", "Error: " + ControllerHelper.ANONYMOUS_USER_MESSAGE);
 			return "error";
 		}
 		
@@ -101,6 +95,8 @@ public class UserAreaController
 		
 		try {
 			user = userData.findByUsername(username);
+			
+			model.addAttribute("user", user);
 		}
 		catch (CannotGetJdbcConnectionException e) {
 			String connectionFailedMessage = "Could not retrieve the user's data because this server could not connect to the user data server.";
@@ -121,11 +117,15 @@ public class UserAreaController
 			return "error";
 		}
 		
-		model.addAttribute("user", user);
-		List<Experiment> allExperiments = new ArrayList<Experiment>();
 		
 		try {
-			allExperiments = experimentData.findAll();
+			Set<Experiment> allExperiments = experimentData.findAll();
+			
+			user.setAllowedExperiments(allExperiments);
+			
+			// Assume all databases are public and allowed.
+			model.addAttribute("allowed", allExperiments);
+			return "select";
 		}
 		catch (CannotGetJdbcConnectionException e) {
 			String connectionFailedMessage = "Could not retrieve the user's data because this server could not connect to the experiment data server.";
@@ -133,12 +133,6 @@ public class UserAreaController
 			log.info(connectionFailedMessage);
 			return "error";
 		}
-		
-		user.setAllowedExperiments(allExperiments);
-		
-		// Assume all databases are public and allowed.
-		model.addAttribute("allowed", allExperiments);
-		return "select";
 	}
 
 	/**
@@ -159,10 +153,10 @@ public class UserAreaController
 			@ModelAttribute("user") DbUser user,
 			@RequestParam("experimentName") String experimentName)
 	{
-		String username = CurrentUsername();
+		String username = ControllerHelper.currentUsername();
 		
-		if (IsAnonymous(username))
-			return new ResponseEntity<String>("ERROR: " + ANONYMOUS_USER_MESSAGE, HttpStatus.FORBIDDEN);
+		if (ControllerHelper.isAnonymous(username))
+			return new ResponseEntity<String>("ERROR: " + ControllerHelper.ANONYMOUS_USER_MESSAGE, HttpStatus.FORBIDDEN);
 		
 		try {
 			Experiment experiment = user.getExperimentByExperimentName(experimentName);
@@ -328,7 +322,7 @@ public class UserAreaController
 			DbUser user = this.userData.findByUsername(System.getProperty(downloadKey));
 			
 			// check permissions and setup experiment for anonymous users
-			List<Experiment> experiments = user.getAllowedExperiments();
+			Set<Experiment> experiments = user.getAllowedExperiments();
 			for (Experiment experiment : experiments) {
 				if (experiment.getExperimentName().equals(activeExperiment)) {
 					user.setActiveExperiment(experiment);
@@ -494,10 +488,10 @@ public class UserAreaController
 	@RequestMapping(value = "/userarea/profile", method = RequestMethod.GET)
 	public String profileAction(Model model, @ModelAttribute("user") DbUser user)
 	{
-		String username = CurrentUsername();
+		String username = ControllerHelper.currentUsername();
 		
-		if (IsAnonymous(username)) {
-			model.addAttribute("message", "Error: " + ANONYMOUS_USER_MESSAGE);
+		if (ControllerHelper.isAnonymous(username)) {
+			model.addAttribute("message", "Error: " + ControllerHelper.ANONYMOUS_USER_MESSAGE);
 			return "error";
 		}
 		
@@ -519,11 +513,11 @@ public class UserAreaController
 			@RequestParam("newpass") String newPassword,
 			@RequestParam("validate") String validationPassword)
 	{
-		String username = CurrentUsername();
+		String username = ControllerHelper.currentUsername();
 		
-		if (IsAnonymous(username)) {
+		if (ControllerHelper.isAnonymous(username)) {
 			log.error("Anonymous User attempted to change their password.");
-			return new ResponseEntity<String>("ERROR: " + ANONYMOUS_USER_MESSAGE, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<String>("ERROR: " + ControllerHelper.ANONYMOUS_USER_MESSAGE, HttpStatus.BAD_REQUEST);
 		}
 		
 		if ( ! newPassword.equals(validationPassword)) {
@@ -555,25 +549,5 @@ public class UserAreaController
 			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
 		}
 		
-	}
-	
-	
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	// Helper Methods
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	private String CurrentUsername()
-	{
-		return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-	}
-	
-	private boolean IsAnonymous(String username)
-	{
-		if (username.equals("anonymousUser")) {
-			log.error(ANONYMOUS_USER_MESSAGE);
-			return true;
-		}
-		return false;
 	}
 }

@@ -31,7 +31,7 @@ public class DownloadManager {
 	 * 
 	 * @throws ActiveKeyException	If the user already has an active key, an exception is thrown.
 	 * 
-	 * TODO: Actually throw ActiveKeyException            
+	 * TODO: Actually throw ActiveKeyException
 	 */
 	public static String generateRandomKey(DbUser user)
 	{

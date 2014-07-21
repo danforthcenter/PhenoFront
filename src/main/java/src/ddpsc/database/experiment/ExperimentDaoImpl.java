@@ -1,5 +1,6 @@
 package src.ddpsc.database.experiment;
 
+import java.util.HashSet;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -11,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /**
  * Implements query to fetch experiment tables from database
  * 
- * @author shill
+ * @author shill, cjmcentee
  */
 public class ExperimentDaoImpl implements ExperimentDao
 {
@@ -21,7 +22,7 @@ public class ExperimentDaoImpl implements ExperimentDao
 	
 	
 	@Override
-	public List<Experiment> findAll() throws CannotGetJdbcConnectionException
+	public HashSet<Experiment> findAll() throws CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to find all experiments in the database.");
 		
@@ -35,7 +36,7 @@ public class ExperimentDaoImpl implements ExperimentDao
 		
 		log.info("All experiments in the database found.");
 		
-		return experimentList;
+		return new HashSet<Experiment>(experimentList);
 	}
 
 	@Override

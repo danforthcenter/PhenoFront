@@ -12,25 +12,26 @@ import org.springframework.web.bind.annotation.RequestParam;
  */
 @Controller
 @RequestMapping("/auth")
-public class LoginLogoutController {
+public class LoginLogoutController
+{
 	
-	protected static Logger logger = Logger.getLogger("controller");
-
+	private static Logger logger = Logger.getLogger("service");
+	
+	
+	
 	/**
 	 * Handles and retrieves the login JSP page
 	 * 
 	 * @return the name of the JSP page
 	 */
 	@RequestMapping(value = "/login", method = RequestMethod.GET)
-	public String getLoginPage(
-			@RequestParam(value = "error", required = false) boolean error,
-			ModelMap model) {
+	public String getLoginPage(@RequestParam(value = "error", required = false) boolean error, ModelMap model)
+	{
 		logger.debug("Received request to show login page");
 
 		if (error == true) {
 			// Assign an error message
-			model.put("error",
-					"You have entered an invalid username or password!");
+			model.put("error", "You have entered an invalid username or password!");
 			model.put("hidden", "");
 		} else {
 			model.put("error", "");
@@ -41,13 +42,13 @@ public class LoginLogoutController {
 	}
 
 	/**
-	 * Handles and retrieves the denied JSP page. This is shown whenever a
-	 * regular user tries to access an admin only page.
+	 * Handles and retrieves the denied JSP page. This is shown whenever a regular user tries to access an admin only page.
 	 * 
 	 * @return the name of the JSP page
 	 */
 	@RequestMapping(value = "/denied", method = RequestMethod.GET)
-	public String getDeniedPage() {
+	public String getDeniedPage()
+	{
 		logger.debug("Received request to show denied page");
 
 		// This will resolve to /WEB-INF/jsp/deniedpage.jsp

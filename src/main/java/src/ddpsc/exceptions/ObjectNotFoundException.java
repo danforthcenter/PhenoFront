@@ -1,5 +1,10 @@
 package src.ddpsc.exceptions;
 
+/**
+ * Thrown if a database object could not be found.
+ * 
+ * @author shill, cjmcentee
+ */
 @SuppressWarnings("serial")
 public class ObjectNotFoundException extends Exception
 {
