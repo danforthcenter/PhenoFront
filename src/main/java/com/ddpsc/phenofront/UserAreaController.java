@@ -79,9 +79,7 @@ public class UserAreaController {
 			DbUser user = ud.findByUsername(username);
 			model.addAttribute("user", user);
 			user.setAllowedExperiments(ed.findAll());
-			//for now we are just assuming all databases are public and allowed.
-			ArrayList<Experiment> experiments = new ArrayList<Experiment>();
-			model.addAttribute("allowed", experiments );
+			model.addAttribute("allowed", user.getAllowedExperiments() );
 			return "select";
 		}
 		
