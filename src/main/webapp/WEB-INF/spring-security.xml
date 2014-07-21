@@ -11,6 +11,13 @@
    						http://www.springframework.org/schema/context 
    						http://www.springframework.org/schema/context/spring-context.xsd">
 
+	<!--  This configures the system properties file -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>database.properties</value>
+		</property>
+	</bean>
 	<context:annotation-config />
 	<!-- This is where we configure Spring-Security -->
 	<security:http auto-config="false" use-expressions="true"
@@ -78,10 +85,10 @@
 	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" />  
 	<bean id="authSource"
 		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://localhost:3306/PhenoFront" />
-		<property name="username" value="root" />
-		<property name="password" value="password" />
+		<property name="driverClassName" value="${user.driverClassName}" />
+		<property name="url" value="${user.url}" />
+		<property name="username" value="${user.username}" />
+		<property name="password" value="${user.password}" />
 	</bean>
 
 

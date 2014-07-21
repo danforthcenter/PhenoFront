@@ -7,6 +7,15 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
+	<!--  enables the database properties available in the class path -->
+	<beans:bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<beans:property name="location">
+			<beans:value>database.properties</beans:value>
+		</beans:property>
+	</beans:bean>
+	<context:property-placeholder location="database.properties" />
+	
 	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
 	
 	<!-- Enables the Spring MVC @Controller programming model -->
@@ -33,18 +42,18 @@
  	<!-- declare datasource bean -->  
  	<beans:bean id="dataSource"  
   		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
-  		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
-  		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LemnaTest" />  
-  		<beans:property name="username" value="shill" />  
-  		<beans:property name="password" value="" />  
+  		<beans:property name="driverClassName" value="${pg.driverClassName}" />  
+  		<beans:property name="url" value="${pg.url}" />  
+  		<beans:property name="username" value="${pg.username}" />  
+  		<beans:property name="password" value="${pg.password}" />  
  	</beans:bean>  
  	
  	<beans:bean id="experimentSource"  
   		class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
-  		<beans:property name="driverClassName" value="org.postgresql.Driver" />  
-  		<beans:property name="url" value="jdbc:postgresql://localhost:5432/LTSystem" />  
-  		<beans:property name="username" value="shill" />  
-  		<beans:property name="password" value="" />  
+  		<beans:property name="driverClassName" value="${system.driverClassName}" />  
+  		<beans:property name="url" value="${system.url}" />  
+  		<beans:property name="username" value="${system.username}" />  
+  		<beans:property name="password" value="${system.password}" />  
  	</beans:bean>  
  	
 

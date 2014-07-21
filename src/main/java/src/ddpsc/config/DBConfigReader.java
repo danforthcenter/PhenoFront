@@ -5,64 +5,50 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.springframework.core.io.ClassPathResource;
 
 import src.ddpsc.exceptions.MalformedConfigException;
 
 /**
- * Class designed to read a flat yaml configuration file containing information about the LT databases
- *   skip lines that begin with # and assumes they are comments.
- *   The required configs are databaseUsername, databasePass, and databaseURL. dbDefault is the default
- *   database to connect to.
- *   It could be better to rework this class so it can be used in a static manner.
+ * DBConfigReader reads the database.properties file used by the bean. The ExperimentConfig is not managed by spring
+ *  so we need to load the properties ourself. 
+ *  
+ *  Expects properties to be '=' delimited, IE key=value
+ *  Expects the file to exist in src/main/webapp
  * 
- * The file it looks for is in the folder immediately above the ClassPathResource. The name is ltdatabase.conf
- *  This file is not included in the main git repository, however an example file is concluded.
- * 
+ * @field properties	hashmap which contains a dictionary of each property
  * @author shill
  *
  */
 public final class DBConfigReader {
-	String dbUsername;
-	String dbPass;
-	String dbURL;
-	String dbDefault = "";
-	String path = "ltdatabase.conf"; //this needs to be a known global configuration file
+
+	String path = "database.properties"; //this needs to be a known global configuration file
+	HashMap<String, String> properties = new HashMap<String, String>();
 	DBConfigReader() throws MalformedConfigException{
 		try {
 			ClassPathResource c = new ClassPathResource("/");
 			File f = c.getFile();
-			FileReader reader = new FileReader(f.getAbsolutePath() + "/../" + path);
+			FileReader reader = new FileReader(f.getAbsolutePath() + "/../../" + path);
+			//FileReader reader = new FileReader(f);
 			BufferedReader buff = new BufferedReader(reader);
-			//flat file containing key pairs
-			//first is name, second is value (ez)
+
 			while( buff.ready() ){
 				String curLine = buff.readLine();
 				if (curLine.startsWith("#")){
 					continue;
 				}
-				String[] lineArr = curLine.split("\t", -1); //-1 lets us get empty results
+				String[] lineArr = curLine.split("=", -1); //-1 lets us get empty results
 				if (lineArr.length < 2){
 					continue;
+				} else{
+					properties.put(lineArr[0], lineArr[1]);
 				}
-				if (lineArr[0].equals("databaseUsername")){
-					this.dbUsername = lineArr[1];
-				}
-				else if (lineArr[0].equals("databasePass")){
-					this.dbPass = lineArr[1];
-				}
-				else if (lineArr[0].equals("databaseURL")){
-					this.dbURL = lineArr[1];
-				}
-				else if(lineArr[0].equals("dbDefault")){
-					this.dbDefault = lineArr[1];
-				}
+				
 			}
 			buff.close();
-			if (this.dbUsername == null || this.dbPass == null || this.dbURL == null ){
-				throw new MalformedConfigException("One or more of the required fields are missing. Check your LTdatabase config file.");
-			}
+		
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
