@@ -122,10 +122,11 @@ public class UserAreaController
 			Set<Experiment> allExperiments = experimentData.findAll();
 
 			user.setAllowedExperiments(allExperiments);
+			Set<Experiment> allowedExperiments = user.getAllowedExperiments();
 
 			// Assume all databases are public and allowed.
-			model.addAttribute("allowed", allExperiments);
-			log.info("Experiments " + Experiment.toString(allExperiments) + " have been added to user " + username + " as allowed experiments.");
+			model.addAttribute("allowed", allowedExperiments);
+			log.info("Experiments " + Experiment.toString(allowedExperiments) + " have been added to user " + username + " as allowed experiments.");
 			return "select";
 		}
 		catch (CannotGetJdbcConnectionException e) {
