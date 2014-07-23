@@ -111,7 +111,7 @@ public class ResultsBuilder {
 		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
 		
 		for (Snapshot snapshot : snapshots) {
-			String prefixName = "snapshot" + snapshot.getId() + "/";
+			String prefixName = "snapshot" + snapshot.getID() + "/";
 			archive.flush(); // keep responsive
 			this.threadStreams.clear(); //reset
 			this.processImages((ArrayList<Tile>) snapshot.getTiles(), new DateTime(snapshot.getTimeStamp()), this.experiment, prefixName);
@@ -142,7 +142,7 @@ public class ResultsBuilder {
 		archive.putNextEntry(new ZipEntry(entryName));
 		archive.write(rep.getBytes());
 		for (Snapshot snapshot : snapshots) {
-			archive.write(snapshot.csvWriterNoHead().getBytes());
+			archive.write(snapshot.toCSVString_noWeights().getBytes());
 		}
 		archive.finish();
 	}
@@ -154,7 +154,8 @@ public class ResultsBuilder {
  * @author shill
  *
  */
-class ImageProcessor extends Thread{
+class ImageProcessor extends Thread
+{
 	private OutputStream os;
 	private Tile tile;
 	private ImageService imageService;

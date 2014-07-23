@@ -35,7 +35,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
  */
 public class CustomAuthenticationManager implements AuthenticationManager
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(CustomAuthenticationManager.class);
 
 	@Autowired
 	private UserDao userDao;
@@ -58,12 +58,12 @@ public class CustomAuthenticationManager implements AuthenticationManager
 			DbUser user = userDao.findByUsername(username);
 			
 			if ( ! user.isEnabled())
-				throw new DisabledException("The account for user '" + username + "' is disabled.");
+				throw new DisabledException("The account for the user " + username + " is disabled.");
 			
 			// Check if the user input password matches the password found in the user-data database
 			boolean passwordValid = passwordEncoder.matches((CharSequence) auth.getCredentials(), user.getPassword());
 			if (passwordValid) {
-				log.info("Authentication Successful for '" + user.getUsername() + "', generating token.");
+				log.info("Authentication Successful for the user " + user.getUsername() + ", generating token.");
 				return new UsernamePasswordAuthenticationToken(username, auth.getCredentials(), getAuthorities(user));
 			}
 			
@@ -117,7 +117,7 @@ public class CustomAuthenticationManager implements AuthenticationManager
 		
 		
 		if (user.isAdmin()) {
-			log.info("Granted the authority of: " + DbUser.ADMIN + " to this user");
+			log.info("Granted the authority of: " + DbUser.ADMIN + " to the user " + user.getUsername());
 			authList.add(new SimpleGrantedAuthority(DbUser.ADMIN));
 		}
 		

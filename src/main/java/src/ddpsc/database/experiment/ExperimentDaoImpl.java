@@ -10,17 +10,23 @@ import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Implements query to fetch experiment tables from database
+ * Fetches experiments from a SQL database
  * 
  * @author shill, cjmcentee
  */
 public class ExperimentDaoImpl implements ExperimentDao
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(ExperimentDaoImpl.class);
 	
 	private DataSource experimentSource;
 	
-	
+	/**
+	 * Returns all the experiments from the database
+	 * 
+	 * @return			All the experiments available in the database
+	 * 
+	 * @throws CannotGetJdbcConnectionException		Thrown if the database can't be accessed
+	 */
 	@Override
 	public HashSet<Experiment> findAll() throws CannotGetJdbcConnectionException
 	{
@@ -31,7 +37,7 @@ public class ExperimentDaoImpl implements ExperimentDao
 					+ "AND datname != 'postgres' "
 					+ "AND datname !='bacula'";
 		
-		// String sql = "SELECT name from ltdbs where removed = FALSE";
+		// String sql = "SELECT name FROM ltdbs WHERE removed = FALSE";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
 		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());
@@ -40,14 +46,6 @@ public class ExperimentDaoImpl implements ExperimentDao
 		
 		return new HashSet<Experiment>(experimentList);
 	}
-
-	@Override
-	public Experiment findById()
-	{
-		// TODO Fill in SQL
-		return null;
-	}
-	
 	
 	@Override
 	public void setExperimentSource(DataSource experimentSource)

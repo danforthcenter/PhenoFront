@@ -31,7 +31,7 @@ import src.ddpsc.exceptions.UserException;
  */
 public class UserDaoImpl implements UserDao
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(UserDaoImpl.class);
 	
 	private DataSource userDataSource; // Should we make this static and transition this class into being a singleton?
 									   // What is gained by having instances of this class?
@@ -92,7 +92,7 @@ public class UserDaoImpl implements UserDao
 		{
 			String multiplicityMessage = "More than one user matches the name '" + username + "':";
 			for (int i = 0; i < users.size(); i++) {
-				multiplicityMessage += users.get(i).shortDescribe();
+				multiplicityMessage += users.get(i).getUsername();
 				if (i != users.size() - 1)
 					multiplicityMessage += ", ";
 			}
@@ -159,7 +159,7 @@ public class UserDaoImpl implements UserDao
 	@Override
 	public void addUser(DbUser user) throws UserException, CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to add user " + user.shortDescribe());
+		log.info("Attempting to add user " + user.getUsername());
 		
 		ensureValidity(user); // Throws UserException
 		
@@ -171,7 +171,7 @@ public class UserDaoImpl implements UserDao
 					+ "'" + user.getUsername() + "', "
 					+ "'" + user.getPassword() + "', "
 					+ "'" + (user.getEnabled() ? 1 : 0) + "', "
-					+ "'" + user.getGroup().getGroupId() + "', "
+					+ "'" + user.getGroup().getGroupID() + "', "
 					+ "'" + user.getAuthority() + "'"
 				+ ")";
 		
@@ -180,9 +180,9 @@ public class UserDaoImpl implements UserDao
 		
 		boolean userAdded = (result != 0);
 		if (userAdded)
-			log.info("Add user operation for " + user.shortDescribe() + " successful.");
+			log.info("Add user operation for " + user.getUsername() + " successful.");
 		else
-			log.error("Add user operation for " + user.shortDescribe() + " failed. Reason unknown.");
+			log.error("Add user operation for " + user.getUsername() + " failed. Reason unknown.");
 	}
 	
 	
@@ -200,7 +200,7 @@ public class UserDaoImpl implements UserDao
 	 */
 	private void addUserNoGroup(DbUser user) throws UserException, CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to add user " + user.shortDescribe() + " without a group.");
+		log.info("Attempting to add user " + user.getUsername() + " without a group.");
 		
 		ensureValidity(user); // Throws UserException
 		
@@ -217,9 +217,9 @@ public class UserDaoImpl implements UserDao
 		
 		boolean userAdded = (result > 0);
 		if (userAdded)
-			log.info("Add user (no group) operation for " + user.shortDescribe() + " successful.");
+			log.info("Add user (no group) operation for " + user.getUsername() + " successful.");
 		else
-			log.error("Add user (no group) operation for " + user.shortDescribe() + " failed. Reason unknown.");
+			log.error("Add user (no group) operation for " + user.getUsername() + " failed. Reason unknown.");
 	}
 	
 	
@@ -236,7 +236,7 @@ public class UserDaoImpl implements UserDao
 	@Override
 	public boolean userExists(DbUser user) throws CannotGetJdbcConnectionException
 	{
-		log.info("Checking if user " + user.shortDescribe() + " exists in the database.");
+		log.info("Checking if user " + user.getUsername() + " exists in the database.");
 		
 		String getByID = "SELECT * FROM users WHERE user_id='" + user.getUserId() + "' " + " OR username='" + user.getUsername() + "'";
 		
@@ -244,9 +244,9 @@ public class UserDaoImpl implements UserDao
 		boolean userExists = jdbcTemplate.query(getByID, new ExistenceResultSet());
 		
 		if (userExists)
-			log.info("User " + user.shortDescribe() + " does exist in the database.");
+			log.info("User " + user.getUsername() + " does exist in the database.");
 		else
-			log.info("User " + user.shortDescribe() + " could not be found in the database.");
+			log.info("User " + user.getUsername() + " could not be found in the database.");
 		
 		return userExists;
 	}
@@ -311,7 +311,7 @@ public class UserDaoImpl implements UserDao
 				+ "password='" + newUser.getPassword() + "', "
 				+ "authority='" + newUser.getAuthority() + "', "
 				+ "enabled='" + (newUser.getEnabled() ? 1 : 0) + "', "
-				+ "group_id='" + newUser.getGroup().getGroupId() + "' "
+				+ "group_id='" + newUser.getGroup().getGroupID() + "' "
 				+ "WHERE user_id='" + oldUser.getUserId() + "'";
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
@@ -319,9 +319,9 @@ public class UserDaoImpl implements UserDao
 		
 		boolean userUpdated = (result > 0);
 		if (userUpdated)
-			log.info("User update for " + newUser.shortDescribe() + " successful.");
+			log.info("User update for " + newUser.getUsername() + " successful.");
 		else
-			log.error("User update for " + newUser.shortDescribe() + " unsuccessful.");
+			log.error("User update for " + newUser.getUsername() + " unsuccessful.");
 	}
 	
 	
@@ -339,7 +339,7 @@ public class UserDaoImpl implements UserDao
 	public void changePassword(DbUser user, String password)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
-		log.info("Attempt to change password for user " + user.shortDescribe());
+		log.info("Attempting to change password for user " + user.getUsername());
 		
 		ensureUserExistence(user); // Throws UserNotFoundException
 		
@@ -352,11 +352,11 @@ public class UserDaoImpl implements UserDao
 		
 		boolean passwordChanged = (result > 0);
 		if (passwordChanged) {
-			log.info("Password changed for user " + user.shortDescribe());
+			log.info("Password changed for user " + user.getUsername());
 			user.setPassword(password);
 		}
 		else
-			log.error("Failed to change password for user " + user.shortDescribe());
+			log.error("Failed to change password for user " + user.getUsername());
 	}
 	
 	/**
@@ -373,7 +373,7 @@ public class UserDaoImpl implements UserDao
 	public void changeUsername(DbUser user, String username)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
-		log.info("Attempt to change username for user " + user.shortDescribe());
+		log.info("Attempting to change username for user " + user.getUsername());
 		
 		ensureUserExistence(user); // Throws UserNotFoundException
 		
@@ -386,11 +386,11 @@ public class UserDaoImpl implements UserDao
 		
 		boolean usernameChanged = (result > 0);
 		if (usernameChanged) {
-			log.info("Username changed for user " + user.shortDescribe());
+			log.info("Username changed for user " + user.getUsername());
 			user.setUsername(username);
 		}
 		else
-			log.error("Failed to change username for user " + user.shortDescribe());
+			log.error("Failed to change username for user " + user.getUsername());
 	}
 	
 	/**
@@ -407,7 +407,7 @@ public class UserDaoImpl implements UserDao
 	public void changeAuthority(DbUser user, String authority)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
-		log.info("Attempt to change authority for user " + user.shortDescribe());
+		log.info("Attempting to change authority for user " + user.getUsername());
 		
 		ensureUserExistence(user); // Throws UserNotFoundException
 		
@@ -420,11 +420,11 @@ public class UserDaoImpl implements UserDao
 		
 		boolean authorityChanged = (result > 0);
 		if (authorityChanged) {
-			log.info("Authority changed for user " + user.shortDescribe());
+			log.info("Authority changed for user " + user.getUsername());
 			user.setAuthority(authority);
 		}
 		else
-			log.error("Failed to change authority for user " + user.shortDescribe());
+			log.error("Failed to change authority for user " + user.getUsername());
 		
 	}
 	
@@ -444,26 +444,26 @@ public class UserDaoImpl implements UserDao
 	public void changeGroup(DbUser user, DbGroup group)
 			throws ObjectNotFoundException, CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
-		log.info("Attempt to change group assignment for user " + user.shortDescribe());
+		log.info("Attempting to change group assignment for user " + user.getUsername());
 		
 		ensureUserExistence(user); // Throws UserNotFoundException
 		
 		String changeGroup = "UPDATE users "
-				+ "SET group_id='" + group.getGroupId() + "' "
+				+ "SET group_id='" + group.getGroupID() + "' "
 				+ "WHERE user_id='" + user.getUserId() + "'";
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		group = this.findGroupByID(group.getGroupId()); // Ensure the group exists by getting it
+		group = this.findGroupByID(group.getGroupID()); // Ensure the group exists by getting it
 		int result = jdbcTemplate.update(changeGroup);
 		
 		boolean groupChanged = (result > 0);
 		if (groupChanged) {
-			log.info("Group changed for user " + user.shortDescribe());
+			log.info("Group changed for user " + user.getUsername());
 			user.setGroup(group);
 		}
 		else
-			log.error("Failed to change group for user " + user.shortDescribe());
+			log.error("Failed to change group for user " + user.getUsername());
 	}
 	
 	
@@ -477,7 +477,7 @@ public class UserDaoImpl implements UserDao
 	@Override
 	public void removeUser(DbUser user) throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempt to delete user " + user.shortDescribe());
+		log.info("Attempting to delete user " + user.getUsername());
 		
 		String deleteUser = "DELETE FROM users WHERE user_id='" + user.getUserId() + "'";
 		
@@ -486,9 +486,9 @@ public class UserDaoImpl implements UserDao
 		
 		boolean deleteSuccessful = (result > 0);
 		if (deleteSuccessful)
-			log.info("User " + user.shortDescribe() + " deleted");
+			log.info("User " + user.getUsername() + " deleted");
 		else
-			log.error("Failed to delete user " + user.shortDescribe());
+			log.error("Failed to delete user " + user.getUsername());
 	}
 	
 	/**
@@ -518,11 +518,11 @@ public class UserDaoImpl implements UserDao
 	}
 	
 	
-	//////////////////////////////////////////////////
-	//////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	// Group Operations
-	//////////////////////////////////////////////////
-	//////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	/**
 	 * Returns a DbUser from the user database that matches the supplied name
 	 * 
@@ -555,7 +555,7 @@ public class UserDaoImpl implements UserDao
 		{
 			String multiplicityMessage = "More than one group matches the name '" + groupName + "':";
 			for (int i = 0; i < groups.size(); i++) {
-				multiplicityMessage += groups.get(i).shortDescribe();
+				multiplicityMessage += groups.get(i).getGroupName();
 				if (i != groups.size() - 1)
 					multiplicityMessage += ", ";
 			}
@@ -601,7 +601,7 @@ public class UserDaoImpl implements UserDao
 		{
 			String multiplicityMessage = "More than one group matches the ID='" + groupID + "':";
 			for (int i = 0; i < groups.size(); i++) {
-				multiplicityMessage += groups.get(i).shortDescribe();
+				multiplicityMessage += groups.get(i).getGroupName();
 				if (i != groups.size() - 1)
 					multiplicityMessage += ", ";
 			}
@@ -744,7 +744,7 @@ public class UserDaoImpl implements UserDao
 	protected void ensureUserExistence(DbUser user) throws ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		if ( ! userExists(user)) {
-			log.error("Operation for user " + user.shortDescribe() + " failed because no such user is in the database.");
+			log.error("Operation for user " + user.getUsername() + " failed because no such user is in the database.");
 			throw new ObjectNotFoundException();
 		}
 	}

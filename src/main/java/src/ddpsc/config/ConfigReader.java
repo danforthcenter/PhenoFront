@@ -41,7 +41,7 @@ import org.springframework.core.io.ClassPathResource;
  */
 public abstract class ConfigReader
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(ConfigReader.class);
 	
 	public static final String COMMENT_CHARACTER = "#";
 	

@@ -35,7 +35,7 @@ import src.ddpsc.exceptions.ObjectNotFoundException;
  */
 public class SnapshotDaoImpl implements SnapshotDao
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(SnapshotDaoImpl.class);
 	
 	private static final String TILE_QUERY_VARIABLES = "SELECT "
 			+ "tiled_image.camera_label, " 
@@ -327,15 +327,15 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Tile> findTiles(Snapshot snapshot)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find tiles associated with the snapshot " + snapshot.getId() + ".");
+		log.info("Attempting to find tiles associated with the snapshot " + snapshot.getID() + ".");
 		
 		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
-				+ "WHERE tiled_image.snapshot_id = " + snapshot.getId() + " "
+				+ "WHERE tiled_image.snapshot_id = " + snapshot.getID() + " "
 				+ "AND tile.tiled_image_id = tiled_image.id";
 		
 		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
 		
-		log.info("Tiles associated with the snapshot " + snapshot.getId() + " found.");
+		log.info("Tiles associated with the snapshot " + snapshot.getID() + " found.");
 		return tiles;
 	}
 	

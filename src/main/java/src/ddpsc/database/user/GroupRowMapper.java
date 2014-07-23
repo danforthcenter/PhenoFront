@@ -32,7 +32,7 @@ public class GroupRowMapper implements RowMapper<DbGroup>
 		owner.setUserId(resultSet.getInt("owner_id"));
 		
 		group.setGroupName(resultSet.getString("group_name"));
-		group.setGroupId(resultSet.getInt("group_id"));
+		group.setGroupID(resultSet.getInt("group_id"));
 		
 		group.setOwner(owner);
 		return group;

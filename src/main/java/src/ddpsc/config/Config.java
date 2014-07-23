@@ -35,7 +35,7 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	 */
 	public static DriverManagerDataSource experimentDataSource() throws MalformedConfigException
 	{
-		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader();
+		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader("ltdatabase.conf");
 		
 		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
 		
@@ -60,7 +60,7 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	public static DriverManagerDataSource experimentDataSource(String database) throws MalformedConfigException
 	{
 		database = database.replace("\\", "").replace("/", ""); // Removes any leading slashes
-		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader();
+		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader("ltdatabase.conf");
 		
 		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
 		
@@ -83,7 +83,7 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	 */
 	public static DriverManagerDataSource userDatabaseDataSource() throws MalformedConfigException
 	{
-		UserDatabaseConfigReader config = new UserDatabaseConfigReader();
+		UserDatabaseConfigReader config = new UserDatabaseConfigReader("userdatabase.conf");
 		
 		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
 		

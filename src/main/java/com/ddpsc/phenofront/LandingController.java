@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,15 +30,12 @@ public class LandingController
 	 * Landing action. Takes an anonymous user to the home page
 	 * 
 	 * @param	locale		Geographical region the user is from
-	 * @param	model		TODO: What is this Model object, how is it passed around
+	 * @param	model		Internal model object to communicate with the view
 	 * @return				The string indicating the next target view 
 	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String homeAction(Locale locale, Model model)
 	{
-		StandardPasswordEncoder encoder = new StandardPasswordEncoder();
-		System.out.println(encoder.encode("password"));
-		
 		if (ControllerHelper.isActiveUser())
 			return "userarea";
 		
@@ -51,6 +47,7 @@ public class LandingController
 		model.addAttribute("serverTime", formattedDate);
 		return "home";
 	}
+	
 
 	/**
 	 * Page shows the status of running jobs, the queue, or jobs in process. Probably going to change this to news or
@@ -58,7 +55,7 @@ public class LandingController
 	 * 
 	 * 
 	 * @param	locale		Geographical region the user is from
-	 * @param	model		TODO: Still have no clue what Model is or what manages it, some spring thing
+	 * @param	model		Internal model for communicating with the view
 	 * @return				TODO: Determine if status is still a page that exists, currently this whole method appears useless
 	 */
 	@RequestMapping(value = "/status", method = RequestMethod.GET)

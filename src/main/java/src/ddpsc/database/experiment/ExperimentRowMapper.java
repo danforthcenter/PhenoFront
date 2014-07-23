@@ -3,38 +3,34 @@ package src.ddpsc.database.experiment;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
 
-public class ExperimentRowMapper implements RowMapper<Experiment> {
+/**
+ * Maps each row of a SQL query to an {@link Experiment} object.
+ * 
+ * The SQL query in particular is that from ExperimentDaoImpl.findAll();
+ * 
+ * The query:
+ * "SELECT datname FROM pg_database "
+ *	+ "WHERE datistemplate = false "
+ *		+ "AND datname != 'postgres' "
+ *		+ "AND datname !='bacula'"
+ * 
+ * @author shill, cjmcentee
+ */
+public class ExperimentRowMapper implements RowMapper<Experiment>
+{
 
 	@Override
-	public Experiment mapRow(ResultSet resultSet, int line) throws SQLException {
-		try{
-			ExperimentExtractor expExtractor = new ExperimentExtractor();
-			return expExtractor.extractData(resultSet);
-		}catch (SQLException e){
-			throw e;
-		}
+	public Experiment mapRow(ResultSet resultSet, int line) throws SQLException
+	{
+		// SQL query value names:
+		//		datname
+		
+		Experiment experiment = new Experiment();
+		experiment.setExperimentName(resultSet.getString("datname"));
+		
+		return experiment;
 	}
-
-}
-
-/**
- * Inner class responsible for mapping table columns to fields in our database.
- * If a new field is added, this must be updated.
- * 
- * 
- * @author shill
- *
- */
-class ExperimentExtractor implements ResultSetExtractor<Experiment> {  
-	public Experiment extractData(ResultSet resultSet) throws SQLException,
-			DataAccessException {
-		Experiment exp = new Experiment();		
-		exp.setExperimentName(resultSet.getString(1));
-		return exp;
-	}	
 }

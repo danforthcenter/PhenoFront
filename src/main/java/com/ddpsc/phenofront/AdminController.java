@@ -37,7 +37,7 @@ import src.ddpsc.exceptions.UserException;
 public class AdminController
 {
 	
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(AdminController.class);
 	
 	private static PasswordEncoder encoder = new StandardPasswordEncoder();
 	
@@ -50,8 +50,8 @@ public class AdminController
      * 
      * Side Effects: All users and groups are added to the model
      * 
-     * @param	Model		TODO: Figure out what model really is
-     * @return				TODO: Figure out what returning these strings do w.r.t. RequestMapping
+     * @param	Model		And internal model for interacting with the view
+     * @return				Takes the user to the users page, or an error page
      */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String homeAction(Model model)
@@ -79,8 +79,8 @@ public class AdminController
 	/**
 	 * Base action which load a table of users.
 	 * 
-	 * @param 		model		TODO: Figure out what this really is and how it's passed around
-	 * @return					TODO: Figure out what the string returning is all about and how it really works
+	 * @param 		model		Internal model for interacting with the view
+	 * @return					Takes the user back to the home screen
 	 */
 	@RequestMapping(value = "/users", method = RequestMethod.GET)
 	public String userManagementAction(Model model)
@@ -350,7 +350,7 @@ public class AdminController
 			}
 			else {
 				ud.addUser(newUser);
-				log.info("User " + newUser.shortDescribe() + " successfully added to the system.");
+				log.info("User " + newUser.getUsername() + " successfully added to the system.");
 				return new ResponseEntity<String>("Success!", HttpStatus.OK);
 			}
 		}

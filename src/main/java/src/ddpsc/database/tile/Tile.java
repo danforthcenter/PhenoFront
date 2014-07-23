@@ -2,20 +2,33 @@ package src.ddpsc.database.tile;
 
 import java.util.List;
 
-public class Tile {
-	private String cameraLabel;
-	private int rawImageOid; //maybe just go fetch the path
-	private int rawNullImageOid;
-	private int dataFormat;
-	private int width;
-	private int height;
-	private int rotateFlipType;
-	private int frame;
-	private String imagePath;
+public class Tile
+{
+	private String	cameraLabel;
+	private int		rawImageOid; // maybe just go fetch the path
+	private int		rawNullImageOid;
+	private int		dataFormat;
+	private int		width;
+	private int		height;
+	private int		rotateFlipType;
+	private int		frame;
+	private String	imagePath;
 	
-	public Tile(String cameraLabel, int rawImageOid, int rawNullImageOid,
-			int dataFormat, int width, int height, int rotateFlipType, int frame, String imagePath) {
-		super();
+	public Tile()
+	{
+	}
+	
+	public Tile(
+			String cameraLabel,
+			int rawImageOid,
+			int rawNullImageOid,
+			int dataFormat,
+			int width,
+			int height,
+			int rotateFlipType,
+			int frame,
+			String imagePath)
+	{
 		this.cameraLabel = cameraLabel;
 		this.rawImageOid = rawImageOid;
 		this.rawNullImageOid = rawNullImageOid;
@@ -24,87 +37,131 @@ public class Tile {
 		this.height = height;
 		this.rotateFlipType = rotateFlipType;
 		this.frame = frame;
-	}
-	public Tile(){}
-	
-	public String getNullImagePath(){
-		return this.imagePath + "/" + new Integer(this.rawNullImageOid).toString();
 	}
 	
 	@Override
-	public String toString() {
-		return "Tile [cameraLabel=" + cameraLabel + ", rawImageOid="
-				+ rawImageOid + ", rawNullImageOid=" + rawNullImageOid
-				+ ", dataFormat=" + dataFormat + ", width=" + width
-				+ ", height=" + height + ", rotateFlipType=" + rotateFlipType
-				+ ", frame=" + frame + ", imagePath=" + imagePath + "]";
+	public String toString()
+	{
+		return "Tile ["
+				+ "cameraLabel=" + cameraLabel + ", "
+				+ "rawImageOid=" + rawImageOid + ", "
+				+ "rawNullImageOid=" + rawNullImageOid + ", "
+				+ "dataFormat=" + dataFormat + ", "
+				+ "width=" + width + ", "
+				+ "height=" + height + ", "
+				+ "rotateFlipType=" + rotateFlipType + ", "
+				+ "frame=" + frame + ", "
+				+ "imagePath=" + imagePath
+				+ "]";
 	}
-	public String getRawImagePath(){
+	
+	public static String toCSVString(List<Tile> tiles, String delimiter)
+	{
+		String csv = "";
+		for (Tile tile : tiles)
+			csv += tile.cameraLabel + "_" + tile.rawImageOid + delimiter;
+		
+		csv = csv.substring(0, csv.length()); // TODO: What does this do? csv.length() - 1 would take off the last element, but THIS?
+		return csv;
+	}
+	
+	public String getNullImagePath()
+	{
+		return this.imagePath + "/" + new Integer(this.rawNullImageOid).toString();
+	}
+	
+	public String getRawImagePath()
+	{
 		return this.imagePath + "/" + new Integer(this.rawImageOid).toString();
 	}
 	
-	public String getImagePath(){
+	public String getImagePath()
+	{
 		return this.imagePath;
 	}
-	public void setImagePath(String imagePath){
+	
+	public void setImagePath(String imagePath)
+	{
 		this.imagePath = imagePath;
 	}
-	public String getCameraLabel() {
+	
+	public String getCameraLabel()
+	{
 		return cameraLabel;
 	}
-	public void setCameraLabel(String cameraLabel) {
+	
+	public void setCameraLabel(String cameraLabel)
+	{
 		this.cameraLabel = cameraLabel;
 	}
-	public int getRawImageOid() {
+	
+	public int getRawImageOid()
+	{
 		return rawImageOid;
 	}
-	public void setRawImageOid(int rawImageOid) {
+	
+	public void setRawImageOid(int rawImageOid)
+	{
 		this.rawImageOid = rawImageOid;
 	}
-	public int getRawNullImageOid() {
+	
+	public int getRawNullImageOid()
+	{
 		return rawNullImageOid;
 	}
-	public void setRawNullImageOid(int rawNullImageOid) {
+	
+	public void setRawNullImageOid(int rawNullImageOid)
+	{
 		this.rawNullImageOid = rawNullImageOid;
 	}
-	public int getDataFormat() {
+	
+	public int getDataFormat()
+	{
 		return dataFormat;
 	}
-	public void setDataFormat(int dataFormat) {
+	
+	public void setDataFormat(int dataFormat)
+	{
 		this.dataFormat = dataFormat;
 	}
-	public int getWidth() {
+	
+	public int getWidth()
+	{
 		return width;
 	}
-	public void setWidth(int width) {
+	
+	public void setWidth(int width)
+	{
 		this.width = width;
 	}
-	public int getHeight() {
+	
+	public int getHeight()
+	{
 		return height;
 	}
-	public void setHeight(int height) {
+	
+	public void setHeight(int height)
+	{
 		this.height = height;
 	}
-	public int getRotateFlipType() {
+	
+	public int getRotateFlipType()
+	{
 		return rotateFlipType;
 	}
-	public void setRotateFlipType(int rotateFlipType) {
+	
+	public void setRotateFlipType(int rotateFlipType)
+	{
 		this.rotateFlipType = rotateFlipType;
 	}
-	public int getFrame() {
+	
+	public int getFrame()
+	{
 		return frame;
 	}
-	public void setFrame(int frame) {
+	
+	public void setFrame(int frame)
+	{
 		this.frame = frame;
 	}
-	public static String toDelimited(List<Tile> tiles, String delimiter) {
-		String fin = "";
-		for (Tile tile : tiles) {
-			fin += tile.cameraLabel + "_" + tile.rawImageOid  + delimiter;
-		}
-		fin = fin.substring(0, fin.length());
-		return fin;
-	}
-	
-	
 }

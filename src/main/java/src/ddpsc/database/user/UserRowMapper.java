@@ -38,7 +38,7 @@ public class UserRowMapper implements RowMapper<DbUser>
 		dbUser.setAuthority(resultSet.getString("authority"));
 		dbUser.setUserId(resultSet.getInt("user_id"));
 		
-		group.setGroupId(resultSet.getInt("group_id"));
+		group.setGroupID(resultSet.getInt("group_id"));
 		group.setOwner(new DbUser(resultSet.getString("owner")));
 		group.setGroupName(resultSet.getString("group_name"));
 		

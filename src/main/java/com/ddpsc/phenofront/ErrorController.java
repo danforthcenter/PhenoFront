@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 class ErrorController
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(ErrorController.class);
 	
 	
 	@RequestMapping("/error")

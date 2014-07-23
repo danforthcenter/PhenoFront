@@ -6,7 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 class ControllerHelper
 {
-	private static Logger log = Logger.getLogger("service");
+	private static final Logger log = Logger.getLogger(ControllerHelper.class);
 	
 	static final String ANONYMOUS_USER_MESSAGE = "User not logged in.";
 	

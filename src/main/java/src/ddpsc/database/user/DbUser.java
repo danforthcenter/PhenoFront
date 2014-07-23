@@ -236,18 +236,6 @@ public class DbUser
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	/**
-	 * Returns a short string description of this user in a natural language.
-	 * 
-	 * Includes username and ID in the description.
-	 * 
-	 * @return				A short description of the user
-	 */
-	public String shortDescribe()
-	{
-		return username + " with ID " + userId;
-	}
-	
-	/**
 	 * Returns a full description of most fields of this user in a natural language.
 	 * 
 	 * The description includes the username, ID, whether the user is enabled, whether
