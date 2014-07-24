@@ -275,14 +275,15 @@ public class UserAreaController
 		String username = user.getUsername();
 		log.info("Attempting to retrieve download key for user " + username);
 		
-		
 		// try {
 		String downloadKey = DownloadManager.generateRandomKey(user);
-
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
 		model.addAttribute("activeExperiment", activeExperiment.getExperimentName());
+		
+		List<String> barcodes = snapshotData.getBarcodes(20);
+		model.addAttribute("exampleBarcodes", barcodes);
 		
 		log.info("Retrieved download key for user " + username + " and queried the active experiment " + activeExperiment.getExperimentName());
 		return "userarea-querybuilder";
