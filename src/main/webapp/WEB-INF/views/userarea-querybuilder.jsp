@@ -30,12 +30,12 @@
 							<input type="text" id="measurementLabel" name="measurementLabel"
 							class="form-control" placeholder=""
 							title="Find Snapshots which have the measurement(experiment) label that contains the input string. Also supports regular expressions." />						  
-							<label for="after">Snapshots After:</label>	
-							<input type="text" class="form-control" name="after" id="after"
+							<label for="startTime">Snapshots After:</label>	
+							<input type="text" class="form-control" name="startTime" id="startTime"
 							title="Click the box to choose a date." />			  
-							<label for="before">Snapshots Before:</label>
-							<input type="text" class="form-control" name="before"
-							title="Click the box to choose a date." id="before" />
+							<label for="endTime">Snapshots Before:</label>
+							<input type="text" class="form-control" name="endTime" id="endTime"
+							title="Click the box to choose a date." />
 						</div>
 						<div class="form-group">
 							<label>Image types to download</label>
@@ -70,15 +70,15 @@
 </body>
 <script>
 $(document).ready(function(){
-	$('#before').datetimepicker();
-	$('#after').datetimepicker();
+	$('#startTime').datetimepicker();
+	$('#endTime').datetimepicker();
 	$('#headers').children().each(function(){
 		$(this).tooltip({content: "Click to sort by column."});
 	});
     $( '#measurementLabel' ).tooltip();
     $( '#plantBarcode' ).tooltip();
-    $( '#before' ).tooltip();
-    $( '#after' ).tooltip();
+    $( '#startTime' ).tooltip();
+	$( '#endTime' ).tooltip();
     $( '#max' ).tooltip();
     $("#submit").submit(function(){
         $(this).find('input[type=submit]').attr('disabled', 'disabled');

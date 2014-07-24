@@ -11,43 +11,55 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-
+/**
+ * Controller for handling general, unhandled server errors.
+ * 
+ * Ideally, the user will never interact with this controller, but just in case
+ * an error slips past, this will be there to handle it and notify the user.
+ * 
+ * 
+ * @author shill, cjmcentee
+ */
 @Controller
-class CustomErrorController {
-	protected static Logger logger = Logger.getLogger("general-error");
-
+class ErrorController
+{
+	private static final Logger log = Logger.getLogger(ErrorController.class);
+	
+	
 	@RequestMapping("/error")
-	public String customError(HttpServletRequest request,
-			HttpServletResponse response, Model model) {
-		// retrieve some useful information from the request
-		Integer statusCode = (Integer) request
-				.getAttribute("javax.servlet.error.status_code");
-		Throwable throwable = (Throwable) request
-				.getAttribute("javax.servlet.error.exception");
-		// String servletName = (String)
-		// request.getAttribute("javax.servlet.error.servlet_name");
-		String exceptionMessage = getExceptionMessage(throwable, statusCode);
-
-		String requestUri = (String) request
-				.getAttribute("javax.servlet.error.request_uri");
-		if (requestUri == null) {
+	public String customError(HttpServletRequest request, HttpServletResponse response, Model model)
+	{
+		Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
+		Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception");
+		
+		String exceptionMessage = getExceptionMessage(exception, statusCode);
+		
+		String requestUri = (String) request.getAttribute("javax.servlet.error.request_uri");
+		if (requestUri == null)
 			requestUri = "Unknown";
-		}
 
-		String message = MessageFormat.format(
-				"Error {0} returned for {1} with message {2}", statusCode,
-				requestUri, exceptionMessage);
-		logger.error(message);
-		message = "Error: " + statusCode + ". Contact an administrator for details."; 
+		String message = MessageFormat.format("Error {0} returned for {1} with message {2}", statusCode, requestUri, exceptionMessage);
+		
+		log.error(message);
+		message = "Error: " + statusCode + ". Contact an administrator for details.";
 		model.addAttribute("message", message);
+		
 		return "error";
 	}
 
-	private String getExceptionMessage(Throwable throwable, Integer statusCode) {
-		if (throwable != null) {
-			return throwable.getMessage();
+	private String getExceptionMessage(Throwable exception, Integer statusCode)
+	{
+		if (exception != null) {
+			return exception.getMessage();
 		}
-		HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
-		return httpStatus.getReasonPhrase();
+		else {
+			HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+			return httpStatus.getReasonPhrase();
+		}
 	}
 }
+
+
+
+
+

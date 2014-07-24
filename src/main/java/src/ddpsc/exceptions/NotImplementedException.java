@@ -1,16 +1,20 @@
 package src.ddpsc.exceptions;
 
-public class NotImplementedException extends Exception {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5517758235406469002L;
-	public NotImplementedException(){
+/**
+ * Thrown if a method or class is not yet implemented, but accessed or called.
+ * 
+ * @author shill
+ */
+@SuppressWarnings("serial")
+public class NotImplementedException extends Exception
+{
+	public NotImplementedException()
+	{
 		super("Method not implemented");
 	}
-	
-	public NotImplementedException(String m){
+
+	public NotImplementedException(String m)
+	{
 		super(m);
 	}
 }

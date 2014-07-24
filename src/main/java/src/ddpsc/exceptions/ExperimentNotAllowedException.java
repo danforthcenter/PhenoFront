@@ -1,10 +1,16 @@
 package src.ddpsc.exceptions;
 
-public class ExperimentNotAllowedException extends Exception {
-
-	public ExperimentNotAllowedException(String message) {
+/**
+ * Thrown if an experiment does not exist to be accessed, or is not allowed by the
+ * user to be accessed.
+ * 
+ * @author shill, cjmcentee
+ */
+@SuppressWarnings("serial")
+public class ExperimentNotAllowedException extends Exception
+{
+	public ExperimentNotAllowedException(String message)
+	{
 		super(message);
 	}
-	private static final long serialVersionUID = 1L;
-
 }

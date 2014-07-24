@@ -7,7 +7,7 @@
 	<div class="container">
 		<div class="jumbotron">
 			<h1>Error!</h1>
-			<p>${message}</p>			
+			<p>${message}</p>
 
 		</div>
 	</div>

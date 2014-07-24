@@ -1,39 +1,50 @@
 package src.ddpsc.database.experiment;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Implements query to fetch experiment tables from database
+ * Fetches experiments from a SQL database
  * 
- * @author shill
- *
+ * @author shill, cjmcentee
  */
-public class ExperimentDaoImpl implements ExperimentDao{
-	@Autowired 
-	DataSource experimentSource;
-	protected static Logger logger = Logger.getLogger("service");
-	protected static String systemFilter = "System"; 
-
+public class ExperimentDaoImpl implements ExperimentDao
+{
+	private static final Logger log = Logger.getLogger(ExperimentDaoImpl.class);
+	
+	private DataSource experimentSource;
+	
+	/**
+	 * Returns all the experiments from the database
+	 * 
+	 * @return			All the experiments available in the database
+	 * 
+	 * @throws CannotGetJdbcConnectionException		Thrown if the database can't be accessed
+	 */
 	@Override
-	public ArrayList<Experiment> findAll() {
-		String sql = "SELECT name from ltdbs where removed = FALSE";
+	public HashSet<Experiment> findAll() throws CannotGetJdbcConnectionException
+	{
+		log.info("Attempting to find all experiments in the database.");
+		
+		String sql = "SELECT name FROM ltdbs WHERE removed = FALSE";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
 		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());
-		return (ArrayList<Experiment>) experimentList;
+		
+		log.info("All experiments in the database found.");
+		
+		return new HashSet<Experiment>(experimentList);
 	}
-
+	
 	@Override
-	public Experiment findById() {
-		// TODO Fill in SQL
-		return null;
+	public void setExperimentSource(DataSource experimentSource)
+	{
+		this.experimentSource = experimentSource;
 	}
-
 }

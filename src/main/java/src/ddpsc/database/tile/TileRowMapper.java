@@ -3,40 +3,34 @@ package src.ddpsc.database.tile;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
  * This class creates a mapping from the database to our Snapshot object's fields. The inner class SnapshotExtractor
- * implements a spring utility function for this purpose, rather than putting it in it's own file, our application
- * will implement extractors as inner methods.
+ * implements a spring utility function for this purpose, rather than putting it in it's own file, our application will
+ * implement extractors as inner methods.
  * 
- * @throws SQLException
  * @see Snapshot
- * @author shill
- *
+ * @see SnapshotDaoImpl.TILE_QUERY_VARIABLES
+ * @see SnapshotDaoImpl
+ * 
+ * @author shill, cjmcentee
  */
-public class TileRowMapper implements RowMapper<Tile>{
-
+public class TileRowMapper implements RowMapper<Tile>
+{
 	@Override
-	public Tile mapRow(ResultSet resultSet, int line) throws SQLException {
-		try{
-			TileExtractor tileExtractor = new TileExtractor();
-			return tileExtractor.extractData(resultSet);
-		}catch (SQLException e){
-			throw e;
-		}
-	}
-}
-/**
- * Maps both TILE and TILED_IMAGE to the tile object.
- * @author shill
- *
- */
-class TileExtractor implements ResultSetExtractor<Tile> {  
-	public Tile extractData(ResultSet resultSet) throws SQLException,
-			DataAccessException {
+	public Tile mapRow(ResultSet resultSet, int line) throws SQLException
+	{
+		// Order and name of queried tile columns
+		//		camera_label 
+		//		raw_image_oid
+		//		raw_null_image_oid
+		//		dataformat
+		//		width
+		//		height 
+		//		rotate_flip_type
+		//		frame
+		
 		Tile tile = new Tile();
 		tile.setCameraLabel(resultSet.getString(1));
 		tile.setRawImageOid(resultSet.getInt(2));
@@ -48,5 +42,4 @@ class TileExtractor implements ResultSetExtractor<Tile> {
 		tile.setFrame(resultSet.getInt(8));
 		return tile;
 	}
-	
-}  
+}

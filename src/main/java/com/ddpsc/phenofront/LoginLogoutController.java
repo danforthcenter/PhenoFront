@@ -2,7 +2,7 @@ package com.ddpsc.phenofront;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,43 +12,47 @@ import org.springframework.web.bind.annotation.RequestParam;
  */
 @Controller
 @RequestMapping("/auth")
-public class LoginLogoutController {
+public class LoginLogoutController
+{
 	
-	protected static Logger logger = Logger.getLogger("controller");
-
+	private static final Logger log = Logger.getLogger(LoginLogoutController.class);
+	
+	
 	/**
 	 * Handles and retrieves the login JSP page
 	 * 
-	 * @return the name of the JSP page
+	 * @return			The name of the JSP page
 	 */
 	@RequestMapping(value = "/login", method = RequestMethod.GET)
 	public String getLoginPage(
 			@RequestParam(value = "error", required = false) boolean error,
-			ModelMap model) {
-		logger.debug("Received request to show login page");
-
+			Model model)
+	{
+		log.info("Received request to show login page to user " + ControllerHelper.currentUsername());
+		
 		if (error == true) {
 			// Assign an error message
-			model.put("error",
-					"You have entered an invalid username or password!");
-			model.put("hidden", "");
+			model.addAttribute("error", "You have entered an invalid username or password!");
+			model.addAttribute("hidden", "");
 		} else {
-			model.put("error", "");
-			model.put("hidden", "hidden");
+			model.addAttribute("error", "");
+			model.addAttribute("hidden", "hidden");
 		}
-
+		
 		return "login";
 	}
 
 	/**
-	 * Handles and retrieves the denied JSP page. This is shown whenever a
-	 * regular user tries to access an admin only page.
+	 * Handles and retrieves the denied JSP page.
 	 * 
-	 * @return the name of the JSP page
+	 * This is shown whenever a regular user tries to access an admin only page.
+	 * 
+	 * @return			The name of the JSP page
 	 */
 	@RequestMapping(value = "/denied", method = RequestMethod.GET)
-	public String getDeniedPage() {
-		logger.debug("Received request to show denied page");
+	public String getDeniedPage()
+	{
+		log.info("Received request to show denied page to user " + ControllerHelper.currentUsername());
 
 		// This will resolve to /WEB-INF/jsp/deniedpage.jsp
 		return "deniedpage";

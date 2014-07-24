@@ -134,14 +134,14 @@ public abstract class TestUtility {
 	public static DbGroup buildGroupMock(int version, DbUser owner){
 		if (version == 1){
 			DbGroup FIRST_USER = new DbGroup();
-			FIRST_USER.setGroupId(1);
+			FIRST_USER.setGroupID(1);
 			FIRST_USER.setGroupName("group1");
 			FIRST_USER.setOwner(owner);
 			return FIRST_USER;
 		}
 		if (version == 2){
 			DbGroup SECOND_USER = new DbGroup();
-			SECOND_USER.setGroupId(2);
+			SECOND_USER.setGroupID(2);
 			SECOND_USER.setGroupName("group2");
 			SECOND_USER.setOwner(owner);
 			return SECOND_USER;

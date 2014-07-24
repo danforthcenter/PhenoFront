@@ -5,6 +5,6 @@ package src.ddpsc.database;
  * users to active databases.
  *
  */
-public class DatabaseManager {
-
+public class DatabaseManager
+{
 }

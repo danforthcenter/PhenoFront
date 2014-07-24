@@ -1,16 +1,22 @@
 package src.ddpsc.exceptions;
 
-public class UsernameExistsException extends Exception{
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3599564290439864841L;
-	public UsernameExistsException(){
+/**
+ * Thrown when a user is attempting to change their username, or an admin is attempting to
+ * add a user, but the username already exists with another user.
+ * 
+ * @author shill, cjmcentee
+ */
+@SuppressWarnings("serial")
+public class UsernameExistsException extends Exception
+{
+	public UsernameExistsException()
+	{
 		super("Username already exists. Try again.");
 	}
-	public UsernameExistsException(String m){
-		super(m);
+
+	public UsernameExistsException(String message)
+	{
+		super(message);
 	}
 
 }

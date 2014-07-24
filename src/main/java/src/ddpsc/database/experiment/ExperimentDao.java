@@ -1,14 +1,15 @@
 package src.ddpsc.database.experiment;
 
-import java.util.ArrayList;
+import java.util.Set;
 
-/**
- * Data abstraction object for Experiments. These are represented in the LemnaTec database as lt_dbs.
- * @author shill
- *
- */
-public interface ExperimentDao {
-	public ArrayList<Experiment> findAll();
-	public Experiment findById(); //arguably useful
+import javax.sql.DataSource;
 
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+
+public interface ExperimentDao
+{
+	public Set<Experiment> findAll()
+		throws CannotGetJdbcConnectionException;
+	
+	public void setExperimentSource(DataSource experimentSource);
 }

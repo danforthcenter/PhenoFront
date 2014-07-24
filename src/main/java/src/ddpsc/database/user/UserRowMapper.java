@@ -3,51 +3,47 @@ package src.ddpsc.database.user;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
-public class UserRowMapper implements RowMapper<DbUser> {
-
-	@Override
-	public DbUser mapRow(ResultSet resultSet, int line) throws SQLException {
-		try{
-			UserExtractor userExtractor = new UserExtractor();
-			return userExtractor.extractData(resultSet);
-		}catch (SQLException e){
-			throw e;
-		}
-	}
-
-}
 /**
- * Inner class responsible for mapping table columns to fields in our database.
- * If a new field is added, this must be updated.
+ * Maps over each row in a returned query and transforms it into a {@link DbUser} object.
  * 
- * @author shill
+ * The values in the result set hash map are tied to the query from {@link UserDao.USER_QUERY_VARIABLES}.
+ * Reference that static variable for determining what string to use to access data from the result set.
+ * 
+ * @author shill, cjmcentee
  *
  */
-class UserExtractor implements ResultSetExtractor<DbUser> {  
-	public DbUser extractData(ResultSet resultSet) throws SQLException,
-			DataAccessException {
+public class UserRowMapper implements RowMapper<DbUser>
+{
+	@Override
+	public DbUser mapRow(ResultSet resultSet, int line) throws SQLException
+	{
+		// The order and names of queried variables 
+		//		username
+		//		password
+		//		enabled 
+		//		group_id
+		//		authority
+		//		owner
+		//		group_name
+		//		user_id
+		
 		DbUser dbUser = new DbUser();
 		DbGroup group = new DbGroup();
-		//us.username, "
-		//		   + "us.password, "
-		//		   + "us.enabled, "
-		//		   + "us.group_id, "
-		//		   + "us.authority, "
-		//		   + "u.username AS owner, "
-		//		   + "gr.group_name "
-		dbUser.setUsername(resultSet.getString(1));
-		dbUser.setPassword(resultSet.getString(2));
-		dbUser.setEnabled(resultSet.getBoolean(3));
-		group.setGroupId(resultSet.getInt(4));
-		dbUser.setAuthority(resultSet.getString(5));
-		group.setOwner(new DbUser(resultSet.getString(6)));
-		group.setGroupName(resultSet.getString(7));
-		dbUser.setUserId(resultSet.getInt(8));
+		
+		dbUser.setUsername(resultSet.getString("username"));
+		dbUser.setPassword(resultSet.getString("password"));
+		dbUser.setEnabled(resultSet.getBoolean("enabled"));
+		dbUser.setAuthority(resultSet.getString("authority"));
+		dbUser.setUserId(resultSet.getInt("user_id"));
+		
+		group.setGroupID(resultSet.getInt("group_id"));
+		group.setOwner(new DbUser(resultSet.getString("owner")));
+		group.setGroupName(resultSet.getString("group_name"));
+		
 		dbUser.setGroup(group);
+		
 		return dbUser;
-	}	
-}  
+	}
+}

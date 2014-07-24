@@ -1,12 +1,15 @@
 package src.ddpsc.exceptions;
 
-public class ActiveKeyException extends Exception {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	public ActiveKeyException(String m){
+/**
+ * Thrown if a user is attempting to make two downloads from the website at the same time.
+ * 
+ * @author shill
+ */
+@SuppressWarnings("serial")
+public class ActiveKeyException extends Exception
+{
+	public ActiveKeyException(String m)
+	{
 		super(m);
 	}
 }
