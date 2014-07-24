@@ -22,7 +22,7 @@ public class Snapshot
 	private float		waterAmount;
 	private boolean		completed;
 	private String		measurementLabel;
-	private int			ID;
+	private int			id;
 	private List<Tile>	tiles;
 	
 	public Snapshot()
@@ -48,7 +48,7 @@ public class Snapshot
 		this.waterAmount = waterAmount;
 		this.completed = completed;
 		this.measurementLabel = measurementLabel;
-		this.ID = id;
+		this.id = id;
 	}
 	
 	/**
@@ -81,7 +81,7 @@ public class Snapshot
 				+ "waterAmount=" + waterAmount + ", " 
 				+ "completed=" + completed + ", "
 				+ "measurementLabel=" + measurementLabel + ", "
-				+ "id=" + ID + ", "
+				+ "id=" + id + ", "
 				+ "tiles=" + tiles
 				+ "]";
 	}
@@ -111,7 +111,7 @@ public class Snapshot
 	 */
 	public String toCSVString_noHeader()
 	{
-		String data = ID
+		String data = id
 				+ "," + plantBarcode
 				+ "," + carTag
 				+ "," + timeStamp
@@ -137,7 +137,7 @@ public class Snapshot
 	 */
 	public String toCSVString_noWeights()
 	{
-		String data = ID
+		String data = id
 				+ "," + plantBarcode
 				+ "," + carTag
 				+ "," + timeStamp
@@ -238,14 +238,14 @@ public class Snapshot
 		this.completed = completed;
 	}
 	
-	public int getID()
+	public int getId()
 	{
-		return ID;
+		return id;
 	}
 	
-	public void setID(int ID)
+	public void setId(int id)
 	{
-		this.ID = ID;
+		this.id = id;
 	}
 	
 	public void setTiles(List<Tile> tiles)

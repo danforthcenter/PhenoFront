@@ -111,7 +111,7 @@ public class ResultsBuilder {
 		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
 		
 		for (Snapshot snapshot : snapshots) {
-			String prefixName = "snapshot" + snapshot.getID() + "/";
+			String prefixName = "snapshot" + snapshot.getId() + "/";
 			archive.flush(); // keep responsive
 			this.threadStreams.clear(); //reset
 			this.processImages((ArrayList<Tile>) snapshot.getTiles(), new DateTime(snapshot.getTimeStamp()), this.experiment, prefixName);
