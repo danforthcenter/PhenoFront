@@ -9,7 +9,7 @@
 						http://www.springframework.org/schema/beans/spring-beans.xsd
 						http://www.springframework.org/schema/context
 						http://www.springframework.org/schema/context/spring-context.xsd">
-
+	
 	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
 	
 	<!-- Enables the Spring MVC @Controller programming model -->
@@ -40,18 +40,15 @@
 		<beans:constructor-arg value="LemnaTest" />
 	</beans:bean>
 	
-	
-	<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >
+ 		<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >
 		<beans:property name="experimentSource" ref="experimentSource" />
 	</beans:bean>
-	
+
 	<beans:bean id="experimentSource"
 		class="src.ddpsc.config.Config"
 		factory-method="experimentDataSource" >
 		<beans:constructor-arg value="LTSystem" />
 	</beans:bean>
-    
- 	
  	
  	
 </beans:beans>

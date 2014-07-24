@@ -33,10 +33,9 @@ public class DownloadManager {
 	 * 
 	 * TODO: Actually throw ActiveKeyException
 	 */
+	static Random rand = new Random(System.currentTimeMillis());
 	public static String generateRandomKey(DbUser user)
 	{
-			Random rand = new Random(System.currentTimeMillis());
-			
 			String theDigest = Long.toString(rand.nextLong());
 			
 			System.setProperty(theDigest, user.getUsername());
@@ -87,7 +86,7 @@ public class DownloadManager {
 			return username;
 		}
 	}
-
+	@Deprecated
 	public static String getKey(DbUser user) {
 		return 	System.getProperty(user.getUsername());
 	}

@@ -57,7 +57,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	
 	DataSource dataSource;
 	
-	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// Snapshot Operations
@@ -383,15 +382,15 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Tile> findTiles(Snapshot snapshot)
 			throws CannotGetJdbcConnectionException
 	{
-		//log.info("Attempting to find tiles associated with the snapshot " + snapshot.getId() + ".");
+		log.info("Attempting to find tiles associated with the snapshot " + snapshot.getID() + ".");
 		
 		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
-				+ "WHERE tiled_image.snapshot_id = " + snapshot.getId() + " "
+				+ "WHERE tiled_image.snapshot_id = " + snapshot.getID() + " "
 				+ "AND tile.tiled_image_id = tiled_image.id";
 		
 		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
 		
-		//log.info("Tiles associated with the snapshot " + snapshot.getId() + " found.");
+		log.info("Tiles associated with the snapshot " + snapshot.getID() + " found.");
 		return tiles;
 	}
 	

@@ -41,7 +41,6 @@ public class AdminController
 	
 	private static PasswordEncoder encoder = new StandardPasswordEncoder();
 	
-	@Autowired
 	UserDao ud;
 	
 	

@@ -64,7 +64,7 @@ public class UserAreaController
 	private static final DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
 	
 	@Autowired
-	UserDao userData;
+	UserDao userDataSource;
 	
 	@Autowired
 	ExperimentDao experimentData;
@@ -84,7 +84,6 @@ public class UserAreaController
 	public String selectAction(Model model)
 	{
 		String username = ControllerHelper.currentUsername();
-		
 		log.info("Selecting experiments for user " + username);
 
 		if (ControllerHelper.isAnonymous(username)) {
@@ -95,8 +94,7 @@ public class UserAreaController
 		DbUser user = null;
 
 		try {
-			user = userData.findByUsername(username);
-
+			user = userDataSource.findByUsername(username);
 			model.addAttribute("user", user);
 		}
 		catch (CannotGetJdbcConnectionException e) {
@@ -171,7 +169,6 @@ public class UserAreaController
 			log.info("The experiment " + experimentName + " selected by user " + user.getUsername() + " loaded successfully.");
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
-
 		catch (ExperimentNotAllowedException e) {
 			log.info("The experiment " + experimentName + " selected by user " + user.getUsername() + " does not exist or is not allowed.");
 			return new ResponseEntity<String>("Experiment does not exist or is not allowed.", HttpStatus.BAD_REQUEST);
@@ -245,7 +242,6 @@ public class UserAreaController
 			log.info("The results of the last search found correctly for user " + username);
 			return "userarea-results";
 		}
-
 		catch (CannotGetJdbcConnectionException e) {
 			String connectionFailedMessage = "Could not retrieve the last " + numSnapshots + " snapshots for user " + username
 										   + " because this server could not connect to the snapshot data server.";
@@ -269,12 +265,8 @@ public class UserAreaController
 									Model	model,
 			@ModelAttribute("user") DbUser	user)
 	{
-		// this is for testing remove please shit works
-		// TODO: Should I remove the shit that works? Which shit is it exactly that works and ought to be removed?
-		
 		String username = user.getUsername();
 		log.info("Attempting to retrieve download key for user " + username);
-		
 		// try {
 		String downloadKey = DownloadManager.generateRandomKey(user);
 		model.addAttribute("downloadKey", downloadKey);
@@ -327,7 +319,7 @@ public class UserAreaController
 		String username = ControllerHelper.currentUsername();
 		log.info("Attempting to execute a mass download for user " + username);
 		
-		// TODO: Reimplement 1 download per user limit?
+		// TODO: Reimplement 1 download per user limit? Yes
 		if (downloadKey == null) {
 			log.info("The download key for the user " + username + " was null. Terminating mass download.");
 			response.sendError(403, "Permission denied.");
@@ -344,7 +336,7 @@ public class UserAreaController
 		
 		DbUser user = null;
 		try {
-			user = userData.findByUsername(System.getProperty(downloadKey)); // TODO: Why are we accessing user this way?
+			user = userDataSource.findByUsername(System.getProperty(downloadKey)); // TODO: Why are we accessing user this way?
 			System.err.println("ControllerHelper.currentUsername()=" + ControllerHelper.currentUsername() + " AND System.getProperty(downloadKey)=" + System.getProperty(downloadKey));
 		}
 		
@@ -367,8 +359,6 @@ public class UserAreaController
 			response.flushBuffer();
 			return;
 		}
-
-		
 		try {
 			// Check permissions and setup experiment for anonymous users
 			Set<Experiment> experiments = user.getAllowedExperiments();
@@ -429,8 +419,6 @@ public class UserAreaController
 			response.flushBuffer();
 			log.info("The mass download for user " + username + " with active experiment " + activeExperiment + " is successful.");
 		}
-
-		
 		catch (CannotGetJdbcConnectionException e1) {
 			log.info("Could not access the experiments server in search of experiments under the name " + activeExperiment + " for user " + username + ". Terminating mass download.");
 			response.sendError(500, "Internal error: Could not access server.");
@@ -625,14 +613,14 @@ public class UserAreaController
 		}
 
 		try {
-			DbUser user = userData.findByUsername(username);
+			DbUser user = userDataSource.findByUsername(username);
 
 			if (CustomAuthenticationManager.validateCredentials(oldPassword, user) == false) {
 				log.info("Password change for user " + username + " failed because the old password that was input was incorrect.");
 				return new ResponseEntity<String>("Current password is incorrect.", HttpStatus.BAD_REQUEST);
 			}
 			
-			this.userData.changePassword(user, encoder.encode(newPassword));
+			this.userDataSource.changePassword(user, encoder.encode(newPassword));
 			log.info("Password change for user " + username + " successful.");
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}

@@ -424,7 +424,6 @@ public class DbUser
 	{
 		this.userId = id;
 	}
-
 	public int getUserId()
 	{
 		return this.userId;

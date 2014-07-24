@@ -32,12 +32,7 @@ public class ExperimentDaoImpl implements ExperimentDao
 	{
 		log.info("Attempting to find all experiments in the database.");
 		
-		String sql = "SELECT datname FROM pg_database "
-				+ "WHERE datistemplate = false "
-					+ "AND datname != 'postgres' "
-					+ "AND datname !='bacula'";
-		
-		// String sql = "SELECT name FROM ltdbs WHERE removed = FALSE";
+		String sql = "SELECT name FROM ltdbs WHERE removed = FALSE";
 
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
 		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());

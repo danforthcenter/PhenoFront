@@ -29,7 +29,7 @@ public class ExperimentRowMapper implements RowMapper<Experiment>
 		//		datname
 		
 		Experiment experiment = new Experiment();
-		experiment.setExperimentName(resultSet.getString("datname"));
+		experiment.setExperimentName(resultSet.getString("name"));
 		
 		return experiment;
 	}

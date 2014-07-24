@@ -51,6 +51,9 @@
 				<li 
 					<c:if test = "${ active == 'Profile'}">class = "active"</c:if>
 					><a href="<c:url context= "/phenofront/userarea" value="/profile"/>">Profile</a></li>
+				<li 
+					<c:if test = "${ active == 'Select Experiment'}">class = "active"</c:if>
+					><a href="<c:url context= "/phenofront/" value="/selectexperiment"/>">Select Experiment</a></li>
 				
 				<li><a href="<c:url value="/j_spring_security_logout"/>">Log-out</a></li>
 			</ul>

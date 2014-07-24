@@ -29,7 +29,6 @@ public class TestController
 	@Autowired
 	SnapshotDao snapshotData;
 
-	@Autowired
 	ExperimentDao experimentData;
 
 	/**

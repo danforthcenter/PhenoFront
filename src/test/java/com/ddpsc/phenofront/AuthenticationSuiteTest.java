@@ -79,7 +79,6 @@ public class AuthenticationSuiteTest extends TestUtility {
 	 */
 	@Test
 	public void correctLoginTest() throws Exception {
-		// prob wont work but i hope?
 		String username = "user";
 		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
@@ -91,7 +90,6 @@ public class AuthenticationSuiteTest extends TestUtility {
 				.andExpect(redirectedUrl("/selectexperiment")).andReturn().getRequest();
 
 		HttpSession session = req.getSession();
-		// maybe forwarded idk
 		Assert.assertNotNull(session);
 		Assert.assertNull(req.getUserPrincipal());
 
