@@ -1,8 +1,12 @@
 package src.ddpsc.database.snapshot;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -11,6 +15,7 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
 
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileRowMapper;
@@ -57,6 +62,57 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// Snapshot Operations
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
+	public List<String> getBarcodes(int maxTags)
+			throws CannotGetJdbcConnectionException
+	{
+		String getBarcodes = "SELECT id_tag FROM snapshot";
+		List<String> barcodes = getTags(maxTags, getBarcodes); 
+		
+		return barcodes;
+	}
+	
+	public List<String> getMeasurementLabels(int maxTags)
+			throws CannotGetJdbcConnectionException
+	{
+		String getMeasurementLabels = "SELECT measurement_label FROM snapshot";
+		
+		return getTags(maxTags, getMeasurementLabels);
+	}
+	
+	private List<String> getTags(int maxTags, String getTags)
+			throws CannotGetJdbcConnectionException
+	{
+		JdbcTemplate database = new JdbcTemplate(dataSource);
+		List<String> tags = database.query(getTags, new StringRowMapper());
+		// Moving to and from a set removes duplicates
+		List<String> uniqueTags = new ArrayList<String>(new HashSet<String>(tags));
+		Collections.sort(uniqueTags);
+		
+		if (uniqueTags.size() <= maxTags)
+			return uniqueTags;
+		
+		else {
+			List<String> maxUniqueTags = new ArrayList<String>(maxTags);
+			float ratio = uniqueTags.size() / maxTags; // greater than 1
+			
+			for (int i = 0; i < maxTags; i++)
+				maxUniqueTags.add(uniqueTags.get((int) (i*ratio)));
+			
+			return maxUniqueTags;
+		}
+	}
+	
+	private class StringRowMapper implements RowMapper<String>
+	{
+		@Override
+		public String mapRow(ResultSet resultSet, int line) throws SQLException
+		{
+			// Expects the first entry in each row to be a string
+			// Ideally, the only entry in the row will be a string
+			return resultSet.getString(1);
+		}
+	}
+	
 	/**
 	 * Gets a snapshot by ID number, without it's associated images.
 	 * 

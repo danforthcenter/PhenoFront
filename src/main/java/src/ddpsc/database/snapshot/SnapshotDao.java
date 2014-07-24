@@ -23,6 +23,12 @@ public interface SnapshotDao
 	
 	
 	
+	public List<String> getBarcodes(int maxTags) throws CannotGetJdbcConnectionException;
+	
+	public List<String> getMeasurementLabels(int maxTags) throws CannotGetJdbcConnectionException;
+	
+	
+	
 	public Snapshot findByID(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 	
 	public Snapshot findByID_withTiles(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
