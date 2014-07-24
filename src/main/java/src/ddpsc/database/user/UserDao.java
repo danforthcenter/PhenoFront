@@ -31,7 +31,6 @@ public interface UserDao {
 	public void changePassword(DbUser user);
 	public void updateAuthority(DbUser user);
 	
-	//how bad of a practice is this? yolo they should be coupled
 	public void removeGroup(DbGroup user);
 	public void updateGroup(DbUser user);
 	public void addGroup(DbGroup group);

@@ -21,6 +21,8 @@ import src.ddpsc.exceptions.ExperimentNotAllowedException;
  * 			  Field for potential restrictions to specific databases in the future.
  * @field String
  *            authority Can only be ROLE_ADMIN and ROLE_USER
+ *            ROLE_USER - Common users which have access to data
+ *            ROLE_ADMIN - Users who also have access to editing user accounts and creating user accounts
  * @field DbGroup
  *            group Group object which this user belongs to.
  * @see {@link DbGroup }
@@ -144,6 +146,7 @@ public class DbUser {
 		System.err.println("Warning: using a statically set experiment list");
 		return this.allowedExperiments;
 	}
+	
 	public void setActiveExperiment(Experiment active) throws ExperimentNotAllowedException{
 		if (this.allowedExperiments.contains(active)){
 			this.activeExperiment = active;
@@ -151,18 +154,30 @@ public class DbUser {
 			throw new ExperimentNotAllowedException("Experiment is not allowed or does not exist.");
 		}
 	}
+	
 	/**
-	 * Will probably be null unless you call setActiveExperiment first
+	 * Will be null unless you call setActiveExperiment first
 	 * @return
 	 */
 	public Experiment getActiveExperiment(){
 		return this.activeExperiment;
 	}
 
+	/**
+	 * Returns all available experiments to this user
+	 * @param experiments
+	 */
 	public void setAllowedExperiments(ArrayList<Experiment> experiments){
 		this.allowedExperiments = experiments;
 	}
 	
+	/**
+	 * Get's the experiment object associated with the passed experiment name.
+	 * 
+	 * @param experimentName
+	 * @return
+	 * @throws ExperimentNotAllowedException
+	 */
 	public Experiment getExperimentByExperimentName(String experimentName) throws ExperimentNotAllowedException{
 		for (Experiment experiment : this.getAllowedExperiments()) {
 			if (experiment.getExperimentName().equals(experimentName)){

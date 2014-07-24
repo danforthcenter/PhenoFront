@@ -40,6 +40,7 @@ import src.ddpsc.database.tile.TileRowMapper;
 // Note: when the interface is removed it breaks. don't remove the interface,
 // just suck it up and use it.
 public class SnapshotDaoImpl implements SnapshotDao {
+	
 	@Autowired
 	DataSource dataSource;
 

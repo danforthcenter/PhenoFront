@@ -73,7 +73,7 @@ public class UserAreaController {
 			String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			if (username.equals("anonymousUser")){
 				model.addAttribute("message", "Error: Not logged in.");
-				return "error"; //lol suck it
+				return "error"; 
 			}
 			
 			DbUser user = ud.findByUsername(username);
@@ -122,7 +122,7 @@ public class UserAreaController {
 		@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)
 		public String visualizeAction(Locale locale, Model model) {
 			//Consider using jqplotter, open source plotting tool
-			//also could call R/perl/python -> file, then load file (would be very unresponsive)
+			//also could call R/perl/python -> file, then load file
 			return "visualize";
 		}
 		
@@ -156,8 +156,6 @@ public class UserAreaController {
 			String downloadKey;
 			downloadKey = DownloadManager.generateRandomKey(user);
 			model.addAttribute("downloadKey", downloadKey);
-			System.out.println(user);
-			System.out.println(user.getActiveExperiment().getExperimentName());
 			model.addAttribute("activeExperiment", user.getActiveExperiment().getExperimentName());
 			return "userarea-querybuilder";
 		}
@@ -185,13 +183,8 @@ public class UserAreaController {
 			
 			DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
 			//error handling
-			if (downloadKey == null){
-				response.sendError(403, "Permission denied.");  
-				response.flushBuffer();
-		        return;
-			}
-			if (System.getProperty(downloadKey) == null){
 
+			if (System.getProperty(downloadKey) == null){
 				//property is null so we can't do anything?
 				response.sendError(400, "Invalid download key");   
 				response.flushBuffer();
@@ -242,6 +235,7 @@ public class UserAreaController {
 	        ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), nir, vis, fluo);
 	        results.writeZipArchive();
 			response.flushBuffer();			
+			System.setProperty(downloadKey, null); 
 			return;
 		}
 		
