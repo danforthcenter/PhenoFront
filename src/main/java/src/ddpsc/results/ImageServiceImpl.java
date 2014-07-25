@@ -33,7 +33,7 @@ public class ImageServiceImpl implements ImageService{
 	public final static int FLOUWIDTH = 1388;
 	public final static int FLOUHEIGHT = 1038;
 	public final static int VISWIDTH = 2454;
-	public final static int VISHEIGHT = 2048;
+	public final static int VISHEIGHT = 2056;
 	
 	/**
 	 * Converts the passed image to a png format. Expects the string to be prebuilt with the 
@@ -54,7 +54,7 @@ public class ImageServiceImpl implements ImageService{
 		WritableRaster grayRaster = img.getRaster();
 		for (int x = 0; x < NIRHEIGHT; x++){
 			for (int y = 0; y < NIRWIDTH; y++){
-				grayRaster.setSample(y, x, 0, bytes[x * NIRWIDTH + y] );
+				grayRaster.setSample(y, NIRHEIGHT - x - 1, 0, bytes[x * NIRWIDTH + y] );
 			}
 		}
 	    ImageIO.write(img, "png", out);
