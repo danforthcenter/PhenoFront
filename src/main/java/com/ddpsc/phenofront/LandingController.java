@@ -4,10 +4,13 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+
+import src.ddpsc.database.snapshot.SnapshotDao;
 
 
 /**
@@ -16,11 +19,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * I almost feel although the mapping requests should be handled in a master file... not in this one.
  * 
  * @author shill
- *
  */
 @Controller
 public class LandingController
 {
+	@Autowired
+	SnapshotDao snapshotData;
+	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// Controller Methods
@@ -41,7 +46,7 @@ public class LandingController
 		
 		Date date = new Date();
 		DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
-
+		
 		String formattedDate = dateFormat.format(date);
 
 		model.addAttribute("serverTime", formattedDate);

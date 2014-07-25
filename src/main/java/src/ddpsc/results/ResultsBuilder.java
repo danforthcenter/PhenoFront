@@ -43,20 +43,32 @@ public class ResultsBuilder {
 	 * runtime will be the time of the slowest thread. (vs O(n)) which is fine.
 	 */
 	private OutputStream requestStream;
+	
 	private List<Snapshot> snapshots;
 	private Experiment experiment;
+	
 	private HashMap<String, InputStream> threadStreams;
 	private ThreadGroup group;
-	private boolean vis;
-	private boolean nir;
-	private boolean fluo;
+	
+	private boolean includeVisible;
+	private boolean includeNearIR;
+	private boolean includeFlourescent;
+	private boolean includeWatering;
 
-	public ResultsBuilder(OutputStream out, List<Snapshot> snapshots,
-			Experiment experiment, boolean vis, boolean nir, boolean fluo) {
+	public ResultsBuilder(
+			OutputStream out,
+			List<Snapshot> snapshots,
+			Experiment experiment,
+			boolean includeVisible,
+			boolean includeNearIR,
+			boolean includeFlourescent,
+			boolean includeWatering)
+	{
 		//new DateTime(snapshot.getTimeStamp())
-		this.vis = vis;
-		this.nir = nir;
-		this.fluo = fluo;
+		this.includeVisible = includeVisible;
+		this.includeNearIR = includeNearIR;
+		this.includeFlourescent = includeFlourescent;
+		this.includeWatering = includeWatering;
 		this.requestStream = out;
 		this.snapshots = snapshots;
 		this.experiment = experiment;
@@ -75,19 +87,21 @@ public class ResultsBuilder {
 	 * To handle null tiles, it simply returns. That is snapshots with no tiles associated with it.
 	 * 
 	 * TODO: Implement listener that monitors progress
+	 * 
 	 * @param tiles
 	 * @param datetime
 	 * @param experiment
 	 * @param namePrefix	Prefix to be added to map names. This could be anything but was added for zip archives.
 	 * @throws IOException 
 	 */
-	public void processImages(ArrayList<Tile> tiles, DateTime datetime, Experiment experiment, String namePrefix) throws IOException {
-		if (tiles == null){
+	public void processImages(ArrayList<Tile> tiles, DateTime datetime, Experiment experiment, String namePrefix) throws IOException
+	{
+		if (tiles == null)
 			return;
-		}
+		
 		for (Tile tile : tiles) {
 			//assert that this file is allowed
-			if ((tile.getDataFormat() == 0 && this.nir) || (tile.getDataFormat() == 1 && this.vis) || (tile.getDataFormat() == 6 && this.fluo)){
+			if ((tile.getDataFormat() == 0 && this.includeNearIR) || (tile.getDataFormat() == 1 && this.includeVisible) || (tile.getDataFormat() == 6 && this.includeFlourescent)){
 				PipedInputStream is = new PipedInputStream();
 				OutputStream threadStream = new PipedOutputStream(is);
 				String imgName = namePrefix 
@@ -95,8 +109,8 @@ public class ResultsBuilder {
 						+ tile.getRawImageOid() + ".png";
 				this.threadStreams.put(imgName, is);
 				
-				// no logging happens, nothing. This is something that needs to be discussed and addressed.
-				new ImageProcessor(group, "name", threadStream, tile, datetime, experiment, this.vis, this.nir, this.fluo).start();
+				// TODO: No logging happens, nothing. This is something that needs to be discussed and addressed.
+				new ImageProcessor(group, "name", threadStream, tile, datetime, experiment, this.includeVisible, this.includeNearIR, this.includeFlourescent).start();
 			}
 		}
 	}
@@ -107,14 +121,22 @@ public class ResultsBuilder {
 	 * 
 	 * @throws IOException
 	 */
-	public void writeZipArchive() throws IOException{
+	public void writeZipArchive() throws IOException
+	{
 		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
 		
 		for (Snapshot snapshot : snapshots) {
+			
 			String prefixName = "snapshot" + snapshot.getId() + "/";
 			archive.flush(); // keep responsive
 			this.threadStreams.clear(); //reset
-			this.processImages((ArrayList<Tile>) snapshot.getTiles(), new DateTime(snapshot.getTimeStamp()), this.experiment, prefixName);
+			
+			this.processImages(
+					(ArrayList<Tile>) snapshot.getTiles(),
+					new DateTime(snapshot.getTimeStamp()),
+					this.experiment,
+					prefixName);
+			
 			for(String key : this.threadStreams.keySet()){
 				try{
 					ZipEntry entry = new ZipEntry(key);
@@ -122,12 +144,13 @@ public class ResultsBuilder {
 					archive.write(IOUtils.toByteArray(this.threadStreams.get(key)));	
 					archive.flush();
 				} catch(java.util.zip.ZipException e){
-					//WHY
+					// TODO: Determine why this is thrown and how to handle it
 					System.err.println(e.getMessage());
 				}
 			}
+			
 			try {
-				synchronized (this.group) {
+				synchronized (this.group) { // TODO: Synchronization... god have mercy on our souls =(
 					if (group.activeCount() > 0){
 						group.wait();
 					}
@@ -136,14 +159,16 @@ public class ResultsBuilder {
 				e.printStackTrace();
 			}
 		}
+		
 		//adds csv file
-		String rep = "id,plant barcode,car tag,timestamp,weight before, weight after,water amount,completed,measurement label,tiles\n";
 		String entryName = "SnapshotInfo.csv";
+		String rep = "id,plant barcode,car tag,timestamp,weight before,weight after,water amount,completed,measurement label,tiles\n";
 		archive.putNextEntry(new ZipEntry(entryName));
 		archive.write(rep.getBytes());
 		for (Snapshot snapshot : snapshots) {
-			archive.write(snapshot.toCSVString_noWeights().getBytes());
+			archive.write(snapshot.toCSVString_noHeader().getBytes());
 		}
+		
 		archive.finish();
 	}
 }

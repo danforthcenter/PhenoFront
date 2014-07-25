@@ -106,7 +106,7 @@ public class UserAreaController
 		catch (UserException e) {
 			String userInvalidMessage = "Could not retrieve the user's data because the data is corrupt or invalid.";
 			model.addAttribute("message", userInvalidMessage);
-			log.info(userInvalidMessage);
+			log.error(userInvalidMessage, e);
 			return "error";
 		}
 		catch (ObjectNotFoundException e) {
@@ -274,8 +274,11 @@ public class UserAreaController
 		Experiment activeExperiment = user.getActiveExperiment();
 		model.addAttribute("activeExperiment", activeExperiment.getExperimentName());
 		
-		List<String> barcodes = snapshotData.getBarcodes(20);
+		List<String> barcodes = snapshotData.getBarcodes(100);
 		model.addAttribute("exampleBarcodes", barcodes);
+		
+		List<String> measurementLabels = snapshotData.getMeasurementLabels(50);
+		model.addAttribute("exampleMeasurementLabels", measurementLabels);
 		
 		log.info("Retrieved download key for user " + username + " and queried the active experiment " + activeExperiment.getExperimentName());
 		return "userarea-querybuilder";
@@ -307,13 +310,14 @@ public class UserAreaController
 			Model model,
 			@RequestParam(value = "endTime",			required = false) String endTime,
 			@RequestParam(value = "startTime",			required = false) String startTime,
-			@RequestParam(value = "activeExperiment",	required = false) String activeExperiment,
+			@RequestParam(value = "activeExperiment",	required = false) String activeExperimentName,
 			@RequestParam(value = "plantBarcode",		required = false) String plantBarcode,
 			@RequestParam(value = "measurementLabel",	required = false) String measurementLabel,
 			@RequestParam(value = "downloadKey",		required = true)  String downloadKey,
 			@RequestParam(value = "vis",		defaultValue = "false")	  boolean visibileLightImages,
 			@RequestParam(value = "nir",		defaultValue = "false")	  boolean nearInfraredImages,
-			@RequestParam(value = "fluo",		defaultValue = "false")	  boolean fluorescentImages)
+			@RequestParam(value = "fluo",		defaultValue = "false")	  boolean fluorescentImages,
+			@RequestParam(value = "watering",	defaultValue = "false")	  boolean includeWatering)
 					throws IOException, ExperimentNotAllowedException
 	{
 		String username = ControllerHelper.currentUsername();
@@ -337,50 +341,41 @@ public class UserAreaController
 		DbUser user = null;
 		try {
 			user = userDataSource.findByUsername(System.getProperty(downloadKey)); // TODO: Why are we accessing user this way?
-			System.err.println("ControllerHelper.currentUsername()=" + ControllerHelper.currentUsername() + " AND System.getProperty(downloadKey)=" + System.getProperty(downloadKey));
 		}
 		
 		
-		catch (CannotGetJdbcConnectionException e1) {
+		catch (CannotGetJdbcConnectionException e) {
 			log.info("Could not access the user data server in search of user " + username + ". Terminating mass download.");
 			response.sendError(500, "Internal error: Could not access server.");
 			response.flushBuffer();
 			return;
 		}
-		catch (UserException e1) {
-			log.info("The user " + username + "'s data is corrupted. Terminating mass download.");
+		catch (UserException e) {
+			log.info("The user " + username + "'s data is corrupted. Terminating mass download.", e);
 			response.sendError(500, "User data corrupt.");
 			response.flushBuffer();
 			return;
 		}
-		catch (ObjectNotFoundException e1) {
-			log.info("The user " + username + "could not be found. Terminating mass download.");
+		catch (ObjectNotFoundException e) {
+			log.error("The user " + username + "could not be found. Terminating mass download.", e);
 			response.sendError(403, "Invalid download key.");
 			response.flushBuffer();
 			return;
 		}
+		
+		
 		try {
-			// Check permissions and setup experiment for anonymous users
-			Set<Experiment> experiments = user.getAllowedExperiments();
-			for (Experiment experiment : experiments) {
-				if (experiment.getExperimentName().equals(activeExperiment)) {
-					
-					user.setActiveExperiment(experiment);
-					try {
-						snapshotData.setDataSource(Config.experimentDataSource(experiment.getExperimentName()));
-					}
-					catch (MalformedConfigException e) {
-						log.fatal(e.getMessage(), e);
-						response.sendError(400, "Bad experiment configuration");
-						response.flushBuffer();
-					}
-					break;
-				}
-			}
+			// Setup the snapshot data to pull from the appropriate experiment
+			Set<Experiment> allExperiments = experimentData.findAll();
+			user.setAllowedExperiments(allExperiments);
 			
-			Experiment usersActiveExperiment = user.getActiveExperiment();
+			Experiment activeExperiment = experimentData.getByName(activeExperimentName);
+			user.setActiveExperiment(activeExperiment);	// TODO All these lines are because of a deprecated, but not yet removed, "allowed experiments" functionality, booo
+			
+			snapshotData.setDataSource(Config.experimentDataSource(activeExperimentName));
+			
 			// If none of the user's experiments match the active experiment
-			if (usersActiveExperiment == null) {
+			if (activeExperiment == null) {
 				log.info("The active experiment for the user " + username + " was found to not be set."
 						+ "The system doesn't know where to look. Terminating mass download.");
 				response.sendError(403, "Invalid experiment selection");
@@ -413,17 +408,34 @@ public class UserAreaController
 			response.flushBuffer();
 			
 			snapshots = snapshotData.findCustomQueryAnyTime_imageJobs_withTiles(startTimestamp, endTimestamp, plantBarcode, measurementLabel);
-			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, usersActiveExperiment, nearInfraredImages, visibileLightImages, fluorescentImages);
-			
+			ResultsBuilder results = new ResultsBuilder(
+					response.getOutputStream(),
+					snapshots,
+					activeExperiment,
+					nearInfraredImages,
+					visibileLightImages,
+					fluorescentImages,
+					includeWatering);
 			results.writeZipArchive();
+			
 			response.flushBuffer();
-			log.info("The mass download for user " + username + " with active experiment " + activeExperiment + " is successful.");
+			log.info("The mass download for user " + username + " with active experiment " + activeExperimentName + " is successful.");
 		}
-		catch (CannotGetJdbcConnectionException e1) {
-			log.info("Could not access the experiments server in search of experiments under the name " + activeExperiment + " for user " + username + ". Terminating mass download.");
+		catch (CannotGetJdbcConnectionException e) {
+			log.info("Could not access the experiments server in search of experiments under the name " + activeExperimentName + " for user " + username + ". Terminating mass download.");
 			response.sendError(500, "Internal error: Could not access server.");
 			response.flushBuffer();
 			return;
+		}
+		catch (MalformedConfigException e) {
+			log.fatal(e.getMessage(), e);
+			response.sendError(400, "Improperly formed database configuration");
+			response.flushBuffer();
+		}
+		catch (ObjectNotFoundException e) {
+			log.error(e.getMessage(), e);
+			response.sendError(400, "Experiment not found.");
+			response.flushBuffer();
 		}
 	}
 
@@ -536,7 +548,7 @@ public class UserAreaController
 		boolean nir = true;
 		boolean fluo = true;
 		try {
-			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo);
+			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo, false);
 			results.writeZipArchive();
 		}
 		catch (IOException e) {

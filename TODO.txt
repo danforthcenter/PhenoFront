@@ -1,0 +1,5 @@
+TODO:
+
+Add option for watering information downloads in the query builder
+Add loading bar to querybuilder page to track download preparation progress
+Extend and customize the error controller

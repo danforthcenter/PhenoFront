@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -63,10 +62,7 @@ public class AdminController
 			users = ud.findAllUsers();
 		}
 		catch (CannotGetJdbcConnectionException e) {
-			String connectionFailedMessage = "Could not retrieve all user and group data because this server could not connect to the user data server.";
-			model.addAttribute("message", connectionFailedMessage);
-			log.info(connectionFailedMessage);
-			return "error";
+			return ControllerHelper.HandleJdbcException(model, log, "retrieve all user and group data");
 		}
 		
 		model.addAttribute("users", users);
@@ -95,7 +91,7 @@ public class AdminController
 	 * 
 	 * Encoding is done with the standard encoder.
 	 * 
-	 * @param	userID				The ID of the user whose password is going to change
+	 * @param	userId				The ID of the user whose password is going to change
 	 * @param	newPassword			The first copy of the new password
 	 * @param	validationPassword	The second copy of the new password
 	 * 
@@ -103,36 +99,27 @@ public class AdminController
 	 */
 	@RequestMapping(value = "/changepass", method=RequestMethod.POST)
 	public @ResponseBody ResponseEntity<String> changePasswordAction(
-			@RequestParam("userid") int userID,
+			@RequestParam("userid") int userId,
 			@RequestParam("newpass") String newPassword,
 			@RequestParam("validate") String validationPassword)
 	{
 		// Validate input
 		boolean passwordsMatch = newPassword.equals(validationPassword); 
 		if ( ! passwordsMatch) {
-			log.info("Change password for user ID=" + userID + " failed because the new and validation passwords don't match.");
+			log.info("Change password for user ID=" + userId + " failed because the new and validation passwords don't match.");
 			return new ResponseEntity<String>("Passwords do not match!", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to change password
 		try {
-			DbUser user = ud.findByID(userID);
+			DbUser user = ud.findByID(userId);
 			ud.changePassword(user, encoder.encode(newPassword));
-			log.info("Change password for user ID=" + userID + " succeeded without errors.");
+			log.info("Change password for user ID=" + userId + " succeeded without errors.");
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Change password for user ID=" + userID + " failed because this server could not connect to the user data server.");
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (UserException e) {
-			log.info("Change password for user ID=" + userID + " failed because the user data on the server is corrupt or incomplete.");
-			return new ResponseEntity<String>("User data corrupted.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (ObjectNotFoundException e) {
-			log.info("Change password for user ID=" + userID + " failed because the user could not be found.");
-			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
+		catch (Exception e) {
+			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the password of");
 		}
 	}
 	
@@ -142,41 +129,32 @@ public class AdminController
 	 * 
 	 * If the supplied authority is not ROLE_USER or ROLE_ADMIN bad request is returned.
 	 * 
-	 * @param userID		ID of the user whose authority is changing
+	 * @param userId		ID of the user whose authority is changing
 	 * @param newAuthority	New authority value for the user
 	 * 
 	 * @return				Http response of whether the authority change worked
 	 */
 	@RequestMapping(value = "/changeauthority", method=RequestMethod.POST)
 	public @ResponseBody ResponseEntity<String> changeAuthorityAction(
-			@RequestParam("userid")  int userID, 
+			@RequestParam("userid")  int userId, 
 			@RequestParam("authority") String newAuthority)
 	{
 		// Validate input	
 		if (DbUser.authorityInvalid(newAuthority)) {
-			log.info("Change authority for user ID=" + userID + " failed because the new authority isn't valid.");
+			log.info("Change authority for user ID=" + userId + " failed because the new authority isn't valid.");
 			return new ResponseEntity<String>("Not a valid authority.", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to change authority
 		try {
-			DbUser user = ud.findByID(userID);
+			DbUser user = ud.findByID(userId);
 			ud.changeAuthority(user, newAuthority);
-			log.info("Change authority for user ID=" + userID + " succeeded without errors.");
+			log.info("Change authority for user ID=" + userId + " succeeded without errors.");
 		    return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Change authority for user ID=" + userID + " failed because this server could not connect to the user data server.");
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (UserException e) {
-			log.info("Change authority for user ID=" + userID + " failed because the user data on the server is corrupt or incomplete.");
-			return new ResponseEntity<String>("User data corrupted.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (ObjectNotFoundException e) {
-			log.info("Change authority for user ID=" + userID + " failed because the user could not be found.");
-			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
+		catch (Exception e) {
+			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the authority of");
 		}
 		
 	}
@@ -186,7 +164,7 @@ public class AdminController
 	 * 
 	 * Requires that no one else has the same username, and that the username is valid (not empty).
 	 * 
-	 * @param userID		The ID of the user whose username will change
+	 * @param userId		The ID of the user whose username will change
 	 * @param newUsername	The new username of the user
 	 * 
 	 * @return				Http response of whether the username change worked
@@ -194,47 +172,38 @@ public class AdminController
 	@RequestMapping(value = "/changeusername", method=RequestMethod.POST)
 	public @ResponseBody
 	ResponseEntity<String> changeUsernameAction(
-			@RequestParam("userid") int userID,
+			@RequestParam("userid") int userId,
 			@RequestParam("username") String newUsername)
 	{
 		// Validate input	
 		if (DbUser.usernameInvalid(newUsername)) {
-			log.info("Change username for user ID=" + userID + " failed because the new username isn't valid.");
+			log.info("Change username for user ID=" + userId + " failed because the new username isn't valid.");
 			return new ResponseEntity<String>("New username is not valid.", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to change the username
 		try {
-			DbUser user = ud.findByID(userID);
+			DbUser user = ud.findByID(userId);
 			
 			if (user.getUsername().equals(newUsername)) {
-				log.info("Change username for user ID=" + userID + " failed because the new username is the same as the current username.");
+				log.info("Change username for user ID=" + userId + " failed because the new username is the same as the current username.");
 				return new ResponseEntity<String>("New username is the same as the current username.", HttpStatus.BAD_REQUEST);
 			}
 			
 			else if (ud.usernameExists(newUsername)) {
-				log.info("Change username for user ID=" + userID + " failed because the username already eixsts.");
+				log.info("Change username for user ID=" + userId + " failed because the username already eixsts.");
 				return new ResponseEntity<String>("New username is already taken.", HttpStatus.CONFLICT);
 			}
 			
 			else {
 				ud.changeUsername(user, newUsername);
-				log.info("Change username for user ID=" + userID + " succeeded without errors.");
+				log.info("Change username for user ID=" + userId + " succeeded without errors.");
 			    return new ResponseEntity<String>("Success!", HttpStatus.OK);
 			}
 		}
 		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Change username for user ID=" + userID + " failed because this server could not connect to the user data server.");
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (UserException e) {
-			log.info("Change username for user ID=" + userID + " failed because the user data on the server is corrupt or incomplete.");
-			return new ResponseEntity<String>("User data corrupted.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (ObjectNotFoundException e) {
-			log.info("Change username for user ID=" + userID + " failed because the user could not be found.");
-			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
+		catch (Exception e) {
+			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the username of");
 		}
 	}
 	
@@ -245,7 +214,7 @@ public class AdminController
 	 * Expects the name of the new group. The group must exist.
 	 * 
 	 * 
-	 * @param userID		The ID of the user whose group is changing
+	 * @param userId		The ID of the user whose group is changing
 	 * @param newGroupName	The name of user's new group
 	 * 
 	 * @return				Http response of whether the group change worked
@@ -253,7 +222,7 @@ public class AdminController
 	@RequestMapping(value = "/changegroup", method=RequestMethod.POST)
 	public @ResponseBody
 	ResponseEntity<String> changeGroupAction(
-			@RequestParam("userid") int userID,
+			@RequestParam("userid") int userId,
 			@RequestParam("groupname") String newGroupName)
 	{
 		try {
@@ -262,28 +231,40 @@ public class AdminController
 				group = ud.findGroupByName(newGroupName);
 			}
 			catch (ObjectNotFoundException e) {
-				log.info("Change group for user ID=" + userID + " failed because the group could not be found.");
+				log.info("Change group for user ID=" + userId + " failed because the group could not be found.");
 				return new ResponseEntity<String>("User data corrupted.", HttpStatus.BAD_REQUEST);
 			}
 			
-			DbUser user = ud.findByID(userID);
+			DbUser user = ud.findByID(userId);
 			ud.changeGroup(user, group);
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Change group for user ID=" + userID + " failed because this server could not connect to the user data server.");
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
+		catch (Exception e) {
+			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the group of");
 		}
-		catch (ObjectNotFoundException e) {
-			log.info("Change group for user ID=" + userID + " failed because the user could not be found.");
-			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
-		}
-		catch (UserException e) {
-			log.info("Change group for user ID=" + userID + " failed because the user data on the server is corrupt or incomplete.");
-			return new ResponseEntity<String>("User data corrupted.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+	}
 	
+	/**
+	 * Removes a user from the database.
+	 * 
+	 * 
+	 * @param 	userId			ID of the user to remove
+	 * @return					Http response of whether the user was removed
+	 */
+	@RequestMapping(value = "/removeuser", method=RequestMethod.POST)
+	public @ResponseBody ResponseEntity<String> deleteUserAction(
+			@RequestParam("userid") int userId)
+	{
+		try {
+			DbUser user = ud.findByID(userId);
+			ud.removeUser(user);
+			return new ResponseEntity<String>("Success!", HttpStatus.OK);
+		}
+		
+		catch (Exception e) {
+			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "remove");
+		}
 	}
 	
 	/**
@@ -361,37 +342,6 @@ public class AdminController
 		catch (UserException e) {
 			log.info("Could not add the user " + username + " because the supplied user data is incomplete.");
 			return new ResponseEntity<String>("User data corrupted.", HttpStatus.BAD_REQUEST);
-		}
-	}
-	
-	/**
-	 * Removes a user from the database.
-	 * 
-	 * 
-	 * @param 	userId			ID of the user to remove
-	 * @return					Http response of whether the user was removed
-	 */
-	@RequestMapping(value = "/removeuser", method=RequestMethod.POST)
-	public @ResponseBody ResponseEntity<String> deleteUserAction(
-			@RequestParam("userid") int userId)
-	{
-		try {
-			DbUser user = ud.findByID(userId);
-			ud.removeUser(user);
-			return new ResponseEntity<String>("Success!", HttpStatus.OK);
-		}
-		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("The user with ID='" + userId + "' could not be removed because this server could not connect to the user data server.");
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (UserException e) {
-			log.info("The user with ID='" + userId + "' could not be removed because the user data on the server is corrupt or incomplete.");
-			return new ResponseEntity<String>("User data corrupted.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (ObjectNotFoundException e) {
-			log.info("The user with ID='" + userId + "' was not removed because it could not be found.");
-			return new ResponseEntity<String>("User not found. Success?", HttpStatus.BAD_REQUEST);
 		}
 	}
 }

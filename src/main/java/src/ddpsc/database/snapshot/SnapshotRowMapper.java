@@ -41,7 +41,7 @@ public class SnapshotRowMapper implements RowMapper<Snapshot>{
 		
 		Snapshot snapshot = new Snapshot();
 		
-		snapshot.setId(resultSet.getInt(1)); // Should be 0, TODO: Figure out why not 0
+		snapshot.setId(resultSet.getInt(1));
 		snapshot.setPlantBarcode(resultSet.getString(4));
 		snapshot.setCarTag(resultSet.getString(9));
 		snapshot.setMeasurementLabel(resultSet.getString(10));

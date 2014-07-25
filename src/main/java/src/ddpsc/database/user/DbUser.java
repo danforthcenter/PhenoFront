@@ -336,7 +336,6 @@ public class DbUser
 			this.activeExperiment = activeExperiment;
 		else
 			throw new ExperimentNotAllowedException("Experiment is not allowed or does not exist.");
-		
 	}
 	
 	/**

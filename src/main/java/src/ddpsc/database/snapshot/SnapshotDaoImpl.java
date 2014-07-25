@@ -62,6 +62,20 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// Snapshot Operations
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
+	/**
+	 * Returns an evenly distributed list of barcodes that contains no duplicates.
+	 * 
+	 * If fewer than maxTags many unique barcodes exist, then it returns all available barcodes.
+	 * 
+	 * Even distribution is considered to be moving through a sorted list with equal space between
+	 * chosen barcodes. (E.g., if you want 10 barcodes out of 100 total, then the 0th, 10th, 20th,
+	 * etc. are selected.)
+	 * 
+	 * @param	maxTags			The maximum number of returned barcodes
+	 * @return					Example list of barcodes
+	 * 
+	 * @throws	CannotGetJdbcConnectionException		Thrown if the postgres server cannot be accessed
+	 */
 	public List<String> getBarcodes(int maxTags)
 			throws CannotGetJdbcConnectionException
 	{
@@ -71,12 +85,27 @@ public class SnapshotDaoImpl implements SnapshotDao
 		return barcodes;
 	}
 	
+	/**
+	 * Returns an evenly distributed list of measurement labels that contains no duplicates.
+	 * 
+	 * If fewer than maxTags many unique measurement labels exist, then it returns all available measurement labels.
+	 * 
+	 * Even distribution is considered to be moving through a sorted list with equal space between
+	 * chosen measurement labels. (E.g., if you want 10 labels out of 100 total, then the 0th, 10th, 20th,
+	 * etc. are selected.)
+	 * 
+	 * @param	maxTags			The maximum number of returned measurement labels
+	 * @return					Example list of measurement labels
+	 * 
+	 * @throws	CannotGetJdbcConnectionException		Thrown if the postgres server cannot be accessed
+	 */
 	public List<String> getMeasurementLabels(int maxTags)
 			throws CannotGetJdbcConnectionException
 	{
 		String getMeasurementLabels = "SELECT measurement_label FROM snapshot";
+		List<String> measurementLabels = getTags(maxTags, getMeasurementLabels);
 		
-		return getTags(maxTags, getMeasurementLabels);
+		return measurementLabels;
 	}
 	
 	private List<String> getTags(int maxTags, String getTags)
@@ -358,16 +387,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Tile> findTiles(int snapshotID)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find tiles associated with the snapshot with ID='" + snapshotID + "'.");
-		
 		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
 				+ "WHERE "
 					+ "tiled_image.snapshot_id = " + snapshotID + " "
 				+ "AND tile.tiled_image_id = tiled_image.id";
 		
 		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
-		
-		log.info("Tiles associated with the snapshot with ID='" + snapshotID + "' found.");
 		return tiles;
 	}
 	
@@ -382,15 +407,11 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Tile> findTiles(Snapshot snapshot)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find tiles associated with the snapshot " + snapshot.getId() + ".");
-		
 		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
 				+ "WHERE tiled_image.snapshot_id = " + snapshot.getId() + " "
 				+ "AND tile.tiled_image_id = tiled_image.id";
 		
 		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
-		
-		log.info("Tiles associated with the snapshot " + snapshot.getId() + " found.");
 		return tiles;
 	}
 	
@@ -476,8 +497,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * 
 	 * @param	startTime			Time before all returned snapshots
 	 * @param	endTime				Time after all returned snapshots
-	 * @param	plantBarcode		TODO: Figure out what this is, some kind of string-based ID
-	 * @param	measurementLabel	TODO: Figure out what this is, another string-based ID
+	 * @param	plantBarcode		Plant experiment identification
+	 * @param	measurementLabel	Type of measurement
 	 * @return						Snapshots meeting the specified criteria
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
@@ -532,8 +553,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * 
 	 * @param	startTime			Time before all returned snapshots
 	 * @param	endTime				Time after all returned snapshots
-	 * @param	plantBarcode		TODO: Figure out what this is, some kind of string-based ID
-	 * @param	measurementLabel	TODO: Figure out what this is, another string-based ID
+	 * @param	plantBarcode		Plant experiment identification
+	 * @param	measurementLabel	Type of measurement
 	 * @return						Snapshots meeting the specified criteria
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
@@ -577,9 +598,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 				+ "WHERE "
 					+ "time_stamp <= ? "
 				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~* ? "
-				+ "AND completed = 't' "
-				+ "AND water_amount = -1";
+				+ "AND measurement_label ~ ? "
+				+ "AND completed = 't' ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -605,9 +625,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 				+ "WHERE "
 					+ "time_stamp >= ? "
 				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~* ? "
-				+ "AND completed = 't' "
-				+ "AND water_amount = -1";
+				+ "AND measurement_label ~ ? "
+				+ "AND completed = 't' ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -631,9 +650,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 		String sqlStatement = SNAPSHOT_QUERY_VARIABLES 
 				+ "WHERE "
 					+ "id_tag ~ ? "
-				+ "AND measurement_label ~* ? "
-				+ "AND completed = 't' "
-				+ "AND water_amount = -1";
+				+ "AND measurement_label ~ ? "
+				+ "AND completed = 't' ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -660,9 +678,8 @@ public class SnapshotDaoImpl implements SnapshotDao
 					+ "time_stamp >= ? "
 				+ "AND time_stamp <= ? "
 				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~* ? "
-				+ "AND completed = 't' "
-				+ "AND water_amount = -1";
+				+ "AND measurement_label ~ ? "
+				+ "AND completed = 't' ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override

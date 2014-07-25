@@ -9,6 +9,8 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import src.ddpsc.exceptions.ObjectNotFoundException;
+
 /**
  * Fetches experiments from a SQL database
  * 
@@ -40,6 +42,41 @@ public class ExperimentDaoImpl implements ExperimentDao
 		log.info("All experiments in the database found.");
 		
 		return new HashSet<Experiment>(experimentList);
+	}
+	
+	/**
+	 * Returns the experiment with the supplied name
+	 * 
+	 * @param	experimentName		The name of the returned experiment
+	 * @return						The experiment matching the supplied name
+	 * 
+	 * 
+	 * @throws CannotGetJdbcConnectionException		Thrown if the database can't be accessed
+	 * @throws ObjectNotFoundException				Thrown if the expirement isn't found
+	 */
+	@Override
+	public Experiment getByName(String experimentName)
+			throws ObjectNotFoundException, CannotGetJdbcConnectionException
+	{
+		log.info("Attempting to find the experiment " + experimentName);
+		
+		String sql = "SELECT name FROM ltdbs"
+				+ " WHERE"
+					+ " removed = FALSE"
+				+ " AND name ='" + experimentName + "'";
+		
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(experimentSource);
+		List<Experiment> experimentList = jdbcTemplate.query(sql, new ExperimentRowMapper());
+		
+		if (experimentList.size() == 0)
+			throw new ObjectNotFoundException("The experiment " + experimentName + " could not be found.");
+		
+		else {
+			Experiment experiment = experimentList.get(0);
+			
+			log.info("Found experiment with the name " + experimentName);
+			return experiment;
+		}
 	}
 	
 	@Override

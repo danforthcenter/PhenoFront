@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * Ideally, the user will never interact with this controller, but just in case
  * an error slips past, this will be there to handle it and notify the user.
  * 
- * 
  * @author shill, cjmcentee
  */
 @Controller
@@ -25,9 +24,12 @@ class ErrorController
 {
 	private static final Logger log = Logger.getLogger(ErrorController.class);
 	
-	
+	// TODO: Extend and customize this
 	@RequestMapping("/error")
-	public String customError(HttpServletRequest request, HttpServletResponse response, Model model)
+	public String customError(
+			HttpServletRequest request,
+			HttpServletResponse response,
+			Model model)
 	{
 		Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
 		Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception");
@@ -46,7 +48,7 @@ class ErrorController
 		
 		return "error";
 	}
-
+	
 	private String getExceptionMessage(Throwable exception, Integer statusCode)
 	{
 		if (exception != null) {

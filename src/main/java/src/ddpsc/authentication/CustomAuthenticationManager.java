@@ -39,6 +39,7 @@ public class CustomAuthenticationManager implements AuthenticationManager
 
 	@Autowired
 	private UserDao userDao;
+	
 	private PasswordEncoder passwordEncoder = new StandardPasswordEncoder();
 
 	/**
