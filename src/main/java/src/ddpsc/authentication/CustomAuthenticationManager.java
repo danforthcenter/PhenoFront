@@ -11,7 +11,6 @@ import src.ddpsc.database.user.DbUser;
 import src.ddpsc.exceptions.UserException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,10 +36,9 @@ public class CustomAuthenticationManager implements AuthenticationManager
 {
 	private static final Logger log = Logger.getLogger(CustomAuthenticationManager.class);
 
-	@Autowired
 	private UserDao userDao;
+	private PasswordEncoder passwordEncoder;
 	
-	private PasswordEncoder passwordEncoder = new StandardPasswordEncoder();
 
 	/**
 	 * Determines whether the authentication object has valid credentials for logging into this webservice.
@@ -124,5 +122,26 @@ public class CustomAuthenticationManager implements AuthenticationManager
 		
 		return authList;
 	}
-
+	
+	
+	
+	public void setUserDao(UserDao userDao)
+	{
+		this.userDao = userDao;
+	}
+	
+	public UserDao getUserDao()
+	{
+		return userDao;
+	}
+	
+	public void setPasswordEncoder(PasswordEncoder passwordEncoder)
+	{
+		this.passwordEncoder = passwordEncoder;
+	}
+	
+	public PasswordEncoder getPasswordEncoder()
+	{
+		return passwordEncoder;
+	}
 }

@@ -12,6 +12,8 @@
    						http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<context:annotation-config />
+	
+	
 	<!-- This is where we configure Spring-Security -->
 	<security:http auto-config="false" use-expressions="true"
 		access-denied-page="/auth/denied" entry-point-ref="authenticationEntryPoint">
@@ -33,7 +35,9 @@
 		<security:custom-filter ref="authenticationFilter"
 			position="FORM_LOGIN_FILTER" />
 	</security:http>
-
+	
+	
+	
 	<!-- Custom filter to deny unwanted users even though registered -->
 	<!-- Custom filter for username and password. The real customization is 
 		done in the customAuthenticationManager -->
@@ -42,41 +46,46 @@
 		p:authenticationManager-ref="customAuthenticationManager"
 		p:authenticationFailureHandler-ref="customAuthenticationFailureHandler"
 		p:authenticationSuccessHandler-ref="customAuthenticationSuccessHandler" />
-
-	<!-- Custom authentication manager. In order to authenticate, username and 
-		password must not be the same -->
-	<bean id="customAuthenticationManager" class="src.ddpsc.authentication.CustomAuthenticationManager" />
-
-	<!-- We just actually need to set the default failure url here -->
+	
+	
+	<!-- Configuring authentication manager to ensure only the correct users log in -->
+	<bean id="customAuthenticationManager" class="src.ddpsc.authentication.CustomAuthenticationManager" >
+		<property name="userDao" ref="userDao" />
+		<property name="passwordEncoder" ref="passwordEncoder" />
+	</bean>
+	
+	<bean class="org.springframework.security.crypto.password.StandardPasswordEncoder" id="passwordEncoder" />
+	
+	
+	<!-- The AuthenticationEntryPoint is responsible for redirecting the user 
+	to a particular page, like a login page, whenever the server sends back a 
+	response requiring authentication
+		See Spring-Security Reference 5.4.1 for more info -->
+	<bean id="authenticationEntryPoint"
+		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"
+		p:loginFormUrl="/auth/login" />
+	
+	
+	<!-- The default failure URL in any login attempt -->
 	<bean id="customAuthenticationFailureHandler"
 		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler"
 		p:defaultFailureUrl="/auth/login?error=true" />
 
-	<!-- We just actually need to set the default target url here -->
+	<!-- The default success URL in any login attempt -->
 	<bean id="customAuthenticationSuccessHandler"
 		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler"
 		p:defaultTargetUrl="/selectexperiment" />
-
-	<!-- The AuthenticationEntryPoint is responsible for redirecting the user 
-		to a particular page, like a login page, whenever the server sends back a 
-		response requiring authentication -->
-	<!-- See Spring-Security Reference 5.4.1 for more info -->
-	<bean id="authenticationEntryPoint"
-		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"
-		p:loginFormUrl="/auth/login" />
-
-	<!-- Standard password encoder that is used by our database. Automatically salts. -->
-	<bean class="org.springframework.security.crypto.password.StandardPasswordEncoder" id="passwordEncoder" />
-	
-	<!-- authdb config -->
-	<context:component-scan base-package="src.ddpsc.authentication" />
 	
 	
-	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" />
+	<!-- Configuring access to the user data database for admin operations and user authentication -->
+	<bean id="userDao" class="src.ddpsc.database.user.UserDaoImpl" >
+		<property name="userDataSource" ref="userDataSource" />
+	</bean>
 	
 	<bean id="userDataSource"
 		class="src.ddpsc.config.Config"
 		factory-method="userDatabaseDataSource" />
+	
 	
 	
 	<!-- The tag below has no use but Spring Security needs it to autowire the 

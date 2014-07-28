@@ -5,7 +5,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -34,7 +33,6 @@ public class UserDaoImpl implements UserDao
 {
 	private static final Logger log = Logger.getLogger(UserDaoImpl.class);
 	
-	@Autowired
 	private DataSource userDataSource; // Should we make this static and transition this class into being a singleton?
 									   // What is gained by having instances of this class?
 	

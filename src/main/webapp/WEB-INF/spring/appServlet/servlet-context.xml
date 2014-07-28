@@ -28,8 +28,7 @@
 	<context:component-scan base-package="com.ddpsc.phenofront" />
 	
 	
-	<!-- declare data source beans -->
-	
+	<!-- Configures server access to the LemnaTec system -->
 	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" >
 		<beans:property name="dataSource" ref="dataSource" />
 	</beans:bean>
