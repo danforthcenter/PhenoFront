@@ -53,8 +53,7 @@ public class LoginLogoutController
 	public String getDeniedPage()
 	{
 		log.info("Received request to show denied page to user " + ControllerHelper.currentUsername());
-
-		// This will resolve to /WEB-INF/jsp/deniedpage.jsp
+		
 		return "deniedpage";
 	}
 }

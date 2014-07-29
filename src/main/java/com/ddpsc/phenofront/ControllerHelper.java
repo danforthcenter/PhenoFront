@@ -103,7 +103,7 @@ class ControllerHelper
 	public static ResponseEntity<String> HandleUserPOSTExceptions(Exception e, int userId, Logger log, String action)
 	{
 		if (e instanceof CannotGetJdbcConnectionException) {
-			log.info("Could not " + action + " the user with ID='" + userId + "' because this server could not connect to the user data server.");
+			log.error("Could not " + action + " the user with ID='" + userId + "' because this server could not connect to the user data server.", e);
 			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		else if (e instanceof UserException) {
@@ -115,7 +115,7 @@ class ControllerHelper
 			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
 		}
 		else {
-			log.fatal("Unhandled exception on action: " + action + " with the user with ID='" + userId + "'.", e);
+			log.fatal("Unhandled exception on action: '" + action + "' with the user with ID='" + userId + "'.", e);
 			return new ResponseEntity<String>("Unknown error.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

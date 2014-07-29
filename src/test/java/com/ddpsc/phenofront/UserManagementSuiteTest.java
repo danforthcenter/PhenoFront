@@ -3,7 +3,9 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -20,6 +22,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,6 +33,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import src.ddpsc.database.user.DbGroup;
+import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
@@ -37,15 +42,16 @@ import src.ddpsc.exceptions.ObjectNotFoundException;
  * This classes purpose is to test the user mangaement area of the admin section. It is impotant to note that NO security testing is
  * done in this class. All it does is test that the correct fields are sent to the server through the different POST requests.
  * 
- * @author shill
+ * @author shill, cjmcentee
  *
  */
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"file:src/main/webapp/WEB-INF/spring/testContext.xml", "file:src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml"})
+@ContextConfiguration(locations = {
+		"file:src/main/webapp/WEB-INF/spring/testContext.xml",
+		"file:src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml" })
 @WebAppConfiguration
-public class UserManagementSuiteTest extends TestUtility{
-
+public class UserManagementSuiteTest extends TestUtility
+{
     private MockMvc mockMvc;
 
     @Autowired
@@ -56,9 +62,9 @@ public class UserManagementSuiteTest extends TestUtility{
 
     @Before
     public void setUp() {
-        //We have to reset our mock between tests because the mock objects
-        //are managed by the Spring container. If we would not reset them,
-        //stubbing and verified behavior would "leak" from one test to another.
+        // We have to reset our mock between tests because the mock objects
+        // are managed by the Spring container. If we would not reset them,
+        // stubbing and verified behavior would "leak" from one test to another.
         Mockito.reset(userDaoMock);
         UserTestUtility();
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -70,22 +76,20 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void userManagementBaseTest() throws Exception {
-      
+    public void userManagementBaseTest() throws Exception
+    {
     	//TestUtility
         when(userDaoMock.findAllUsers()).thenReturn(USERS);
 
         mockMvc.perform(get("/admin/users"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("users"))
-        .andExpect(forwardedUrl("/WEB-INF/views/users.jsp"))
-        .andExpect(model().attribute("users", hasSize(3)))
-        .andExpect(model().attribute("users", hasItem(
-                allOf(
-                        hasProperty("userId", is(1)),
-                        hasProperty("username", is("testuser1"))
-                )
-        )));
+	        .andExpect(status().isOk())
+	        .andExpect(view().name("users"))
+	        .andExpect(forwardedUrl("/WEB-INF/views/users.jsp"))
+	        .andExpect(model().attribute("users", hasSize(3)))
+	        .andExpect(model().attribute("users", hasItem(
+	                allOf(hasProperty("userId", equalTo(1)),
+	                      hasProperty("username", equalTo("testuser1"))))));
+        
 		verify(userDaoMock, times(1)).findAllUsers();
 		verify(userDaoMock, times(1)).findAllGroups();
 		verifyNoMoreInteractions(userDaoMock);
@@ -96,16 +100,31 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void changeUsernameSuccessTest() throws Exception {
-        when(userDaoMock.findAllUsers()).thenReturn(USERS);
-        when(userDaoMock.findByID(2)).thenReturn(SECOND_USER); 
-
-        String username = "uniqueusername";
-        String userid = Integer.toString(SECOND_USER.getUserId());
-    	mockMvc.perform(post("/admin/changeusername").param("username", username).param("userid", userid))
-    		.andExpect(status().isOk());
-    	Assert.assertEquals(SECOND_USER.getUsername(),username); //should actually change
+    public void changeUsernameSuccessTest() throws Exception
+    {
+    	String newValidUsername = "usernameNoOneElseHas";
+    	int userId_secondUser = SECOND_USER.getUserId();
     	
+    	doAnswer(new Answer<Object>() {
+    		public Object answer(InvocationOnMock invocation) {
+    			Object[] args = invocation.getArguments();
+    			
+    			DbUser user = (DbUser) args[0];
+    			String newUsername = (String) args[1];
+    			
+    			user.setUsername(newUsername);
+    			return null;
+    		}
+    	}).when(userDaoMock).changeUsername(SECOND_USER, newValidUsername);
+        when(userDaoMock.findAllUsers()).thenReturn(USERS);
+        when(userDaoMock.findByID(userId_secondUser)).thenReturn(SECOND_USER);
+        
+    	mockMvc.perform(post("/admin/changeusername")
+    			.param("username", newValidUsername)
+    			.param("userid", Integer.toString(userId_secondUser)))
+    			.andExpect(status().isOk());
+    	
+    	Assert.assertThat(SECOND_USER.getUsername(), equalTo(newValidUsername));
     }
     
     /**
@@ -113,42 +132,71 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void changeUsernameNotUniqueTest() throws Exception {
-        when(userDaoMock.findAllUsers()).thenReturn(USERS); 
-        when(userDaoMock.findByID(2)).thenReturn(SECOND_USER); 
-        String username = FIRST_USER.getUsername();
-        String orig = SECOND_USER.getUsername(); //for later check
-        String userid = Integer.toString(SECOND_USER.getUserId());
-        mockMvc.perform(post("/admin/changeusername").param("username", username).param("userid", userid))
-			.andExpect(status().isConflict());
-        Assert.assertEquals(SECOND_USER.getUsername(), orig); //shouldn't have changed!
+    public void changeUsernameNotUniqueTest() throws Exception
+    {
+    	String username_firstUser = FIRST_USER.getUsername();
+        int userId_secondUser = SECOND_USER.getUserId();
+    	
+        when(userDaoMock.findAllUsers()).thenReturn(USERS);
+        when(userDaoMock.findByID(userId_secondUser)).thenReturn(SECOND_USER);
+        when(userDaoMock.usernameExists(username_firstUser)).thenReturn(true);
+        
+        mockMvc.perform(post("/admin/changeusername")
+        		.param("username", username_firstUser)
+        		.param("userid", Integer.toString(userId_secondUser)))
+			   .andExpect(status().isConflict());
+        
+        Assert.assertThat(SECOND_USER.getUsername(), not(equalTo(username_firstUser)));
     }
     /**
      * Tests the changeAuthority POST method with valid parameters. Expects success.
      * @throws Exception
      */
     @Test
-    public void changeAuthoritySuccessTest() throws Exception {
-		when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
-    	String newAuth = "ROLE_USER";
-    	String userId = Integer.toString( FIRST_USER.getUserId()); 
-    	mockMvc.perform(post("/admin/changeauthority").param("authority", newAuth).param("userid", userId))
+    public void changeAuthoritySuccessTest() throws Exception
+    {
+    	String newValidAuthority = "ROLE_USER";
+    	int userId_firstUser = FIRST_USER.getUserId();
+    	
+    	doAnswer(new Answer<Object>() {
+    		public Object answer(InvocationOnMock invocation) {
+    			Object[] args = invocation.getArguments();
+    			
+    			DbUser user = (DbUser) args[0];
+    			String newAuthority = (String) args[1];
+    			
+    			user.setAuthority(newAuthority);
+    			return null;
+    		}
+    	}).when(userDaoMock).changeAuthority(FIRST_USER, newValidAuthority);
+		when(userDaoMock.findByID(userId_firstUser)).thenReturn(FIRST_USER); 
+    	
+    	
+    	mockMvc.perform(post("/admin/changeauthority")
+    			.param("authority", newValidAuthority)
+    			.param("userid", Integer.toString(userId_firstUser)))
 			.andExpect(status().isOk());
-    	Assert.assertEquals(FIRST_USER.getAuthority(), newAuth); 
+    	
+    	Assert.assertThat(FIRST_USER.getAuthority(), equalTo(newValidAuthority));
     }
     /**
      * Tests the changeAuthority method with an invalid authority. Expects a badRequest response.
      * @throws Exception
      */
     @Test
-    public void changeAuthorityInvalidTest() throws Exception {
-    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
-    	String newAuth = "ROLE_FAKEEEEER";
-    	String orig = FIRST_USER.getAuthority(); 
-    	String userId = Integer.toString( FIRST_USER.getUserId()); 
-    	mockMvc.perform(post("/admin/changeauthority").param("authority", newAuth).param("userid", userId))
+    public void changeAuthorityInvalidTest() throws Exception
+    {
+    	String newInvalidAuthority = "ROLE_INVALID_AUTHORITY"; 
+    	int userId_firstUser = FIRST_USER.getUserId(); 
+    	
+    	when(userDaoMock.findByID(userId_firstUser)).thenReturn(FIRST_USER);
+    	
+    	mockMvc.perform(post("/admin/changeauthority")
+    			.param("authority", newInvalidAuthority)
+    			.param("userid", Integer.toString(userId_firstUser)))
 			.andExpect(status().isBadRequest());
-    	Assert.assertEquals(FIRST_USER.getAuthority(), orig); 
+    	
+    	Assert.assertThat(FIRST_USER.getAuthority(), not(equalTo(newInvalidAuthority))); 
     }
     
     /**
@@ -156,14 +204,30 @@ public class UserManagementSuiteTest extends TestUtility{
      * happen anyway. (limited by forms)
      */
     @Test
-    public void changeGroupSuccessTest() throws Exception{
-    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
+    public void changeGroupSuccessTest() throws Exception
+    {
+    	String groupName_secondUser = SECOND_USER_GROUP.getGroupName();
+    	int userId_firstUser = FIRST_USER.getUserId();
+    	
+    	doAnswer(new Answer<Object>() {
+    		public Object answer(InvocationOnMock invocation) {
+    			Object[] args = invocation.getArguments();
+    			DbUser user = (DbUser) args[0];
+    			DbGroup newGroup = (DbGroup) args[1];
+    			user.setGroup(newGroup);
+    			return null;
+    		}
+    	}).when(userDaoMock).changeGroup(FIRST_USER, SECOND_USER_GROUP);
+    	when(userDaoMock.findByID(userId_firstUser)).thenReturn(FIRST_USER);
     	when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-    	String userId = Integer.toString( FIRST_USER.getUserId()); 
-    	String newGroup = SECOND_USER_GROUP.getGroupName();
-    	mockMvc.perform(post("/admin/changegroup").param("groupname", newGroup).param("userid", userId))
+    	when(userDaoMock.findGroupByName(groupName_secondUser)).thenReturn(SECOND_USER_GROUP);
+    	
+    	mockMvc.perform(post("/admin/changegroup")
+    			.param("groupname", groupName_secondUser)
+    			.param("userid", Integer.toString(userId_firstUser)))
 			.andExpect(status().isOk());
-    	Assert.assertEquals(FIRST_USER.getGroup(), SECOND_USER_GROUP);     	
+    	
+    	Assert.assertThat(FIRST_USER.getGroup(), equalTo(SECOND_USER_GROUP));
     }
     
     /**
@@ -173,15 +237,21 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void changeGroupNoSuchGroupTest() throws Exception{
-    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
+    public void changeGroupNoSuchGroupTest() throws Exception
+    {
+    	int userId_firstUser = FIRST_USER.getUserId();
+    	String nonExistentGroupName = "Phoenix Suns";
+    	
+    	Mockito.doThrow(new ObjectNotFoundException()).when(userDaoMock).findGroupByName(nonExistentGroupName);
+    	when(userDaoMock.findByID(userId_firstUser)).thenReturn(FIRST_USER);
     	when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-    	String userId = Integer.toString( FIRST_USER.getUserId()); 
-    	String newGroup = "Phoenix Suns";
-    	DbGroup origGroup = FIRST_USER.getGroup();
-    	mockMvc.perform(post("/admin/changegroup").param("groupname", newGroup).param("userid", userId))
-			.andExpect(status().isBadRequest());
-    	Assert.assertEquals(FIRST_USER.getGroup(), origGroup);    	
+    	
+    	mockMvc.perform(post("/admin/changegroup")
+    			.param("groupname", nonExistentGroupName)
+    			.param("userid", Integer.toString(userId_firstUser)))
+    		.andExpect(status().isBadRequest());
+
+    	Assert.assertThat(FIRST_USER.getGroup().getGroupName(), not(equalTo(nonExistentGroupName)));    	
     }
     
     /**
@@ -190,12 +260,15 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void deleteUserSuccessTest() throws Exception {
-    	when(userDaoMock.findByID(1)).thenReturn(FIRST_USER); 
-    	String userId = Integer.toString( FIRST_USER.getUserId()); 
-    	mockMvc.perform(post("/admin/removeuser").param("userid", userId))
+    public void deleteUserSuccessTest() throws Exception
+    {
+    	int userId_firstUser = FIRST_USER.getUserId();
+    	
+    	when(userDaoMock.findByID(userId_firstUser)).thenReturn(FIRST_USER); 
+    	
+    	mockMvc.perform(post("/admin/removeuser")
+    			.param("userid", Integer.toString(userId_firstUser)))
     		.andExpect(status().isOk());
-
     }
     
     /**
@@ -204,53 +277,65 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void deleteUserNoUserFoundTest() throws Exception {
+    public void deleteUserNoUserFoundTest() throws Exception
+    {
+    	int nonExistentUserId = -5;
+    	
     	when(userDaoMock.findByID(-5)).thenThrow(new ObjectNotFoundException()); 
-    	String userId = "-5";
-    	mockMvc.perform(post("/admin/removeuser").param("userid", userId))
+    	
+    	mockMvc.perform(post("/admin/removeuser")
+    			.param("userid", Integer.toString(nonExistentUserId)))
     		.andExpect(status().isBadRequest());
     }
+    
     /**
      * Tests the the newuser post method with all valid parameters.
      * @throws Exception
      */
     @Test
-    public void addNewUserSuccessTest() throws Exception {
-		  when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-    	  when(userDaoMock.findAllUsers()).thenReturn(USERS);
-    	  String username = "newuser";
-    	  String password = "newpassword";
-    	  String validate = "newpassword";
-    	  String authority = "ROLE_USER";
-    	  String groupName = FIRST_USER_GROUP.getGroupName();
-    	  mockMvc.perform(post("/admin/newuser")
-    			  .param("username",username)
-    			  .param("password", password)
-    			  .param("validate", validate)
-    			  .param("authority", authority)
-    			  .param("groupname", groupName))
-    			  .andExpect(status().isOk());
+    public void addNewUserSuccessTest() throws Exception
+    {
+    	String username = "newuser";
+    	String password = "newpassword";
+    	String validate = "newpassword";
+    	String authority = "ROLE_USER";
+    	String groupName = FIRST_USER_GROUP.getGroupName();
+    	
+    	when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
+    	when(userDaoMock.findAllUsers()).thenReturn(USERS);
+    	
+    	mockMvc.perform(post("/admin/newuser")
+    			.param("username",username)
+    			.param("password", password)
+    			.param("validate", validate)
+    			.param("authority", authority)
+    			.param("groupname", groupName))
+    			.andExpect(status().isOk());
     }
     /**
      * Tests for error if username already exists.
      * @throws Exception
      */
     @Test
-    public void addNewUserUsernameExistsTest() throws Exception {
-		  when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-    	  when(userDaoMock.findAllUsers()).thenReturn(USERS);
-    	  String username = FIRST_USER.getUsername();
-    	  String password = "newpassword";
-    	  String validate = "newpassword";
-    	  String authority = "ROLE_USER";
-    	  String groupName = FIRST_USER_GROUP.getGroupName();
-    	  mockMvc.perform(post("/admin/newuser")
-    			  .param("username",username)
-    			  .param("password", password)
-    			  .param("validate", validate)
-    			  .param("authority", authority)
-    			  .param("groupname", groupName))
-    			  .andExpect(status().isConflict());
+    public void addNewUserUsernameExistsTest() throws Exception
+    {
+    	String alreadyExistingUsername = FIRST_USER.getUsername();
+		String password = "newpassword";
+		String validate = "newpassword";
+		String authority = "ROLE_USER";
+		String groupName = FIRST_USER_GROUP.getGroupName();
+    	
+    	when(userDaoMock.usernameExists(alreadyExistingUsername)).thenReturn(true);
+		when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
+		when(userDaoMock.findAllUsers()).thenReturn(USERS);
+		
+		mockMvc.perform(post("/admin/newuser")
+				.param("username", alreadyExistingUsername)
+				.param("password", password)
+				.param("validate", validate)
+				.param("authority", authority)
+				.param("groupname", groupName))
+				.andExpect(status().isConflict());
     }
     
     /**
@@ -258,21 +343,24 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
     @Test
-    public void addNewUserInvalidAuthorityTest() throws Exception {
-		  when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-    	  when(userDaoMock.findAllUsers()).thenReturn(USERS);
-    	  String username = "newuser";
-    	  String password = "newpassword";
-    	  String validate = "newpassword";
-    	  String authority = "ROLE_THE_SISKO";
-    	  String groupName = FIRST_USER_GROUP.getGroupName();
-    	  mockMvc.perform(post("/admin/newuser")
-    			  .param("username",username)
-    			  .param("password", password)
-    			  .param("validate", validate)
-    			  .param("authority", authority)
-    			  .param("groupname", groupName))
-    			  .andExpect(status().isBadRequest());
+    public void addNewUserInvalidAuthorityTest() throws Exception
+    {
+		String username = "newuser";
+		String password = "newpassword";
+		String validate = "newpassword";
+		String invalidAuthority = "ROLE_INVALID_AUTHORITY";
+		String groupName = FIRST_USER_GROUP.getGroupName();  
+		
+		when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
+		when(userDaoMock.findAllUsers()).thenReturn(USERS);
+
+		mockMvc.perform(post("/admin/newuser")
+				.param("username",username)
+				.param("password", password)
+				.param("validate", validate)
+				.param("authority", invalidAuthority)
+				.param("groupname", groupName))
+				.andExpect(status().isBadRequest());
     }
     
     /**
@@ -280,18 +368,21 @@ public class UserManagementSuiteTest extends TestUtility{
      * @throws Exception
      */
 	@Test
-	public void addNewUserNotPassMatchTest() throws Exception {
-		when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
-	   	when(userDaoMock.findAllUsers()).thenReturn(USERS);
-	   	String username = "newuser";
+	public void addNewUserNotPassMatchTest() throws Exception
+	{
+		String username = "newuser";
 		String password = "newpassword";
-		String validate = "newpassword1";
+		String nonMatchingValidate = "passwordThatDoesNotMatch";
 		String authority = "ROLE_USER";
 		String groupName = FIRST_USER_GROUP.getGroupName();
+		
+		when(userDaoMock.findAllGroups()).thenReturn(GROUPS);
+	   	when(userDaoMock.findAllUsers()).thenReturn(USERS);
+	   	
 		mockMvc.perform(post("/admin/newuser")
 			.param("username",username)
 			.param("password", password)
-			.param("validate", validate)
+			.param("validate", nonMatchingValidate)
 			.param("authority", authority)
 			.param("groupname", groupName))
 			.andExpect(status().isBadRequest());

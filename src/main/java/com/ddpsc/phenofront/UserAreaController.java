@@ -331,7 +331,8 @@ public class UserAreaController
 			return;
 		}
 		
-		if (System.getProperty(downloadKey) == null) { // TODO: What if the download key isn't found and this throws an IllegalArgumentException?
+		// TODO: What if the download key isn't found and this throws an IllegalArgumentException?
+		if (System.getProperty(downloadKey) == null) {
 			log.info("The download key for the user " + username + " was found to be null. Terminating mass download.");
 			response.sendError(400, "Invalid download key");
 			response.flushBuffer();
@@ -389,12 +390,12 @@ public class UserAreaController
 			Timestamp endTimestamp = null;
 			
 			
-			if ( ! startTime.equals("")) {
+			if ( startTime != null && ! startTime.equals("")) {
 				DateTime startDate = formatter.parseDateTime(startTime);
 				startTimestamp = new Timestamp(startDate.getMillis());
 			}
 			
-			if ( ! endTime.equals("")) {
+			if ( endTime != null && ! endTime.equals("")) {
 				DateTime endDate = formatter.parseDateTime(endTime);
 				endTimestamp = new Timestamp(endDate.getMillis());
 			}

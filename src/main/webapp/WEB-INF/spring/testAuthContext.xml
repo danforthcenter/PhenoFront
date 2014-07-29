@@ -39,30 +39,38 @@
 		<security:custom-filter ref="authenticationFilter"
 			position="FORM_LOGIN_FILTER" />
 	</security:http>
-
+	
+	
 	<bean id="authenticationFilter"
 		class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter"
 		p:authenticationManager-ref="customAuthenticationManager"
 		p:authenticationFailureHandler-ref="customAuthenticationFailureHandler"
 		p:authenticationSuccessHandler-ref="customAuthenticationSuccessHandler" />
-
-	<bean id="customAuthenticationManager" class="src.ddpsc.authentication.CustomAuthenticationManager" />
-
-	<bean id="customAuthenticationFailureHandler"
-		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler"
-		p:defaultFailureUrl="/auth/login?error=true" />
-
-	<bean id="customAuthenticationSuccessHandler"
-		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler"
-		p:defaultTargetUrl="/selectexperiment" />
-
+	
+	<bean id="customAuthenticationManager" class="src.ddpsc.authentication.CustomAuthenticationManager" >
+		<property name="userDao" ref="userDaoMock" />
+		<property name="passwordEncoder" ref="passwordEncoder" />
+	</bean>
+	
+	<bean class="org.springframework.security.crypto.password.StandardPasswordEncoder" id="passwordEncoder" />
+	
+	
 	<bean id="authenticationEntryPoint"
 		class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"
 		p:loginFormUrl="/auth/login" />
-
-	<bean
-		class="org.springframework.security.crypto.password.StandardPasswordEncoder"
-		id="passwordEncoder" />
+	
+	<bean id="customAuthenticationFailureHandler"
+		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler"
+		p:defaultFailureUrl="/auth/login?error=true" />
+	
+	<bean id="customAuthenticationSuccessHandler"
+		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler"
+		p:defaultTargetUrl="/selectexperiment" />
+	
+	
+	
+	
+	
 	<security:authentication-manager alias="authenticationManager">
 	</security:authentication-manager>
 	

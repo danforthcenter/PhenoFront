@@ -7,5 +7,7 @@
     <bean id="userDaoMock" name="userDaoMock" class="org.mockito.Mockito" factory-method="mock">
         <constructor-arg value="src.ddpsc.database.user.UserDao"/>
     </bean>
+	
+	
     
 </beans>

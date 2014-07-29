@@ -50,8 +50,6 @@ public class AuthenticationSuiteTest extends TestUtility {
 	@Autowired
 	private WebApplicationContext webappContext;
 
-	private TestUtility tu;
-
 	@Autowired
 	private UserDao userDaoMock;
 
@@ -64,10 +62,10 @@ public class AuthenticationSuiteTest extends TestUtility {
 	 * @author shill
 	 */
 	@Before
-	public void setUp() {
+	public void setUp()
+	{
 		UserTestUtility();
-		this.mockMvc = webAppContextSetup(this.webappContext).addFilter(
-				this.springSecurityFilter, "/*").build();
+		this.mockMvc = webAppContextSetup(this.webappContext).addFilter(this.springSecurityFilter, "/*").build();
 	}
 
 	/**
@@ -78,21 +76,23 @@ public class AuthenticationSuiteTest extends TestUtility {
 	 * @author shill
 	 */
 	@Test
-	public void correctLoginTest() throws Exception {
-		String username = "user";
+	public void correctLoginTest() throws Exception
+	{
+		String username = FIRST_USER.getUsername();
 		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
-
+		
 		MockHttpServletRequest req = mockMvc
-				.perform(
-						post("/j_spring_security_check").param("j_username",
-								username).param("j_password", "password"))
+				.perform(post("/j_spring_security_check")
+						.param("j_username", username)
+						.param("j_password", "password"))
 				.andExpect(status().is(HttpStatus.FOUND.value()))
-				.andExpect(redirectedUrl("/selectexperiment")).andReturn().getRequest();
-
+				.andExpect(redirectedUrl("/selectexperiment"))
+				.andReturn().getRequest();
+		
 		HttpSession session = req.getSession();
+		
 		Assert.assertNotNull(session);
 		Assert.assertNull(req.getUserPrincipal());
-
 	}
 
 	/**
@@ -103,18 +103,19 @@ public class AuthenticationSuiteTest extends TestUtility {
 	 * @author shill
 	 */
 	@Test
-	public void badPasswordLoginTest() throws Exception {
-		// prob wont work but i hope?
+	public void badPasswordLoginTest() throws Exception
+	{
 		String username = "user";
 		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
 		MockHttpServletRequest req = mockMvc
-				.perform(
-						post("/j_spring_security_check").param("j_username",
-								username).param("j_password", "passsword"))
+				.perform(post("/j_spring_security_check")
+						.param("j_username", username)
+						.param("j_password", "passsword"))
 				.andExpect(status().is(HttpStatus.FOUND.value()))
-				.andExpect(redirectedUrl("/auth/login?error=true")).andReturn()
-				.getRequest();
+				.andExpect(redirectedUrl("/auth/login?error=true"))
+				.andReturn().getRequest();
+		
 		Assert.assertNull(req.getUserPrincipal());
 	}
 
@@ -126,24 +127,25 @@ public class AuthenticationSuiteTest extends TestUtility {
 	 * @author shill
 	 */
 	@Test
-	public void badLoginUserAreaTest() throws Exception {
+	public void badLoginUserAreaTest() throws Exception
+	{
 		String username = "user";
 		when(userDaoMock.findByUsername(username)).thenReturn(FIRST_USER);
 
 		MockHttpServletRequest req = mockMvc
-				.perform(
-						post("/j_spring_security_check").param("j_username",
-								username).param("j_password", "passsword"))
+				.perform(post("/j_spring_security_check")
+						.param("j_username",username)
+						.param("j_password", "passsword"))
 				.andExpect(status().is(HttpStatus.FOUND.value()))
-				.andExpect(redirectedUrl("/auth/login?error=true")).andReturn()
-				.getRequest();
+				.andExpect(redirectedUrl("/auth/login?error=true"))
+				.andReturn().getRequest();
+		
 		Assert.assertNull(req.getUserPrincipal());
-		MockHttpServletResponse response = mockMvc.perform(get("/userarea"))
-				.andReturn().getResponse();
-		System.out
-				.println("NOTICE: Bug in MvcMock for badLoginUserAreaTest. Redirects to the actual localhost address from security filter. To solve this the assertion is different than in previous tests.");
-		assertEquals("Redirected URL", "http://localhost/auth/login",
-				response.getRedirectedUrl());
+		
+		MockHttpServletResponse response = mockMvc.perform(get("/userarea")).andReturn().getResponse();
+		
+		System.out.println("NOTICE: Bug in MvcMock for badLoginUserAreaTest. Redirects to the actual localhost address from security filter. To solve this the assertion is different than in previous tests.");
+		assertEquals("Redirected URL", "http://localhost/auth/login", response.getRedirectedUrl());
 	}
 
 }

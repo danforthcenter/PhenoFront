@@ -27,33 +27,38 @@ public abstract class TestUtility {
 	 */
 	
 	public DbUser FIRST_USER;
-	
 	public DbUser SECOND_USER;
 	public DbUser THIRD_USER;
+	
 	public DbGroup FIRST_USER_GROUP;
 	public DbGroup SECOND_USER_GROUP;
+	
 	public ArrayList<DbUser> USERS;
-
 	public ArrayList<DbGroup> GROUPS;
 	
 	/**
 	 * Returns all possible ROLE_USER paths that should be accessed via GET
 	 * @return
 	 */
-	public ArrayList<String> getAllGetUserPaths(){
+	public ArrayList<String> getAllGetUserPaths()
+	{
 		ArrayList<String> paths = new ArrayList<String>();
+		
 		paths.add("/userarea");
 		paths.add("/userarea/status");
 		paths.add("/userarea/visualize");
 		paths.add("/userarea/schedule");
 		paths.add("/userarea/results");
+		
 		return paths;
 	}
+	
 	/**
 	 * Returns all possible ROLE_USER paths that should be accessed via POST.
 	 * @return
 	 */
-	public ArrayList<String> getAllPostUserPaths(){
+	public ArrayList<String> getAllPostUserPaths()
+	{
 		ArrayList<String> paths = new ArrayList<String>();
 		return paths;
 	}
@@ -63,10 +68,13 @@ public abstract class TestUtility {
 	 * Does not return ROLE_USER paths. Check both when executing tests.
 	 * @return
 	 */
-	public ArrayList<String> getAllGetAdminPaths(){
+	public ArrayList<String> getAllGetAdminPaths()
+	{
 		ArrayList<String> paths = new ArrayList<String>();
+		
 		paths.add("/admin");
 		paths.add("/admin/users");
+		
 		return paths;
 	}
 	
@@ -75,22 +83,27 @@ public abstract class TestUtility {
 	 * Does not also include ROLE_USER paths. Be sure to check both when executing tests.
 	 * @return
 	 */
-	public ArrayList<String> getAllPostAdminPaths(){
+	public ArrayList<String> getAllPostAdminPaths()
+	{
 		ArrayList<String> paths = new ArrayList<String>();
+		
 		paths.add("/admin/changepass");
 		paths.add("/admin/changeauthority");
 		paths.add("/admin/newuser");
 		paths.add("/admin/changegroup");
 		paths.add("/admin/changeusername");
 		paths.add("/admin/removeuser");
+		
 		return paths;
 	}
 	/**
 	 * All passwords are Standard Password Encoded password
 	 * @return 
 	 */
-	public void UserTestUtility(){
+	public void UserTestUtility()
+	{
 		StandardPasswordEncoder se = new StandardPasswordEncoder();
+		
 		FIRST_USER = new DbUser();
 		FIRST_USER.setUserId(1);
         FIRST_USER.setUsername("testuser1");
@@ -116,6 +129,7 @@ public abstract class TestUtility {
 		THIRD_USER.setPassword(se.encode("password"));
 		SECOND_USER_GROUP = buildGroupMock(2, THIRD_USER);
 		THIRD_USER.setGroup(SECOND_USER_GROUP);
+		
 		USERS = new ArrayList<DbUser>();
         USERS.add(FIRST_USER);
         USERS.add(SECOND_USER);
@@ -131,15 +145,16 @@ public abstract class TestUtility {
 	 * @param version
 	 * @return
 	 */
-	public static DbGroup buildGroupMock(int version, DbUser owner){
-		if (version == 1){
+	public static DbGroup buildGroupMock(int version, DbUser owner)
+	{
+		if (version == 1) {
 			DbGroup FIRST_USER = new DbGroup();
 			FIRST_USER.setGroupID(1);
 			FIRST_USER.setGroupName("group1");
 			FIRST_USER.setOwner(owner);
 			return FIRST_USER;
 		}
-		if (version == 2){
+		if (version == 2) {
 			DbGroup SECOND_USER = new DbGroup();
 			SECOND_USER.setGroupID(2);
 			SECOND_USER.setGroupName("group2");
