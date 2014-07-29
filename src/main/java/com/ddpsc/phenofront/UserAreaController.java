@@ -400,8 +400,6 @@ public class UserAreaController
 				endTimestamp = new Timestamp(endDate.getMillis());
 			}
 			
-			plantBarcode = "^" + plantBarcode;
-			
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
 			// TODO: Add filename option
