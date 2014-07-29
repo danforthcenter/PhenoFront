@@ -531,7 +531,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 		else
 			snapshots = findCustomQueryAnyTime_imageJobs_HELPER(plantBarcode, measurementLabel);
 		
-		log.info("Custom snapshot query fulfilled. Variables: "
+		log.info("Custom snapshot query fulfilled. " + snapshots.size() + "-many snapshots found. Variables: "
 				+ "StartTime = " 		+ startTime 		+ ", "
 				+ "EndTime = " 			+ endTime			+ ", "
 				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
@@ -567,7 +567,17 @@ public class SnapshotDaoImpl implements SnapshotDao
 					throws CannotGetJdbcConnectionException
 	{
 		List<Snapshot> snapshots = this.findCustomQueryAnyTime_imageJobs(startTime, endTime, plantBarcode, measurementLabel);
+		log.info("Beginning to load tiles for " + snapshots.size() + " snapshots queried by the variables: "
+				+ "StartTime = " 		+ startTime 		+ ", "
+				+ "EndTime = " 			+ endTime			+ ", "
+				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
+				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		loadTiles(snapshots);
+		log.info("Tiles loaded for " + snapshots.size() + " snapshots queried by the variables: "
+				+ "StartTime = " 		+ startTime 		+ ", "
+				+ "EndTime = " 			+ endTime			+ ", "
+				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
+				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		
 		return Snapshot.tiledOnly(snapshots);
 	}
@@ -706,8 +716,10 @@ public class SnapshotDaoImpl implements SnapshotDao
 	protected void loadTiles(List<Snapshot> snapshots)
 			throws CannotGetJdbcConnectionException
 	{
-		for (Snapshot snapshot : snapshots)
+		for (Snapshot snapshot : snapshots) {
+			log.info("Load tiles for the snapshot ID='" + snapshot.getId() + "'.");
 			snapshot.setTiles(findTiles(snapshot));
+		}
 	}
 	
 	/**
