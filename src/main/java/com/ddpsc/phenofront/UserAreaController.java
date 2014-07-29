@@ -320,12 +320,12 @@ public class UserAreaController
 			@RequestParam(value = "watering",	defaultValue = "false")	  boolean includeWatering)
 					throws IOException, ExperimentNotAllowedException
 	{
-		String username = ControllerHelper.currentUsername();
-		log.info("Attempting to execute a mass download for user " + username);
+		//????
+		log.info("Attempting to execute a mass download.");
 		
 		// TODO: Reimplement 1 download per user limit? Yes
 		if (downloadKey == null) {
-			log.info("The download key for the user " + username + " was null. Terminating mass download.");
+			log.info("The download key was null. Terminating mass download.");
 			response.sendError(403, "Permission denied.");
 			response.flushBuffer();
 			return;
@@ -333,7 +333,7 @@ public class UserAreaController
 		
 		// TODO: What if the download key isn't found and this throws an IllegalArgumentException?
 		if (System.getProperty(downloadKey) == null) {
-			log.info("The download key for the user " + username + " was found to be null. Terminating mass download.");
+			log.info("The download key for the user was found to be null. Terminating mass download.");
 			response.sendError(400, "Invalid download key");
 			response.flushBuffer();
 			return;
@@ -341,29 +341,31 @@ public class UserAreaController
 		
 		DbUser user = null;
 		try {
-			user = userDataSource.findByUsername(System.getProperty(downloadKey)); // TODO: Why are we accessing user this way?
+			//Need to load the user by hand because there is no session attached to wget (or presumed none).
+			user = userDataSource.findByUsername(System.getProperty(downloadKey)); 
 		}
 		
 		
+		
 		catch (CannotGetJdbcConnectionException e) {
-			log.info("Could not access the user data server in search of user " + username + ". Terminating mass download.");
+			log.info("Could not access the user data server in search of user. Terminating mass download.");
 			response.sendError(500, "Internal error: Could not access server.");
 			response.flushBuffer();
 			return;
 		}
 		catch (UserException e) {
-			log.info("The user " + username + "'s data is corrupted. Terminating mass download.", e);
+			log.info("The user's data is corrupted. Terminating mass download.", e);
 			response.sendError(500, "User data corrupt.");
 			response.flushBuffer();
 			return;
 		}
 		catch (ObjectNotFoundException e) {
-			log.error("The user " + username + "could not be found. Terminating mass download.", e);
+			log.error("The user associated with our key could not be found. Terminating mass download.", e);
 			response.sendError(403, "Invalid download key.");
 			response.flushBuffer();
 			return;
 		}
-		
+		String username = user.getUsername();
 		
 		try {
 			// Setup the snapshot data to pull from the appropriate experiment
