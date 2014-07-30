@@ -155,7 +155,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public Snapshot findByID(int id)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
-		log.info("Attempting to find snapshot with ID='" + id + "'.");
 		
 		String findID = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE id='" + id + "'";
@@ -167,7 +166,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		Snapshot snapshot = snapshots.get(0);
 		
-		log.info("Snapshot with ID='" + id + "' found.");
 		return snapshot;
 	}
 	
@@ -187,12 +185,10 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public Snapshot findByID_withTiles(int id)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
-		log.info("Attempting to find snapshot with ID='" + id + "' and preload tiles.");
 		
 		Snapshot snapshot = this.findByID(id);
 		snapshot.setTiles(this.findTiles(id));
 		
-		log.info("Snapshot with ID='" + id + "' found and preload with tiles.");
 		return snapshot;
 	}
 
@@ -213,14 +209,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findAfterTimestamp(Timestamp timestamp)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find snapshots after the time " + timestamp + ".");
 		
 		String getAfterTime = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE time_stamp > '" + timestamp + "'";
 		
 		List<Snapshot> snapshots = snapshotQuery(getAfterTime);
 		
-		log.info("Snapshots after the time " + timestamp + " found.");
 		return snapshots;
 	}
 
@@ -242,14 +236,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findAfterTimestamp_withTiles(Timestamp timestamp)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find snapshots after the time " + timestamp + " and preload tiles.");
 		
 		List<Snapshot> snapshots = this.findAfterTimestamp(timestamp);
 		loadTiles(snapshots);
 		
 		snapshots = Snapshot.tiledOnly(snapshots);
 		
-		log.info("Snapshots after the time " + timestamp + " found and preloaded with tiles.");
 		return snapshots;
 	}
 	
@@ -271,7 +263,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findAfterTimestamp_imageJobs(Timestamp timestamp)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find image only snapshots after the time " + timestamp + ".");
 		
 		String getAfterTimeImagesOnly = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE "
@@ -280,7 +271,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		List<Snapshot> snapshots = snapshotQuery(getAfterTimeImagesOnly);
 		
-		log.info("Image only snapshots after the time " + timestamp + " found.");
 		return snapshots;
 	}
 
@@ -302,7 +292,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findBetweenTimes(Timestamp startTime, Timestamp endTime)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find snapshots between the times " + startTime + " and " + endTime + ".");
 		
 		String getBetweenTimes = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE "
@@ -311,7 +300,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		List<Snapshot> snapshots = snapshotQuery(getBetweenTimes);
 		
-		log.info("Snapshots between the times " + startTime + " and " + endTime + " found.");
 		return snapshots;
 	}
 
@@ -333,14 +321,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findBetweenTimes_withTiles(Timestamp startTime, Timestamp endTime)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find snapshots between the times " + startTime + " and " + endTime + " and preload the tiles.");
 		
 		List<Snapshot> snapshots = this.findBetweenTimes(startTime, endTime);
 		loadTiles(snapshots);
 		
 		snapshots = Snapshot.tiledOnly(snapshots);
 		
-		log.info("Snapshots between the times " + startTime + " and " + endTime + " found and preloaded with tiles.");
 		return snapshots;
 	}
 	
@@ -362,7 +348,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findBetweenTimes_imageJobs(Timestamp startTime, Timestamp endTime)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find image only snapshots between the times " + startTime + " and " + endTime + ".");
 		
 		String getBetweenTimesImageOnly = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE "
@@ -372,7 +357,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		List<Snapshot> snapshots = snapshotQuery(getBetweenTimesImageOnly);
 		
-		log.info("Image only snapshots between the times " + startTime + " and " + endTime + " found.");
 		return snapshots;
 	}
 
@@ -427,14 +411,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findLastN(int n)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find the last " + n + "-many snapshots.");
 		
 		String getSnapshots = SNAPSHOT_QUERY_VARIABLES
 				+ "ORDER BY time_stamp DESC LIMIT " + n;
 		
 		List<Snapshot> snapshots = snapshotQuery(getSnapshots);
 		
-		log.info("Found the last " + n + "-many snapshots.");
 		return snapshots;
 	}
 	
@@ -450,14 +432,12 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findLastN_withTiles(int n)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find the last " + n + "-many snapshots and preload them with tiles.");
 		
 		List<Snapshot> snapshots = findLastN(n);
 		loadTiles(snapshots);
 		
 		snapshots = Snapshot.tiledOnly(snapshots);
 		
-		log.info("Found the last " + n + "-many snapshots and preloaded them with tiles.");
 		return snapshots;
 	}
 	
@@ -473,7 +453,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public List<Snapshot> findLastN_imageJobs(int n)
 			throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to find the last " + n + "-many image job only snapshots.");
 		
 		String getLastNImageJobs = SNAPSHOT_QUERY_VARIABLES
 				+ "WHERE water_amount = -1 "
@@ -481,7 +460,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		List<Snapshot> snapshots = snapshotQuery(getLastNImageJobs);
 		
-		log.info("Found the last " + n + "-many image only snapshots.");
 		return snapshots;
 	}
 
@@ -511,11 +489,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 			final String measurementLabel)
 					throws CannotGetJdbcConnectionException
 	{
-		log.info("Attempting to fulfill a custom snapshot query with the variables: "
-				+ "StartTime = " 		+ startTime 		+ ", "
-				+ "EndTime = " 			+ endTime			+ ", "
-				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
-				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		
 		List<Snapshot> snapshots;
 		
@@ -531,11 +504,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		else
 			snapshots = findCustomQueryAnyTime_imageJobs_HELPER(plantBarcode, measurementLabel);
 		
-		log.info("Custom snapshot query fulfilled. " + snapshots.size() + "-many snapshots found. Variables: "
-				+ "StartTime = " 		+ startTime 		+ ", "
-				+ "EndTime = " 			+ endTime			+ ", "
-				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
-				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		
 		return snapshots;
 	}
@@ -567,17 +535,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 					throws CannotGetJdbcConnectionException
 	{
 		List<Snapshot> snapshots = this.findCustomQueryAnyTime_imageJobs(startTime, endTime, plantBarcode, measurementLabel);
-		log.info("Beginning to load tiles for " + snapshots.size() + " snapshots queried by the variables: "
-				+ "StartTime = " 		+ startTime 		+ ", "
-				+ "EndTime = " 			+ endTime			+ ", "
-				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
-				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		loadTiles(snapshots);
-		log.info("Tiles loaded for " + snapshots.size() + " snapshots queried by the variables: "
-				+ "StartTime = " 		+ startTime 		+ ", "
-				+ "EndTime = " 			+ endTime			+ ", "
-				+ "PlantBarcode = " 	+ plantBarcode 		+ ", "
-				+ "MeasurementLabel = " + measurementLabel	+ ".");
 		
 		return Snapshot.tiledOnly(snapshots);
 	}
@@ -717,7 +675,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 			throws CannotGetJdbcConnectionException
 	{
 		for (Snapshot snapshot : snapshots) {
-			log.info("Load tiles for the snapshot ID='" + snapshot.getId() + "'.");
 			snapshot.setTiles(findTiles(snapshot));
 		}
 	}

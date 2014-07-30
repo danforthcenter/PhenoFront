@@ -320,7 +320,6 @@ public class UserAreaController
 			@RequestParam(value = "watering",	defaultValue = "false")	  boolean includeWatering)
 					throws IOException, ExperimentNotAllowedException
 	{
-		//????
 		log.info("Attempting to execute a mass download.");
 		
 		// TODO: Reimplement 1 download per user limit? Yes
@@ -408,7 +407,9 @@ public class UserAreaController
 			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
 			response.flushBuffer();
 			
+		    log.info("Querying database for snapshots and tiles.");
 			snapshots = snapshotData.findCustomQueryAnyTime_imageJobs_withTiles(startTimestamp, endTimestamp, plantBarcode, measurementLabel);
+		    log.info("Got snapshots and tiles. Building results.");
 			ResultsBuilder results = new ResultsBuilder(
 					response.getOutputStream(),
 					snapshots,
@@ -417,6 +418,7 @@ public class UserAreaController
 					visibileLightImages,
 					fluorescentImages,
 					includeWatering);
+		    log.info("Writing zip archive.");
 			results.writeZipArchive();
 			
 			response.flushBuffer();
