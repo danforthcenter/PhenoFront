@@ -380,7 +380,7 @@ public class UserAreaController
 			user = userDataSource.findByUsername(System.getProperty(downloadKey));
 		}
 		catch (Exception e) {
-			ControllerHelper.handleUserDataGETExceptions(e, response, username, log, "execute a mass download");
+			ControllerHelper.handleUserDataGETExceptions(e, response, "unknown", log, "execute a mass download");
 			return;
 		}
 		
@@ -388,7 +388,7 @@ public class UserAreaController
 			// Setup the snapshot data to pull from the appropriate experiment
 			Set<Experiment> allExperiments = experimentData.findAll();
 			user.setAllowedExperiments(allExperiments);
-			
+		    String username = user.getUsername();	
 			Experiment activeExperiment = experimentData.getByName(activeExperimentName);
 			user.setActiveExperiment(activeExperiment);	// TODO All these lines are because of a deprecated, but not yet removed, "allowed experiments" functionality, booo
 			
@@ -426,7 +426,7 @@ public class UserAreaController
 			log.info("The mass download for user " + username + " with active experiment " + activeExperimentName + " is successful.");
 		}
 		catch (CannotGetJdbcConnectionException e) {
-			log.info("Could not access the experiments server in search of experiments under the name " + activeExperimentName + " for user " + username + ". Terminating mass download.");
+			log.info("Could not access the experiments server in search of experiments under the name " + activeExperimentName +". Terminating mass download.");
 			response.sendError(500, "Internal error: Could not access server.");
 			response.flushBuffer();
 			return;
