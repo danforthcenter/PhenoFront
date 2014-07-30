@@ -53,7 +53,6 @@ public class ResultsBuilder {
 	private boolean includeVisible;
 	private boolean includeNearIR;
 	private boolean includeFlourescent;
-	private boolean includeWatering;
 
 	public ResultsBuilder(
 			OutputStream out,
@@ -61,14 +60,12 @@ public class ResultsBuilder {
 			Experiment experiment,
 			boolean includeVisible,
 			boolean includeNearIR,
-			boolean includeFlourescent,
-			boolean includeWatering)
+			boolean includeFlourescent)
 	{
 		//new DateTime(snapshot.getTimeStamp())
 		this.includeVisible = includeVisible;
 		this.includeNearIR = includeNearIR;
 		this.includeFlourescent = includeFlourescent;
-		this.includeWatering = includeWatering;
 		this.requestStream = out;
 		this.snapshots = snapshots;
 		this.experiment = experiment;
@@ -162,12 +159,8 @@ public class ResultsBuilder {
 		
 		//adds csv file
 		String entryName = "SnapshotInfo.csv";
-		String rep = "id,plant barcode,car tag,timestamp,weight before,weight after,water amount,completed,measurement label,tiles\n";
 		archive.putNextEntry(new ZipEntry(entryName));
-		archive.write(rep.getBytes());
-		for (Snapshot snapshot : snapshots) {
-			archive.write(snapshot.toCSVString_noHeader().getBytes());
-		}
+		archive.write(Snapshot.toCSV(snapshots, true).getBytes());
 		
 		archive.finish();
 	}

@@ -1,7 +1,6 @@
 package com.ddpsc.phenofront;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,10 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +32,7 @@ import src.ddpsc.authentication.CustomAuthenticationManager;
 import src.ddpsc.config.Config;
 import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.experiment.ExperimentDao;
+import src.ddpsc.database.snapshot.CustomQuerySettings;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.snapshot.SnapshotDao;
 import src.ddpsc.database.snapshot.SnapshotDaoImpl;
@@ -44,6 +40,7 @@ import src.ddpsc.database.user.DbUser;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
+import src.ddpsc.exceptions.NotImplementedException;
 import src.ddpsc.exceptions.UserException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.results.ResultsBuilder;
@@ -61,7 +58,6 @@ public class UserAreaController
 	private static final Logger log = Logger.getLogger(UserAreaController.class);
 	
 	private static final PasswordEncoder encoder = new StandardPasswordEncoder();
-	private static final DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
 	
 	@Autowired
 	UserDao userDataSource;
@@ -92,33 +88,17 @@ public class UserAreaController
 		}
 
 		DbUser user = null;
-
 		try {
 			user = userDataSource.findByUsername(username);
 			model.addAttribute("user", user);
 		}
-		catch (CannotGetJdbcConnectionException e) {
-			String connectionFailedMessage = "Could not retrieve the user's data because this server could not connect to the user data server.";
-			model.addAttribute("message", connectionFailedMessage);
-			log.info(connectionFailedMessage);
-			return "error";
+		catch (Exception e) {
+			return ControllerHelper.handleUserDataGETExceptions(e, model, username, log, "retrieve the user's data");
 		}
-		catch (UserException e) {
-			String userInvalidMessage = "Could not retrieve the user's data because the data is corrupt or invalid.";
-			model.addAttribute("message", userInvalidMessage);
-			log.error(userInvalidMessage, e);
-			return "error";
-		}
-		catch (ObjectNotFoundException e) {
-			String userNotFoundMessage = "Could not retrieve the user's data because the user could not be found.";
-			model.addAttribute("message", userNotFoundMessage);
-			log.info(userNotFoundMessage);
-			return "error";
-		}
-
+		
 		try {
 			Set<Experiment> allExperiments = experimentData.findAll();
-
+			
 			user.setAllowedExperiments(allExperiments);
 			Set<Experiment> allowedExperiments = user.getAllowedExperiments();
 
@@ -188,66 +168,134 @@ public class UserAreaController
 	public ModelAndView homeAction()
 	{
 		log.info("Redirecting user " + ControllerHelper.currentUsername() + " to results view");
-		return new ModelAndView("redirect:" + "/userarea/results");
+		return new ModelAndView("redirect:" + "/userarea/querybuilder");
 	}
 
 	/**
-	 * TODO: Implement visualization tool.
+	 * @throws NotImplementedException 
 	 */
 	@RequestMapping(value = "/userarea/visualize", method = RequestMethod.GET)
-	public String visualizeAction(Locale locale, Model model)
+	public String visualizeAction(Locale locale, Model model) throws NotImplementedException
 	{
 		// Consider using jqplotter, open source plotting tool
 		// also could call R/perl/python -> file, then load file (would be very
 		// unresponsive)
 		log.info("Accessing the visualization page. This is an unimplemented feature.");
-		return "visualize";
+		throw new NotImplementedException();
 	}
 
 	/**
-	 * TODO: Implement scheduling tool? Is this in the specification for the site?
+	 * @throws NotImplementedException 
 	 */
 	@RequestMapping(value = "/userarea/schedule", method = RequestMethod.GET)
-	public String scheduleAction(Locale locale, Model model)
+	public String scheduleAction(Locale locale, Model model) throws NotImplementedException
 	{
 		log.info("Accessing the schedule page. This is an unimplemented feature.");
-		return "schedule";
+		throw new NotImplementedException();
 	}
-
+	
+//	/**
+//	 * Displays the results of the last search.
+//	 * 
+//	 * Currently shows the most recent 50 entries of the selected experiment.
+//	 * 
+//	 * @param locale	Geographical area the user is from
+//	 * @param model		The internal system model to talk with the view
+//	 * @return 			The results page, or error
+//	 */
+//	@RequestMapping(value = "/userarea/results", method = RequestMethod.GET)
+//	public String resultsAction(Locale locale, Model model)
+//	{
+//		String username = ControllerHelper.currentUsername();
+//		log.info("Attempting to display the results of the last search for user " + username);
+//
+//		final int numSnapshots = 50;
+//		try {
+//			DateMidnight todayMidnight = new DateMidnight();
+//			model.addAttribute("date", todayMidnight.toString("EEEE, MMMM dd, YYYY"));
+//
+//			List<Snapshot> snapshots = snapshotData.findLastN_withTiles(numSnapshots);
+//			model.addAttribute("snapshots", snapshots);
+//
+//			log.info("The results of the last search found correctly for user " + username);
+//			return "userarea-results";
+//		}
+//		catch (CannotGetJdbcConnectionException e) {
+//			String connectionFailedMessage = "Could not retrieve the last " + numSnapshots + " snapshots for user "
+//					+ username + " because this server could not connect to the snapshot data server.";
+//			model.addAttribute("message", connectionFailedMessage);
+//			log.info(connectionFailedMessage);
+//			return "error";
+//		}
+//	}
+	
 	/**
-	 * Displays the results of the last search.
 	 * 
-	 * Currently shows the most recent 50 entries of the selected experiment.
-	 * 
-	 * @param locale	Geographical area the user is from
-	 * @param model		The internal system model to talk with the view
-	 * @return 			The results page, or error
 	 */
-	@RequestMapping(value = "/userarea/results", method = RequestMethod.GET)
-	public String resultsAction(
+	@RequestMapping(value = "/userarea/querypreview", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<String> previewAction(
 			Locale locale,
-			Model model)
+			Model model,
+			@RequestParam(value = "activeExperiment",	required = false) String activeExperimentName,
+			
+			@RequestParam(value = "plantBarcode",		required = false,	defaultValue = "") String plantBarcode,
+			@RequestParam(value = "measurementLabel",	required = false,	defaultValue = "") String measurementLabel,
+			@RequestParam(value = "startTime",			required = false,	defaultValue = "") String startTime,
+			@RequestParam(value = "endTime",			required = false,	defaultValue = "") String endTime,
+			@RequestParam(value = "userRestriction",	required = false,	defaultValue = "") String restrictedUsers,
+			
+			@RequestParam(value = "watering",	defaultValue = "false")	boolean includeWatering,
+			@RequestParam(value = "vis",		defaultValue = "false")	boolean visibileLightImages,
+			@RequestParam(value = "nir",		defaultValue = "false")	boolean nearInfraredImages,
+			@RequestParam(value = "fluo",		defaultValue = "false")	boolean fluorescentImages
+			)
+					throws IOException, ExperimentNotAllowedException
 	{
 		String username = ControllerHelper.currentUsername();
-		log.info("Attempting to display the results of the last search for user " + username);
+		log.info("Attempting to return the preview results of the custom query for user " + username);
 		
-		final int numSnapshots = 50;
+		DbUser user = null;
 		try {
-			DateMidnight todayMidnight = new DateMidnight();
-			model.addAttribute("date", todayMidnight.toString("EEEE, MMMM dd, YYYY"));
-			
-			List<Snapshot> snapshots = snapshotData.findLastN_withTiles(numSnapshots);
-			model.addAttribute("snapshots", snapshots);
-			
-			log.info("The results of the last search found correctly for user " + username);
-			return "userarea-results";
+			user = userDataSource.findByUsername(username);
 		}
+		catch (Exception e) {
+			return ControllerHelper.handleUserDataPOSTExceptions(e, username, log, "to return the preview a custom query");
+		}
+		
+		try {
+			// Setup the snapshot data to pull from the appropriate experiment
+			Set<Experiment> allExperiments = experimentData.findAll();
+			user.setAllowedExperiments(allExperiments);
+			
+			Experiment activeExperiment = experimentData.getByName(activeExperimentName);
+			user.setActiveExperiment(activeExperiment);
+			
+			snapshotData.setDataSource(Config.experimentDataSource(activeExperimentName));
+			
+			// If none of the user's experiments match the active experiment
+			if (activeExperiment == null) {
+				log.info("The active experiment for the user " + username + " was found to not be set."
+						+ "The system doesn't know where to look. Terminating custom query preview.");
+			}
+			
+			CustomQuerySettings querySettings = new CustomQuerySettings(plantBarcode, measurementLabel, startTime, endTime, restrictedUsers, includeWatering);
+			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs(querySettings);
+			log.info("The custom query preview for user " + username + " with active experiment " + activeExperimentName + " is successful.");
+			return new ResponseEntity<String>(Snapshot.toCSV(snapshots, true), HttpStatus.OK);
+		}
+		
+		
 		catch (CannotGetJdbcConnectionException e) {
-			String connectionFailedMessage = "Could not retrieve the last " + numSnapshots + " snapshots for user " + username
-										   + " because this server could not connect to the snapshot data server.";
-			model.addAttribute("message", connectionFailedMessage);
-			log.info(connectionFailedMessage);
-			return "error";
+			log.error("Could not access the experiments server in search of experiments under the name " + activeExperimentName + " for user " + username + ". Terminating mass download.", e);
+			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		catch (MalformedConfigException e) {
+			log.fatal(e.getMessage(), e);
+			return new ResponseEntity<String>("Experiment database access misconfigured.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		catch (ObjectNotFoundException e) {
+			log.error(e.getMessage(), e);
+			return new ResponseEntity<String>("Experiment " + activeExperimentName + " not found.", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -267,29 +315,15 @@ public class UserAreaController
 	{
 		String username = user.getUsername();
 		log.info("Attempting to retrieve download key for user " + username);
-		// try {
+		
 		String downloadKey = DownloadManager.generateRandomKey(user);
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
 		model.addAttribute("activeExperiment", activeExperiment.getExperimentName());
 		
-		List<String> barcodes = snapshotData.getBarcodes(100);
-		model.addAttribute("exampleBarcodes", barcodes);
-		
-		List<String> measurementLabels = snapshotData.getMeasurementLabels(50);
-		model.addAttribute("exampleMeasurementLabels", measurementLabels);
-		
 		log.info("Retrieved download key for user " + username + " and queried the active experiment " + activeExperiment.getExperimentName());
 		return "userarea-querybuilder";
-		// }
-
-		// catch (ActiveKeyException e) {
-		// String keyMessage = "Could not download as the user is already downloading another item.";
-		// model.addAttribute("message", keyMessage);
-		// log.info(keyMessage);
-		// return "error";
-		// }
 	}
 
 	/**
@@ -308,16 +342,20 @@ public class UserAreaController
 			HttpServletResponse response,
 			Locale locale,
 			Model model,
-			@RequestParam(value = "endTime",			required = false) String endTime,
-			@RequestParam(value = "startTime",			required = false) String startTime,
 			@RequestParam(value = "activeExperiment",	required = false) String activeExperimentName,
-			@RequestParam(value = "plantBarcode",		required = false) String plantBarcode,
-			@RequestParam(value = "measurementLabel",	required = false) String measurementLabel,
-			@RequestParam(value = "downloadKey",		required = true)  String downloadKey,
-			@RequestParam(value = "vis",		defaultValue = "false")	  boolean visibileLightImages,
-			@RequestParam(value = "nir",		defaultValue = "false")	  boolean nearInfraredImages,
-			@RequestParam(value = "fluo",		defaultValue = "false")	  boolean fluorescentImages,
-			@RequestParam(value = "watering",	defaultValue = "false")	  boolean includeWatering)
+			
+			@RequestParam(value = "plantBarcode",		required = false,	defaultValue = "") String plantBarcode,
+			@RequestParam(value = "measurementLabel",	required = false,	defaultValue = "") String measurementLabel,
+			@RequestParam(value = "startTime",			required = false,	defaultValue = "") String startTime,
+			@RequestParam(value = "endTime",			required = false,	defaultValue = "") String endTime,
+			@RequestParam(value = "userRestriction",	required = false,	defaultValue = "") String restrictedUsers,
+			
+			@RequestParam(value = "downloadKey",		required = true) String downloadKey,
+			
+			@RequestParam(value = "vis",		defaultValue = "false")	boolean visibileLightImages,
+			@RequestParam(value = "nir",		defaultValue = "false")	boolean nearInfraredImages,
+			@RequestParam(value = "fluo",		defaultValue = "false")	boolean fluorescentImages,
+			@RequestParam(value = "watering",	defaultValue = "false")	boolean includeWatering)
 					throws IOException, ExperimentNotAllowedException
 	{
 		log.info("Attempting to execute a mass download.");
@@ -330,7 +368,6 @@ public class UserAreaController
 			return;
 		}
 		
-		// TODO: What if the download key isn't found and this throws an IllegalArgumentException?
 		if (System.getProperty(downloadKey) == null) {
 			log.info("The download key for the user was found to be null. Terminating mass download.");
 			response.sendError(400, "Invalid download key");
@@ -340,31 +377,12 @@ public class UserAreaController
 		
 		DbUser user = null;
 		try {
-			//Need to load the user by hand because there is no session attached to wget (or presumed none).
-			user = userDataSource.findByUsername(System.getProperty(downloadKey)); 
+			user = userDataSource.findByUsername(System.getProperty(downloadKey));
 		}
-		
-		
-		
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Could not access the user data server in search of user. Terminating mass download.");
-			response.sendError(500, "Internal error: Could not access server.");
-			response.flushBuffer();
+		catch (Exception e) {
+			ControllerHelper.handleUserDataGETExceptions(e, response, username, log, "execute a mass download");
 			return;
 		}
-		catch (UserException e) {
-			log.info("The user's data is corrupted. Terminating mass download.", e);
-			response.sendError(500, "User data corrupt.");
-			response.flushBuffer();
-			return;
-		}
-		catch (ObjectNotFoundException e) {
-			log.error("The user associated with our key could not be found. Terminating mass download.", e);
-			response.sendError(403, "Invalid download key.");
-			response.flushBuffer();
-			return;
-		}
-		String username = user.getUsername();
 		
 		try {
 			// Setup the snapshot data to pull from the appropriate experiment
@@ -385,22 +403,6 @@ public class UserAreaController
 				return;
 			}
 			
-			// Setup query
-			List<Snapshot> snapshots;
-			Timestamp startTimestamp = null;
-			Timestamp endTimestamp = null;
-			
-			
-			if ( startTime != null && ! startTime.equals("")) {
-				DateTime startDate = formatter.parseDateTime(startTime);
-				startTimestamp = new Timestamp(startDate.getMillis());
-			}
-			
-			if ( endTime != null && ! endTime.equals("")) {
-				DateTime endDate = formatter.parseDateTime(endTime);
-				endTimestamp = new Timestamp(endDate.getMillis());
-			}
-			
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
 			// TODO: Add filename option
@@ -408,7 +410,8 @@ public class UserAreaController
 			response.flushBuffer();
 			
 		    log.info("Querying database for snapshots and tiles.");
-			snapshots = snapshotData.findCustomQueryAnyTime_imageJobs_withTiles(startTimestamp, endTimestamp, plantBarcode, measurementLabel);
+			CustomQuerySettings querySettings = new CustomQuerySettings(plantBarcode, measurementLabel, startTime, endTime, restrictedUsers, includeWatering);
+			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs(querySettings);
 		    log.info("Got snapshots and tiles. Building results.");
 			ResultsBuilder results = new ResultsBuilder(
 					response.getOutputStream(),
@@ -416,11 +419,8 @@ public class UserAreaController
 					activeExperiment,
 					nearInfraredImages,
 					visibileLightImages,
-					fluorescentImages,
-					includeWatering);
 		    log.info("Writing zip archive.");
 			results.writeZipArchive();
-			
 			response.flushBuffer();
 			log.info("The mass download for user " + username + " with active experiment " + activeExperimentName + " is successful.");
 		}
@@ -453,58 +453,58 @@ public class UserAreaController
 	 * @param endTime			return only snapshots before this date
 	 * @return
 	 */
-	@RequestMapping(value = "/userarea/filterresults", method = RequestMethod.GET)
-	public String filterResultsAction(
-										Locale	locale,
-										Model	model,
-			@RequestParam("startTime")	String	startTime,
-			@RequestParam("endTime")	String	endTime)
-	{
-		
-		String username = ControllerHelper.currentUsername();
-		log.info("Attempting to filter snapshots by date for user " + username);
-		String filterMessage = "Filtered snapshots by dates: ";
-		List<Snapshot> snapshots;
-		
-		if (validTime(endTime) && validTime(startTime)) {
-			
-			Timestamp endTimestamp = timestampFromString(endTime);
-			Timestamp startTimestamp = timestampFromString(startTime);
-			
-			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp);
-			
-			String dateMessage = "Start time: " + startTime + " End time: " + endTime;
-			log.info(filterMessage + dateMessage + " for user " + username);
-			model.addAttribute("date", dateMessage);
-		}
-		
-		else if (validTime(startTime)) {
-			Timestamp startTimestamp = timestampFromString(startTime);
-			
-			snapshots = snapshotData.findAfterTimestamp_imageJobs(startTimestamp);
-			
-			String dateMessage = "Start time: " + startTime;
-			log.info(filterMessage + dateMessage + " for user " + username);
-			model.addAttribute("date", dateMessage);
-		}
-		
-		else {
-			// TODO: Determine why we're subtracting 3 days here
-			Timestamp endTimestamp = timestampFromString(endTime);
-			
-			DateTime endDate = formatter.parseDateTime(endTime);
-			Timestamp startTimestamp_3daysBefore = new Timestamp(endDate.minusDays(3).getMillis());
-			
-			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp_3daysBefore);
-			
-			String dateMessage = "Start time: " + startTimestamp_3daysBefore + " End time: " + endTime;
-			log.info(filterMessage + dateMessage + " for user " + username);
-			model.addAttribute("date", dateMessage);
-		}
-		
-		model.addAttribute("snapshots", snapshots);
-		return "userarea-results";
-	}
+//	@RequestMapping(value = "/userarea/filterresults", method = RequestMethod.GET)
+//	public String filterResultsAction(
+//										Locale	locale,
+//										Model	model,
+//			@RequestParam("startTime")	String	startTime,
+//			@RequestParam("endTime")	String	endTime)
+//	{
+//		
+//		String username = ControllerHelper.currentUsername();
+//		log.info("Attempting to filter snapshots by date for user " + username);
+//		String filterMessage = "Filtered snapshots by dates: ";
+//		List<Snapshot> snapshots;
+//		
+//		if (validTime(endTime) && validTime(startTime)) {
+//			
+//			Timestamp endTimestamp = timestampFromString(endTime);
+//			Timestamp startTimestamp = timestampFromString(startTime);
+//			
+//			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp);
+//			
+//			String dateMessage = "Start time: " + startTime + " End time: " + endTime;
+//			log.info(filterMessage + dateMessage + " for user " + username);
+//			model.addAttribute("date", dateMessage);
+//		}
+//		
+//		else if (validTime(startTime)) {
+//			Timestamp startTimestamp = timestampFromString(startTime);
+//			
+//			snapshots = snapshotData.findAfterTimestamp_imageJobs(startTimestamp);
+//			
+//			String dateMessage = "Start time: " + startTime;
+//			log.info(filterMessage + dateMessage + " for user " + username);
+//			model.addAttribute("date", dateMessage);
+//		}
+//		
+//		else {
+//			// TODO: Determine why we're subtracting 3 days here
+//			Timestamp endTimestamp = timestampFromString(endTime);
+//			
+//			DateTime endDate = formatter.parseDateTime(endTime);
+//			Timestamp startTimestamp_3daysBefore = new Timestamp(endDate.minusDays(3).getMillis());
+//			
+//			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp_3daysBefore);
+//			
+//			String dateMessage = "Start time: " + startTimestamp_3daysBefore + " End time: " + endTime;
+//			log.info(filterMessage + dateMessage + " for user " + username);
+//			model.addAttribute("date", dateMessage);
+//		}
+//		
+//		model.addAttribute("snapshots", snapshots);
+//		return "userarea-results";
+//	}
 	
 	/**
 	 * Method for getting a snapshot and all associated images in a chunked manner. That is, a stream which will allow for a
@@ -551,7 +551,7 @@ public class UserAreaController
 		boolean nir = true;
 		boolean fluo = true;
 		try {
-			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo, false);
+			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo);
 			results.writeZipArchive();
 		}
 		catch (IOException e) {
@@ -652,24 +652,5 @@ public class UserAreaController
 			log.info("Password change for user " + username + " failed because the user could not be found.");
 			return new ResponseEntity<String>("User not found.", HttpStatus.BAD_REQUEST);
 		}
-	}
-	
-	
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	// Helper Methods
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	private Timestamp timestampFromString(String time)
-	{	
-		DateTime date = formatter.parseDateTime(time);
-		Timestamp timestamp = new Timestamp(date.getMillis());
-		
-		return timestamp;
-	}
-	
-	private boolean validTime(String time)
-	{
-		return ! time.equals("");
 	}
 }

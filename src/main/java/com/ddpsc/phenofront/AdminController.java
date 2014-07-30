@@ -64,7 +64,7 @@ public class AdminController
 			users = ud.findAllUsers();
 		}
 		catch (CannotGetJdbcConnectionException e) {
-			return ControllerHelper.HandleJdbcException(model, log, "retrieve all user and group data");
+			return ControllerHelper.handleJdbcException(model, log, "retrieve all user and group data");
 		}
 		
 		model.addAttribute("users", users);
@@ -121,7 +121,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the password of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the password of");
 		}
 	}
 	
@@ -156,7 +156,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the authority of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the authority of");
 		}
 		
 	}
@@ -205,7 +205,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the username of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the username of");
 		}
 	}
 	
@@ -243,7 +243,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "change the group of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the group of");
 		}
 	}
 	
@@ -265,7 +265,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.HandleUserPOSTExceptions(e, userId, log, "remove");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "remove");
 		}
 	}
 	

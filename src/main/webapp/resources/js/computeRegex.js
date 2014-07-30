@@ -6,7 +6,15 @@
  */
 function computeRegex(pattern, barcodes)
 {
-	var regex = new RegExp(pattern);
+	var regex;
+	try {
+		regex = new RegExp(pattern);
+	}
+	catch (e) {
+		// Invalid regex
+		return "Invalid regex.";
+	}
+	
 	var matchedBarcodes = [];
 	
 	barcodes.forEach(function(barcode) {
