@@ -512,7 +512,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 		List<Snapshot> snapshots;
 		Timestamp startTime = querySettings.startTime;
 		Timestamp endTime = querySettings.endTime;
-		
 		if (startTime == null && endTime != null)
 			snapshots = findCustomQueryBeforeTime_imageJobs_HELPER(querySettings);
 			
@@ -695,7 +694,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 			throws CannotGetJdbcConnectionException
 	{
 		for (Snapshot snapshot : snapshots) {
-			log.info("Load tiles for the snapshot ID='" + snapshot.getId() + "'.");
 			snapshot.setTiles(findTiles(snapshot));
 		}
 	}
