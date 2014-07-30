@@ -419,6 +419,7 @@ public class UserAreaController
 					activeExperiment,
 					nearInfraredImages,
 					visibileLightImages,
+                    fluorescentImages);
 		    log.info("Writing zip archive.");
 			results.writeZipArchive();
 			response.flushBuffer();
