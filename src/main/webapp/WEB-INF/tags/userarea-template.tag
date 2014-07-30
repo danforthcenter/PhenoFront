@@ -22,40 +22,31 @@
 				<span class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="<c:url context="/phenofront/userarea" value="/results"/>">PhenoFront</a>
+			<a class="navbar-brand" href="<c:url context="/phenofront/userarea" value="/querybuilder"/>">PhenoFront</a>
 		</div>
 		<div class="collapse navbar-collapse">
 			<ul class="nav navbar-nav">
-				<li 
-					<c:if test = "${ active == 'Home'}">class = "active"</c:if> 
-					><a href="<c:url context="/phenofront/userarea" value="/results"/>">Home</a></li>
-				<!--
-				<li 
-					<c:if test = "${ active == 'Visualize'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/userarea" value="/visualize"/>">Visualize</a></li>
-				<li 
-					<c:if test = "${ active == 'Schedule'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/userarea" value="/schedule"/>">Schedule</a></li>
-				-->
-				<li 
-					<c:if test = "${ active == 'Results'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/userarea" value="/results"/>">Results</a></li>
-				<li 
-					<c:if test = "${ active == 'Batch Download'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/userarea" value="/querybuilder"/>">Batch Download</a></li>
-				<!-- 
-				<li 
-					<c:if test = "${ active == 'Status'}">class = "active"</c:if>
-					><a href="<c:url context="/phenofront/userarea" value="/status"/>">Job Status</a></li>
-				-->
-				<li 
-					<c:if test = "${ active == 'Profile'}">class = "active"</c:if>
-					><a href="<c:url context= "/phenofront/userarea" value="/profile"/>">Profile</a></li>
-				<li 
-					<c:if test = "${ active == 'Select Experiment'}">class = "active"</c:if>
-					><a href="<c:url context= "/phenofront/" value="/selectexperiment"/>">Select Experiment</a></li>
+			
+				<li <c:if test = "${ active == 'Home'}">class = "active"</c:if>>
+					<a href="<c:url context="/phenofront/userarea" value="/querybuilder"/>">Home</a>
+				</li>
 				
-				<li><a href="<c:url value="/j_spring_security_logout"/>">Log-out</a></li>
+				<li <c:if test = "${ active == 'Batch Download'}">class = "active"</c:if>>
+					<a href="<c:url context="/phenofront/userarea" value="/querybuilder"/>">Query Builder</a>
+				</li>
+				
+				<li <c:if test = "${ active == 'Select Experiment'}">class = "active"</c:if>>
+					<a href="<c:url context= "/phenofront" value="/selectexperiment"/>">Select Experiment</a>
+				</li>
+				
+				<li <c:if test = "${ active == 'Profile'}">class = "active"</c:if>>
+					<a href="<c:url context= "/phenofront/userarea" value="/profile"/>">Profile</a>
+				</li>
+
+				<li>
+					<a href="<c:url value="/j_spring_security_logout"/>">Log-out</a>
+				</li>
+				
 			</ul>
 		</div>
 		<!--/.nav-collapse -->

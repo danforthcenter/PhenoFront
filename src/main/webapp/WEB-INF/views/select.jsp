@@ -17,7 +17,9 @@
 			      	<option value="${experiment.experimentName }">${ experiment.experimentName }</option>
 			      </c:forEach>
 				</select>
+				
 				<div class="result hidden"></div>
+				
 				<button type="submit" class="btn btn-default btn-block btn-large">Submit</button>
 			</form>
 		</div>
@@ -33,7 +35,7 @@ $(document).ready(function(){
 			url: '<c:url context="/phenofront" value="/selection" />',
 			data: $(this).serialize(),
 			success: function(data){
-				window.location.href = '<c:url context="/phenofront" value="/userarea/results"/>';
+				window.location.href = '<c:url context="/phenofront" value="/userarea/querybuilder"/>';
 			},
 			error: function(xhr, status, error) {
 				form.find('.result').removeClass('hidden alert alert-success');

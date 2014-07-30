@@ -14,6 +14,11 @@ import src.ddpsc.database.tile.Tile;
  */
 public class Snapshot
 {
+	public static String CSV_HEADER
+		= "id,plant barcode,car tag,timestamp,weight before,weight after,water amount,completed,measurement label,tiles\n";
+	public static String CSV_HEADER_NO_WEIGHTS
+		= "id,plant barcode,car tag,timestamp,completed,measurement label\n";
+	
 	private	String		plantBarcode;
 	private String		carTag;
 	private Timestamp	timeStamp;
@@ -92,26 +97,33 @@ public class Snapshot
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	/**
+	 * Converts a series of snapshots into CSV form, includes headers
+	 * 
+	 * @return			csv form of a list of snapshots
+	 */
+	public static String toCSV(List<Snapshot> snapshots) { return toCSV(snapshots, true); }
+	public static String toCSV(List<Snapshot> snapshots, boolean addHeader)
+	{
+		StringBuilder data = new StringBuilder();
+		
+		for (Snapshot snapshot : snapshots)
+			data.append(snapshot.toCSV(false));
+		
+		if (addHeader)
+			return CSV_HEADER + data.toString();
+		else
+			return data.toString();
+	}
+	
+	/**
 	 * Converts this snapshot to a comma separated string with labels for each value on the first line.
 	 * 
 	 * @return			csv form of the Snapshot with labels
 	 */
-	public String toCSVString()
+	public String toCSV() { return toCSV(true); }
+	public String toCSV(boolean addHeader)
 	{
-		String labels = "id,plant barcode,car tag,timestamp,weight before,weight after,water amount,completed,measurement label,tiles\n";
-		String data = toCSVString_noHeader();
-		
-		return labels + data;
-	}
-
-	/**
-	 * Same as csvWriter except it excludes the header labels line.
-	 * 
-	 * @return			csv form of the snapshot without the header labels
-	 */
-	public String toCSVString_noHeader()
-	{
-		String data = id
+		StringBuilder data = new StringBuilder(id
 				+ "," + plantBarcode
 				+ "," + carTag
 				+ "," + timeStamp
@@ -119,15 +131,17 @@ public class Snapshot
 				+ "," + weightAfter
 				+ "," + waterAmount
 				+ "," + completed
-				+ "," + measurementLabel;
-		
+				+ "," + measurementLabel);
+
 		if (tiles != null && tiles.size() > 0)
-			data += "," + Tile.toCSVString(tiles, ";") + "\n";
-		
+			data.append("," + Tile.toCSVString(tiles, ";") + "\n");
 		else
-			data += "\n";
+			data.append("\n");
 		
-		return (data);
+		if (addHeader)
+			return CSV_HEADER + data.toString();
+		else
+			return data.toString();
 	}
 
 	/**
@@ -135,21 +149,25 @@ public class Snapshot
 	 * 
 	 * @return			csv of the snapshot without the label line and missing the weight tags
 	 */
-	public String toCSVString_noWeights()
+	public String toCSV_noWeights() { return toCSV_noWeights(true); }
+	public String toCSV_noWeights(boolean addHeader)
 	{
-		String data = id
+		StringBuilder data = new StringBuilder(id
 				+ "," + plantBarcode
 				+ "," + carTag
 				+ "," + timeStamp
 				+ "," + completed
-				+ "," + measurementLabel;
+				+ "," + measurementLabel);
 		 
 		if (tiles != null && tiles.size() > 0)
-			data += "," + Tile.toCSVString(tiles, ";") + "\n";
+			data.append("," + Tile.toCSVString(tiles, ";") + "\n");
 		else
-			data += "\n";
+			data.append("\n");
 		
-		return (data);
+		if (addHeader)
+			return CSV_HEADER_NO_WEIGHTS + data.toString();
+		else
+			return data.toString();
 	}
 	
 	

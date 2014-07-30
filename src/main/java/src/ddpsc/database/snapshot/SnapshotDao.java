@@ -59,7 +59,7 @@ public interface SnapshotDao
 	
 	
 	
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs(Timestamp startTime, Timestamp endTime, String plantBarcode, String measurementLabel) throws CannotGetJdbcConnectionException;
+	public List<Snapshot> findCustomQueryAnyTime_imageJobs(CustomQuerySettings querySettings) throws CannotGetJdbcConnectionException;
 	
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs_withTiles(Timestamp startTime, Timestamp endTime, String plantBarcode, String measurementLabel) throws CannotGetJdbcConnectionException;
+	public List<Snapshot> findCustomQueryAnyTime_imageJobs_withTiles(CustomQuerySettings querySettings) throws CannotGetJdbcConnectionException;
 }
