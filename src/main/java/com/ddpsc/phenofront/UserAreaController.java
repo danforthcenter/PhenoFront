@@ -358,19 +358,19 @@ public class UserAreaController
 			@RequestParam(value = "watering",	defaultValue = "false")	boolean includeWatering)
 					throws IOException, ExperimentNotAllowedException
 	{
-		String username = ControllerHelper.currentUsername();
-		log.info("Attempting to execute a mass download for user " + username);
+		//????
+		log.info("Attempting to execute a mass download.");
 		
 		// TODO: Reimplement 1 download per user limit? Yes
 		if (downloadKey == null) {
-			log.info("The download key for the user " + username + " was null. Terminating mass download.");
+			log.info("The download key was null. Terminating mass download.");
 			response.sendError(403, "Permission denied.");
 			response.flushBuffer();
 			return;
 		}
 		
 		if (System.getProperty(downloadKey) == null) {
-			log.info("The download key for the user " + username + " was found to be null. Terminating mass download.");
+			log.info("The download key for the user was found to be null. Terminating mass download.");
 			response.sendError(400, "Invalid download key");
 			response.flushBuffer();
 			return;

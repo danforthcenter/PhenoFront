@@ -53,7 +53,7 @@ public abstract class ConfigReader
 		try {
 			ClassPathResource c = new ClassPathResource("/");
 			File f = c.getFile();
-			FileReader reader = new FileReader(f.getAbsolutePath() + "/../" + configurationFile);
+			FileReader reader = new FileReader(f.getAbsolutePath() + "/" + configurationFile);
 			BufferedReader buff = new BufferedReader(reader);
 			// Flat file containing key pairs separated by an arbitrary amount of whitespace
 			// First is name, second is value
