@@ -279,7 +279,7 @@ public class UserAreaController
 			}
 			
 			CustomQuerySettings querySettings = new CustomQuerySettings(plantBarcode, measurementLabel, startTime, endTime, restrictedUsers, includeWatering);
-			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs(querySettings);
+			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs_withTiles(querySettings);
 			log.info("The custom query preview for user " + username + " with active experiment " + activeExperimentName + " is successful.");
 			return new ResponseEntity<String>(Snapshot.toCSV(snapshots, true), HttpStatus.OK);
 		}
