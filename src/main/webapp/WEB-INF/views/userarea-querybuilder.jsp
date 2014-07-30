@@ -54,13 +54,15 @@
 					class="form-control" placeholder=""
 					title="The latest a snapshot can occur. Click the box to choose a date." />
 				
-				
+				<!--  
 				<label for="userRestriction">
 					Restrict By User:
 				</label>
+				
 				<input type="text" name="userRestriction" id="userRestriction"
 					class="form-control" placeholder="~~~~~NOT IMPLEMENTED YET~~~~~username1, usernam2, username3, etc."
 					title="A comma separated list of users. Removes any snapshots downloaded by a listed user.~~~~~NOT IMPLEMENTED YET~~~~~" />
+				-->
 			</div>
 			
 			<div class="form-group">
