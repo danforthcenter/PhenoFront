@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 
-import src.ddpsc.database.user.DbGroup;
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.Group;
+import src.ddpsc.database.user.User;
 /**
  * Utility abstract class that contains various data instantiation.
  * 
@@ -26,15 +26,15 @@ public abstract class TestUtility {
 	 * @return
 	 */
 	
-	public DbUser FIRST_USER;
-	public DbUser SECOND_USER;
-	public DbUser THIRD_USER;
+	public User FIRST_USER;
+	public User SECOND_USER;
+	public User THIRD_USER;
 	
-	public DbGroup FIRST_USER_GROUP;
-	public DbGroup SECOND_USER_GROUP;
+	public Group FIRST_USER_GROUP;
+	public Group SECOND_USER_GROUP;
 	
-	public ArrayList<DbUser> USERS;
-	public ArrayList<DbGroup> GROUPS;
+	public ArrayList<User> USERS;
+	public ArrayList<Group> GROUPS;
 	
 	/**
 	 * Returns all possible ROLE_USER paths that should be accessed via GET
@@ -104,7 +104,7 @@ public abstract class TestUtility {
 	{
 		StandardPasswordEncoder se = new StandardPasswordEncoder();
 		
-		FIRST_USER = new DbUser();
+		FIRST_USER = new User();
 		FIRST_USER.setUserId(1);
         FIRST_USER.setUsername("testuser1");
         FIRST_USER.setAuthority("ROLE_ADMIN");
@@ -113,7 +113,7 @@ public abstract class TestUtility {
         FIRST_USER_GROUP = buildGroupMock(1, FIRST_USER);
         FIRST_USER.setGroup(FIRST_USER_GROUP);
         
-        SECOND_USER = new DbUser();
+        SECOND_USER = new User();
 		SECOND_USER.setUserId(2);
 		SECOND_USER.setUsername("testuser2");
 		SECOND_USER.setAuthority("ROLE_USER");
@@ -121,7 +121,7 @@ public abstract class TestUtility {
 		SECOND_USER.setPassword(se.encode("password"));
 		SECOND_USER.setGroup(FIRST_USER_GROUP);
 		
-		THIRD_USER = new DbUser();
+		THIRD_USER = new User();
 		THIRD_USER.setUserId(3);
 		THIRD_USER.setUsername("testuser3");
 		THIRD_USER.setAuthority("ROLE_USER");
@@ -130,12 +130,12 @@ public abstract class TestUtility {
 		SECOND_USER_GROUP = buildGroupMock(2, THIRD_USER);
 		THIRD_USER.setGroup(SECOND_USER_GROUP);
 		
-		USERS = new ArrayList<DbUser>();
+		USERS = new ArrayList<User>();
         USERS.add(FIRST_USER);
         USERS.add(SECOND_USER);
         USERS.add(THIRD_USER);
         
-        GROUPS = new ArrayList<DbGroup>();
+        GROUPS = new ArrayList<Group>();
         GROUPS.add(FIRST_USER_GROUP);
         GROUPS.add(SECOND_USER_GROUP);
 	}
@@ -145,18 +145,18 @@ public abstract class TestUtility {
 	 * @param version
 	 * @return
 	 */
-	public static DbGroup buildGroupMock(int version, DbUser owner)
+	public static Group buildGroupMock(int version, User owner)
 	{
 		if (version == 1) {
-			DbGroup FIRST_USER = new DbGroup();
-			FIRST_USER.setGroupID(1);
+			Group FIRST_USER = new Group();
+			FIRST_USER.setGroupId(1);
 			FIRST_USER.setGroupName("group1");
 			FIRST_USER.setOwner(owner);
 			return FIRST_USER;
 		}
 		if (version == 2) {
-			DbGroup SECOND_USER = new DbGroup();
-			SECOND_USER.setGroupID(2);
+			Group SECOND_USER = new Group();
+			SECOND_USER.setGroupId(2);
 			SECOND_USER.setGroupName("group2");
 			SECOND_USER.setOwner(owner);
 			return SECOND_USER;

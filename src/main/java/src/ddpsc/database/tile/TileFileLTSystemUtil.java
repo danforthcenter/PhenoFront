@@ -3,6 +3,7 @@ package src.ddpsc.database.tile;
 import org.joda.time.DateTime;
 
 import src.ddpsc.database.experiment.Experiment;
+
 /**
  * The purpose of this class is to create a system utility for accessing Images on the LemnaTec filesystem, obviously, this
  * could be a runtime Interface/Service as well. However it seems more intuitive to simply design for the
@@ -23,8 +24,6 @@ import src.ddpsc.database.experiment.Experiment;
  */
 public final class TileFileLTSystemUtil
 {
-	public final static String fileroot = "/data/pgftp";
-	
 	/**
 	 * Returns absolute path to the blob of the raw image.
 	 * 
@@ -38,7 +37,7 @@ public final class TileFileLTSystemUtil
 	 */
 	public static final String getTileFilename(Tile tile, DateTime date, Experiment experiment)
 	{
-		return fileroot + "/" + experiment.getExperimentName() + "/" + date.toString("YYYY-MM-dd") + "/blob" + tile.getRawImageOid();
+		return LTSystem.fileroot + "/" + experiment.getExperimentName() + "/" + date.toString("YYYY-MM-dd") + "/blob" + tile.getRawImageOid();
 	}
 	
 	/**
@@ -52,6 +51,6 @@ public final class TileFileLTSystemUtil
 	 */
 	public static final String getTileFilename(String imageOid, String date, Experiment experiment)
 	{
-		return fileroot + "/"+ experiment.getExperimentName() + "/" + date + "/" + imageOid;
+		return LTSystem.fileroot + "/"+ experiment.getExperimentName() + "/" + date + "/" + imageOid;
 	}
 }

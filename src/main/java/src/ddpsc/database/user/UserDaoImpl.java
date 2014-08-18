@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.User;
 import src.ddpsc.database.user.UserRowMapper;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
@@ -37,15 +37,16 @@ public class UserDaoImpl implements UserDao
 									   // What is gained by having instances of this class?
 	
 	private static final String USER_QUERY_VARIABLES = "SELECT "
-			+ "us.username, "
-			+ "us.password, "
-			+ "us.enabled, "
-			+ "us.group_id, "
-			+ "us.authority, "
-			+ "u.username AS owner, "
+			+ "us."+User.USER_ID + ", "
+			+ "us."+User.USERNAME + ", "
+			+ "us."+User.PASSWORD + ", "
+			+ "us."+User.ENABLED + ", "
+			+ "us."+User.GROUP_ID + ", "
+			+ "u."+User.USER_ID + " AS owner, "
 			+ "gr.group_name, "
-			+ "us.user_id "
-			+ "FROM users AS us, groups AS gr ";
+			+ "us."+User.AUTHORITY + " "
+			+ "FROM " + User.TABLE + " AS us, groups AS gr "
+			+ "JOIN " + User.TABLE + " AS u ON u."+User.USER_ID + " = gr.owner_id ";
 	
 	private static final String GROUP_QUERY_VARIABLES = "SELECT "
 			+ "u.username AS owner, "
@@ -70,19 +71,18 @@ public class UserDaoImpl implements UserDao
 	 * @throws		ObjectNotFoundException				Thrown if the username is not in the database 
 	 */
 	@Override
-	public DbUser findByUsername(String username) 
+	public User findByUsername(String username) 
 			throws ObjectNotFoundException, CannotGetJdbcConnectionException, UserException
 	{
 		log.info("Attempting to find user with name " + username);
 		
 		String getUser = USER_QUERY_VARIABLES
-				+ "JOIN users AS u ON u.user_id = gr.owner_id "
 				+ "WHERE us.username =  '" + username + "' "
 				+ "AND gr.group_id = us.group_id";
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbUser> users = jdbcTemplate.query(getUser, new UserRowMapper());
+		List<User> users = jdbcTemplate.query(getUser, new UserRowMapper());
 		
 		
 		if (users.size() == 0)
@@ -99,7 +99,7 @@ public class UserDaoImpl implements UserDao
 			log.error(multiplicityMessage);
 		}
 		
-		DbUser user = users.get(0);
+		User user = users.get(0);
 		
 		ensureValidity(user); // Throws UserException
 		
@@ -120,24 +120,23 @@ public class UserDaoImpl implements UserDao
 	 * @throws 		UserException						Thrown if the retrieved user returns incomplete data 
 	 */
 	@Override
-	public DbUser findByID(int userID)
+	public User findByID(int userID)
 			throws ObjectNotFoundException, CannotGetJdbcConnectionException, UserException
 	{
 		log.info("Attempting to find user with ID='" + userID +"'");
 		
 		String getUser = USER_QUERY_VARIABLES
-				+ "JOIN users AS u ON u.user_id = gr.owner_id "
 				+ "WHERE us.user_id =  '" + userID + "' "
 				+ "AND gr.group_id = us.group_id";
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbUser> users = jdbcTemplate.query(getUser, new UserRowMapper());
+		List<User> users = jdbcTemplate.query(getUser, new UserRowMapper());
 		
 		if (users.size() == 0)
 			throw new ObjectNotFoundException("User with ID='" + userID + "' not found.");
 		
-		DbUser user = users.get(0);
+		User user = users.get(0);
 		
 		ensureValidity(user); // Throws UserException
 		
@@ -148,7 +147,7 @@ public class UserDaoImpl implements UserDao
 	
 	
 	/**
-	 * Adds a user to the user database with the data defined by the supplied {@link DbUser} object.
+	 * Adds a user to the user database with the data defined by the supplied {@link User} object.
 	 * 
 	 * To be used for administrative purposes.
 	 * 
@@ -157,7 +156,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is inaccessible
 	 */
 	@Override
-	public void addUser(DbUser user) throws UserException, CannotGetJdbcConnectionException
+	public void addUser(User user) throws UserException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to add user " + user.getUsername());
 		
@@ -171,7 +170,7 @@ public class UserDaoImpl implements UserDao
 					+ "'" + user.getUsername() + "', "
 					+ "'" + user.getPassword() + "', "
 					+ "'" + (user.getEnabled() ? 1 : 0) + "', "
-					+ "'" + user.getGroup().getGroupID() + "', "
+					+ "'" + user.getGroup().getGroupId() + "', "
 					+ "'" + user.getAuthority() + "'"
 				+ ")";
 		
@@ -198,7 +197,7 @@ public class UserDaoImpl implements UserDao
 	 * 
 	 * @see addUser
 	 */
-	private void addUserNoGroup(DbUser user) throws UserException, CannotGetJdbcConnectionException
+	private void addUserNoGroup(User user) throws UserException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to add user " + user.getUsername() + " without a group.");
 		
@@ -234,7 +233,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the program has failed to access the user database
 	 */
 	@Override
-	public boolean userExists(DbUser user) throws CannotGetJdbcConnectionException
+	public boolean userExists(User user) throws CannotGetJdbcConnectionException
 	{
 		log.info("Checking if user " + user.getUsername() + " exists in the database.");
 		
@@ -294,10 +293,10 @@ public class UserDaoImpl implements UserDao
 	 * @throws 	ObjectNotFoundException 				Thrown if the user could not be found in the database
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 * 
-	 * @see DbUser
+	 * @see User
 	 */
 	@Override
-	public void updateUser(DbUser oldUser, DbUser newUser)
+	public void updateUser(User oldUser, User newUser)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting update user operation for user with ID=" + oldUser.getUserId() + " adding new user " + newUser.describe());
@@ -311,7 +310,7 @@ public class UserDaoImpl implements UserDao
 				+ "password='" + newUser.getPassword() + "', "
 				+ "authority='" + newUser.getAuthority() + "', "
 				+ "enabled='" + (newUser.getEnabled() ? 1 : 0) + "', "
-				+ "group_id='" + newUser.getGroup().getGroupID() + "' "
+				+ "group_id='" + newUser.getGroup().getGroupId() + "' "
 				+ "WHERE user_id='" + oldUser.getUserId() + "'";
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
@@ -326,7 +325,7 @@ public class UserDaoImpl implements UserDao
 	
 	
 	/**
-	 * Sets the password in the database to the password of the supplied {@link DbUser} object.
+	 * Sets the password in the database to the password of the supplied {@link User} object.
 	 * 
 	 * Matches the supplied user against the database using the user's ID number, and not username.
 	 * 
@@ -336,7 +335,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 */
 	@Override
-	public void changePassword(DbUser user, String password)
+	public void changePassword(User user, String password)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to change password for user " + user.getUsername());
@@ -360,7 +359,7 @@ public class UserDaoImpl implements UserDao
 	}
 	
 	/**
-	 * Sets the username in the database to the username of the supplied {@link DbUser} object.
+	 * Sets the username in the database to the username of the supplied {@link User} object.
 	 * 
 	 * Matches the supplied user against the database using the user's ID number, and not username.
 	 * 
@@ -370,7 +369,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 */
 	@Override
-	public void changeUsername(DbUser user, String username)
+	public void changeUsername(User user, String username)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to change username for user " + user.getUsername());
@@ -394,7 +393,7 @@ public class UserDaoImpl implements UserDao
 	}
 	
 	/**
-	 * Sets the authority in the database to the authority of the supplied {@link DbUser} object.
+	 * Sets the authority in the database to the authority of the supplied {@link User} object.
 	 * 
 	 * Matches the supplied user against the database using the user's ID number, and not username.
 	 * 
@@ -404,7 +403,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 */
 	@Override
-	public void changeAuthority(DbUser user, String authority)
+	public void changeAuthority(User user, String authority)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to change authority for user " + user.getUsername());
@@ -441,7 +440,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 */
 	@Override
-	public void changeGroup(DbUser user, DbGroup group)
+	public void changeGroup(User user, Group group)
 			throws ObjectNotFoundException, CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
 		log.info("Attempting to change group assignment for user " + user.getUsername());
@@ -449,12 +448,12 @@ public class UserDaoImpl implements UserDao
 		ensureUserExistence(user); // Throws UserNotFoundException
 		
 		String changeGroup = "UPDATE users "
-				+ "SET group_id='" + group.getGroupID() + "' "
+				+ "SET group_id='" + group.getGroupId() + "' "
 				+ "WHERE user_id='" + user.getUserId() + "'";
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		group = this.findGroupByID(group.getGroupID()); // Ensure the group exists by getting it
+		group = this.findGroupByID(group.getGroupId()); // Ensure the group exists by getting it
 		int result = jdbcTemplate.update(changeGroup);
 		
 		boolean groupChanged = (result > 0);
@@ -475,7 +474,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the server cannot be accessed
 	 */
 	@Override
-	public void removeUser(DbUser user) throws CannotGetJdbcConnectionException
+	public void removeUser(User user) throws CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to delete user " + user.getUsername());
 		
@@ -501,16 +500,15 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the program has failed to access the user database
 	 */
 	@Override
-	public List<DbUser> findAllUsers() throws CannotGetJdbcConnectionException
+	public List<User> findAllUsers() throws CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to find all users in the database.");
 		
 		String getAllUsers = USER_QUERY_VARIABLES
-				+ "JOIN users AS u ON u.user_id = gr.owner_id "
 				+ "WHERE gr.group_id = us.group_id";
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbUser> users = jdbcTemplate.query(getAllUsers, new UserRowMapper());
+		List<User> users = jdbcTemplate.query(getAllUsers, new UserRowMapper());
 		
 		log.info("All users in the database found.");
 		
@@ -533,7 +531,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws		ObjectNotFoundException				Thrown if the group is not in the database 
 	 */
 	@Override
-	public DbGroup findGroupByName(String groupName) 
+	public Group findGroupByName(String groupName) 
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
 		log.info("Attempting to find group with name " + groupName + ".");
@@ -545,7 +543,7 @@ public class UserDaoImpl implements UserDao
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbGroup> groups = jdbcTemplate.query(getGroup, new GroupRowMapper());
+		List<Group> groups = jdbcTemplate.query(getGroup, new GroupRowMapper());
 		
 		
 		if (groups.size() == 0)
@@ -562,7 +560,7 @@ public class UserDaoImpl implements UserDao
 			log.error(multiplicityMessage);
 		}
 		
-		DbGroup group = groups.get(0);
+		Group group = groups.get(0);
 		
 		log.info("Group with name " + groupName + " found.");
 		
@@ -580,7 +578,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws		ObjectNotFoundException				Thrown if the ID is not in the database 
 	 */
 	@Override
-	public DbGroup findGroupByID(int groupID)
+	public Group findGroupByID(int groupID)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
 		log.info("Attempting to find group with ID='" + groupID + "'.");
@@ -592,7 +590,7 @@ public class UserDaoImpl implements UserDao
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbGroup> groups = jdbcTemplate.query(getGroup, new GroupRowMapper());
+		List<Group> groups = jdbcTemplate.query(getGroup, new GroupRowMapper());
 		
 		if (groups.size() == 0)
 			throw new ObjectNotFoundException("Group with ID='" + groupID + "' not found.");
@@ -608,7 +606,7 @@ public class UserDaoImpl implements UserDao
 			log.error(multiplicityMessage);
 		}
 		
-		DbGroup group = groups.get(0);
+		Group group = groups.get(0);
 		
 		log.info("Group with ID='" + groupID + "' found.");
 		
@@ -620,7 +618,7 @@ public class UserDaoImpl implements UserDao
 	 * they don't seem to have much of a future in this web service.
 	 */
 	@Override
-	public void addGroup(DbGroup group)
+	public void addGroup(Group group)
 	{
 		
 	}
@@ -630,7 +628,7 @@ public class UserDaoImpl implements UserDao
 	 * they don't seem to have much of a future in this web service.
 	 */
 	@Override
-	public void removeGroup(DbGroup group)
+	public void removeGroup(Group group)
 	{
 		
 	}
@@ -643,7 +641,7 @@ public class UserDaoImpl implements UserDao
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the program has failed to access the user database
 	 */
 	@Override
-	public List<DbGroup> findAllGroups() throws CannotGetJdbcConnectionException
+	public List<Group> findAllGroups() throws CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to get all groups from the user database.");
 		
@@ -653,7 +651,7 @@ public class UserDaoImpl implements UserDao
 		
 		
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(userDataSource);
-		List<DbGroup> groupList = jdbcTemplate.query(getGroups, new GroupRowMapper());
+		List<Group> groupList = jdbcTemplate.query(getGroups, new GroupRowMapper());
 		
 		log.info("All groups in the database have been found.");
 		
@@ -731,7 +729,7 @@ public class UserDaoImpl implements UserDao
 	// Helper methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
-	protected void ensureValidity(DbUser user) throws UserException
+	protected void ensureValidity(User user) throws UserException
 	{
 		if (user.isInvalid()) {
 			String incompleteMessage = "The user " + user.describe() + " is incomplete or invalid because " + user.InvalidityMessage();
@@ -741,7 +739,7 @@ public class UserDaoImpl implements UserDao
 		}	
 	}
 	
-	protected void ensureUserExistence(DbUser user) throws ObjectNotFoundException, CannotGetJdbcConnectionException
+	protected void ensureUserExistence(User user) throws ObjectNotFoundException, CannotGetJdbcConnectionException
 	{
 		if ( ! userExists(user)) {
 			log.error("Operation for user " + user.getUsername() + " failed because no such user is in the database.");

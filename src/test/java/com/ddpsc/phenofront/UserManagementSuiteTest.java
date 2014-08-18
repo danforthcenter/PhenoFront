@@ -32,8 +32,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import src.ddpsc.database.user.DbGroup;
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.Group;
+import src.ddpsc.database.user.User;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
@@ -109,7 +109,7 @@ public class UserManagementSuiteTest extends TestUtility
     		public Object answer(InvocationOnMock invocation) {
     			Object[] args = invocation.getArguments();
     			
-    			DbUser user = (DbUser) args[0];
+    			User user = (User) args[0];
     			String newUsername = (String) args[1];
     			
     			user.setUsername(newUsername);
@@ -162,7 +162,7 @@ public class UserManagementSuiteTest extends TestUtility
     		public Object answer(InvocationOnMock invocation) {
     			Object[] args = invocation.getArguments();
     			
-    			DbUser user = (DbUser) args[0];
+    			User user = (User) args[0];
     			String newAuthority = (String) args[1];
     			
     			user.setAuthority(newAuthority);
@@ -212,8 +212,8 @@ public class UserManagementSuiteTest extends TestUtility
     	doAnswer(new Answer<Object>() {
     		public Object answer(InvocationOnMock invocation) {
     			Object[] args = invocation.getArguments();
-    			DbUser user = (DbUser) args[0];
-    			DbGroup newGroup = (DbGroup) args[1];
+    			User user = (User) args[0];
+    			Group newGroup = (Group) args[1];
     			user.setGroup(newGroup);
     			return null;
     		}

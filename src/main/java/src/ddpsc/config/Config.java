@@ -1,5 +1,7 @@
 package src.ddpsc.config;
 
+import java.io.IOException;
+
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import src.ddpsc.exceptions.MalformedConfigException;
@@ -32,8 +34,9 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	 * @return	DataSource object pointing to the default experiment database
 	 * 
 	 * @throws 	MalformedConfigException
+	 * @throws IOException 
 	 */
-	public static DriverManagerDataSource experimentDataSource() throws MalformedConfigException
+	public static DriverManagerDataSource experimentDataSource() throws MalformedConfigException, IOException
 	{
 		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader("ltdatabase.conf");
 		
@@ -56,8 +59,9 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	 * @return	DataSource	object pointing to given database on the LemnaTech server
 	 * 
 	 * @throws 	MalformedConfigException
+	 * @throws IOException 
 	 */
-	public static DriverManagerDataSource experimentDataSource(String database) throws MalformedConfigException
+	public static DriverManagerDataSource experimentDataSource(String database) throws MalformedConfigException, IOException
 	{
 		database = database.replace("\\", "").replace("/", ""); // Removes any leading slashes
 		LemnaTechDatabaseConfigReader config = new LemnaTechDatabaseConfigReader("ltdatabase.conf");
@@ -80,8 +84,9 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 	 * @return	DataSource object pointing to the database containing all the user data (usernames, password, etc)
 	 * 
 	 * @throws 	MalformedConfigException
+	 * @throws IOException 
 	 */
-	public static DriverManagerDataSource userDatabaseDataSource() throws MalformedConfigException
+	public static DriverManagerDataSource userDatabaseDataSource() throws MalformedConfigException, IOException
 	{
 		UserDatabaseConfigReader config = new UserDatabaseConfigReader("userdatabase.conf");
 		
@@ -93,5 +98,22 @@ public class Config extends DriverManagerDataSource // Access to protected metho
 		driverManagerDataSource.setPassword(config.password);
 		
 		return driverManagerDataSource;
+	}
+	
+	/**
+	 * Returns a DataSource pointing to the metadata database
+	 * 
+	 * Currently, the metadata database is the same as the user profile database
+	 * 
+	 * @see UserDatabaseConfigReader
+	 * 
+	 * @return	DataSource object pointing to the database containing the metadata associated with each snapshot in the LemnaTec database
+	 * 
+	 * @throws 	MalformedConfigException
+	 * @throws IOException 
+	 */
+	public static DriverManagerDataSource metdataDatabaseDataSource() throws MalformedConfigException, IOException
+	{
+		return userDatabaseDataSource();
 	}
 }

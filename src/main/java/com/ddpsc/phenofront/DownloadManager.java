@@ -2,7 +2,7 @@ package com.ddpsc.phenofront;
 
 import java.util.Random;
 
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.User;
 import src.ddpsc.exceptions.ActiveKeyException;
 
 /**
@@ -34,7 +34,7 @@ public class DownloadManager {
 	 * TODO: Actually throw ActiveKeyException
 	 */
 	static Random rand = new Random(System.currentTimeMillis());
-	public static String generateRandomKey(DbUser user)
+	public static String generateRandomKey(User user)
 	{
 			String theDigest = Long.toString(rand.nextLong());
 			
@@ -87,7 +87,7 @@ public class DownloadManager {
 		}
 	}
 	@Deprecated
-	public static String getKey(DbUser user) {
+	public static String getKey(User user) {
 		return 	System.getProperty(user.getUsername());
 	}
 }

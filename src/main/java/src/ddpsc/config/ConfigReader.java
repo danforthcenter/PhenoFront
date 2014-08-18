@@ -9,6 +9,8 @@ import java.io.IOException;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
 
+import src.ddpsc.exceptions.MalformedConfigException;
+
 /**
  * Abstract construction of a class designed to read a flat yaml configuration file containing any relevant
  * configuration information for the PhenoFront web service.
@@ -42,61 +44,84 @@ import org.springframework.core.io.ClassPathResource;
 public abstract class ConfigReader
 {
 	private static final Logger log = Logger.getLogger(ConfigReader.class);
-	
 	public static final String COMMENT_CHARACTER = "#";
 	
-	protected abstract void ProcessLine(String name, String value);
+	public final BufferedReader file;
 	
-	protected ConfigReader(String configurationFile)
+	protected ConfigReader(String configurationFile) throws IOException
 	{
-		
+		ClassPathResource c = new ClassPathResource("/");
+		File f = c.getFile();
+		FileReader reader = new FileReader(f.getAbsolutePath() + "/" + configurationFile);
+		file = new BufferedReader(reader);
+	}
+	
+	protected ConfigReader(BufferedReader file)
+	{
+		this.file = file;
+	}
+	
+	protected void processFile() throws MalformedConfigException
+	{
 		try {
-			ClassPathResource c = new ClassPathResource("/");
-			File f = c.getFile();
-			FileReader reader = new FileReader(f.getAbsolutePath() + "/" + configurationFile);
-			BufferedReader buff = new BufferedReader(reader);
 			// Flat file containing key pairs separated by an arbitrary amount of whitespace
 			// First is name, second is value
-			while( buff.ready() ) {
-				String line = buff.readLine();
+			while( file.ready() ) {
+				String line = file.readLine().trim();
 				
 				// Exclude commented lines and empty lines
 				if (line.startsWith(COMMENT_CHARACTER) || line.length() == 0)
 					continue;
 				
-				// Split each line into its component words
-				String[] words = line.split("\\s+", -1);
-				
-				// If there aren't two words, something went wrong, don't crash, but say something
-				if (words.length != 2) {
-					String configurationMessage = "Reading configuration file '" + configurationFile
-							+ "' has encountered an invalid configuration line, tokenized as: {";
-					for (int i = 0; i < words.length; i++) {
-						configurationMessage += words[i];
-						if (i != words.length - 1)
-							configurationMessage += ", ";
-					}
-					configurationMessage += "}.";
-					log.error(configurationMessage);
-					continue;
-				}
-				
-				// Process the variables according to the subclass's specifications
-				String variableName = words[0];
-				String variableValue = words[1];
-				ProcessLine(variableName, variableValue);
+				processLine(line);
 			}
 			
-			buff.close();
+			file.close();
 		}
 		catch (FileNotFoundException e) {
-			String noConfigMessage = "No configuration file could be found at '" + configurationFile + "'";
+			String noConfigMessage = "No configuration file could be found.";
 			log.error(noConfigMessage, e);
 			return;
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			return;
+		}
+	}
+	
+	protected abstract void processColumns(String name, String value) throws MalformedConfigException;
+	
+	protected void processColumn(String singleWord) throws MalformedConfigException
+	{
+		throw new MalformedConfigException("Each line must have two tokens. This line has only one: " + singleWord);
+	}
+	
+	protected void processLine(String line) throws MalformedConfigException
+	{
+		// Split each line into its component words
+		String[] words = line.split("\\s+", -1);
+		
+		// If there are more than two words, something went wrong, don't crash, but say something
+		if (words.length > 2) {
+			String configurationMessage = "Reading configuration file has encountered an invalid configuration line, tokenized as: {";
+			for (int i = 0; i < words.length; i++) {
+				configurationMessage += words[i];
+				if (i != words.length - 1)
+					configurationMessage += ", ";
+			}
+			configurationMessage += "}.";
+			log.error(configurationMessage);
+			return;
+		}
+		
+		if (words.length == 1)
+			processColumn(words[0]);
+		
+		if (words.length == 2) {
+			// Process the variables according to the subclass's specifications
+			String variableName = words[0];
+			String variableValue = words[1];
+			processColumns(variableName, variableValue);
 		}
 	}
 	

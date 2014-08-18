@@ -2,6 +2,7 @@ package src.ddpsc.database.snapshot;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -14,27 +15,63 @@ import src.ddpsc.database.tile.Tile;
  */
 public class Snapshot
 {
-	public static String CSV_HEADER
-		= "id,plant barcode,car tag,timestamp,weight before,weight after,water amount,completed,measurement label,tiles\n";
-	public static String CSV_HEADER_NO_WEIGHTS
-		= "id,plant barcode,car tag,timestamp,completed,measurement label\n";
+	// CSV labels
+	public static final String ID				= "id";
+	public static final String EXPERIMENT		= "experiment";
+	
+	public static final String BARCODE			= "plant barcode";
+	public static final String MEASUREMENT		= "measurement label";
+	public static final String TIMESTAMP		= "timestamp";
+	
+	public static final String CAR_TAG			= "car tag";
+	public static final String COMPLETED		= "completed";
+	
+	public static final String WEIGHT_BEFORE	= "weight before";
+	public static final String WEIGHT_AFTER		= "weight after";
+	public static final String WATER_AMOUNT		= "water amount";
+	
+	public static final String TILES			= "tiles";
+	public static final String TAG				= "tag";
+	
+	public static final String CSV_HEADER =
+					EXPERIMENT
+			+ "," + ID
+			+ "," + BARCODE
+			+ "," + CAR_TAG
+			+ "," + TIMESTAMP
+			+ "," + WEIGHT_BEFORE
+			+ "," + WEIGHT_AFTER
+			+ "," + WATER_AMOUNT
+			+ "," + COMPLETED
+			+ "," + MEASUREMENT
+			+ "," + TAG
+			+ "," + TILES
+			+ "\n";
+	
+	private int			id;
+	private String		experiment;
 	
 	private	String		plantBarcode;
+	private String		measurementLabel;
+	private Timestamp	timestamp;
+	
 	private String		carTag;
-	private Timestamp	timeStamp;
+	private boolean		completed;
+	
 	private float		weightBefore;
 	private float		weightAfter;
 	private float		waterAmount;
-	private boolean		completed;
-	private String		measurementLabel;
-	private int			id;
+	
 	private List<Tile>	tiles;
+	private String		tag;
 	
 	public Snapshot()
 	{
+		this.tiles = new ArrayList<Tile>();
 	}
 	
 	public Snapshot(
+			String		experimentName,
 			String		plantBarcode,
 			String		carTag,
 			Timestamp	timeStamp,
@@ -45,15 +82,18 @@ public class Snapshot
 			int			id,
 			String		measurementLabel)
 	{
+		this.experiment = experimentName;
 		this.plantBarcode = plantBarcode;
 		this.carTag = carTag;
-		this.timeStamp = timeStamp;
+		this.timestamp = timeStamp;
 		this.weightBefore = weightBefore;
 		this.weightAfter = weightAfter;
 		this.waterAmount = waterAmount;
 		this.completed = completed;
 		this.measurementLabel = measurementLabel;
 		this.id = id;
+		
+		this.tiles = new ArrayList<Tile>();
 	}
 	
 	/**
@@ -74,22 +114,34 @@ public class Snapshot
 		return snapshotsWithTiles;
 	}
 	
+	public static List<Integer> getIds(List<Snapshot> snapshots)
+	{
+		List<Integer> ids = new ArrayList<Integer>(snapshots.size());
+		for (Snapshot snapshot : snapshots)
+			ids.add(snapshot.id);
+		
+		return ids;
+	}
+		
 	@Override
 	public String toString()
 	{
 		return "Snapshot ["
+				+ "experiment=" + experiment + ", "
+				+ "id=" + id + ", "
 				+ "plantBarcode=" + plantBarcode + ", "
 				+ "carTag=" + carTag + ", "
-				+ "timeStamp=" + timeStamp + ", "
+				+ "timeStamp=" + timestamp + ", "
 				+ "weightBefore=" + weightBefore + ", "
 				+ "weightAfter=" + weightAfter + ", "
 				+ "waterAmount=" + waterAmount + ", " 
 				+ "completed=" + completed + ", "
 				+ "measurementLabel=" + measurementLabel + ", "
-				+ "id=" + id + ", "
-				+ "tiles=" + tiles
+				+ "tiles=" + tiles + ", "
+				+ "tag=" + tag
 				+ "]";
 	}
+	
 	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
@@ -101,7 +153,10 @@ public class Snapshot
 	 * 
 	 * @return			csv form of a list of snapshots
 	 */
-	public static String toCSV(List<Snapshot> snapshots) { return toCSV(snapshots, true); }
+	public static String toCSV(List<Snapshot> snapshots)
+	{
+		return toCSV(snapshots, true);
+	}
 	public static String toCSV(List<Snapshot> snapshots, boolean addHeader)
 	{
 		StringBuilder data = new StringBuilder();
@@ -120,54 +175,42 @@ public class Snapshot
 	 * 
 	 * @return			csv form of the Snapshot with labels
 	 */
-	public String toCSV() { return toCSV(true); }
+	public String toCSV()
+	{
+		return toCSV(true);
+	}
 	public String toCSV(boolean addHeader)
 	{
-		StringBuilder data = new StringBuilder(id
+		StringBuilder data = new StringBuilder(
+						experiment
+				+ "," + id
 				+ "," + plantBarcode
 				+ "," + carTag
-				+ "," + timeStamp
+				+ "," + timestamp
 				+ "," + weightBefore
 				+ "," + weightAfter
 				+ "," + waterAmount
 				+ "," + completed
-				+ "," + measurementLabel);
-
-		if (tiles != null && tiles.size() > 0)
-			data.append("," + Tile.toCSVString(tiles, ";") + "\n");
-		else
-			data.append("\n");
+				+ "," + measurementLabel
+				+ "," + tag);
+		
+		data.append(tilesToCSV());
 		
 		if (addHeader)
 			return CSV_HEADER + data.toString();
 		else
 			return data.toString();
 	}
-
-	/**
-	 * Same as csvWriter except it excludes the weight measurements
-	 * 
-	 * @return			csv of the snapshot without the label line and missing the weight tags
-	 */
-	public String toCSV_noWeights() { return toCSV_noWeights(true); }
-	public String toCSV_noWeights(boolean addHeader)
+	
+	private String tilesToCSV()
 	{
-		StringBuilder data = new StringBuilder(id
-				+ "," + plantBarcode
-				+ "," + carTag
-				+ "," + timeStamp
-				+ "," + completed
-				+ "," + measurementLabel);
-		 
+		StringBuilder tilesEntry = new StringBuilder("");
 		if (tiles != null && tiles.size() > 0)
-			data.append("," + Tile.toCSVString(tiles, ";") + "\n");
+			tilesEntry.append("," + Tile.toCSV(tiles, ";"));
 		else
-			data.append("\n");
+			tilesEntry.append(",");
 		
-		if (addHeader)
-			return CSV_HEADER_NO_WEIGHTS + data.toString();
-		else
-			return data.toString();
+		return tilesEntry.toString();
 	}
 	
 	
@@ -208,12 +251,12 @@ public class Snapshot
 	
 	public Timestamp getTimeStamp()
 	{
-		return timeStamp;
+		return timestamp;
 	}
 	
 	public void setTimeStamp(Timestamp timeStamp)
 	{
-		this.timeStamp = timeStamp;
+		this.timestamp = timeStamp;
 	}
 	
 	public float getWeightBefore()
@@ -256,6 +299,16 @@ public class Snapshot
 		this.completed = completed;
 	}
 	
+	public String getExperiment()
+	{
+		return experiment;
+	}
+	
+	public void setExperiment(String experimentName)
+	{
+		this.experiment = experimentName;
+	}
+	
 	public int getId()
 	{
 		return id;
@@ -281,8 +334,18 @@ public class Snapshot
 		return this.tiles.get(index);
 	}
 	
-	public void setTile(Tile tile, int index)
+	public void addTile(Tile tile)
 	{
-		this.tiles.set(index, tile);
+		this.tiles.add(tile);
+	}
+	
+	public void setTag(String tag)
+	{
+		this.tag = tag;
+	}
+	
+	public String getTag()
+	{
+		return tag;
 	}
 }

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+
+<title>MOCKED Query Explorer</title>
+<link rel="stylesheet" type="text/css" href="../../resources/css/bootstrap.min.css"/></link>
+<link rel="stylesheet" type="text/css" href="../../resources/css/jquery-ui-1.10.3.custom.min.css"/></link>
+<link rel="stylesheet" type="text/css" href="../../resources/css/custom.css"/></link>
+
+<script type="text/javascript" src="../../resources/js/jquery-1.10.2.min.js"/></script>
+<script type="text/javascript" src="../../resources/js/jquery-ui-1.10.3.custom.min.js"/></script>
+<script type="text/javascript" src="../../resources/js/jquery-ui-timepicker-addon.js"/></script>
+<script type="text/javascript" src="../../resources/js/bootstrap.min.js"/></script>
+<script type="text/javascript" src="../../resources/js/angular.min.js"/></script>
+
+</head>
+
+<body>
+<div class="container">
+	<div class="jumbotron" style="padding-left: 30px; padding-right: 30px;">				
+		
+		<h2>Query Explorer</h2>
+		<p>
+			View past queries and downloads.
+		</p>
+		
+		<form role='form' id="queryFilter">
+			
+			<input type="hidden" value="${experiment}" name="experiment"/>
+			<input type="hidden" value="" id="currentQueries" name="currentQueries"/>
+			
+			<label for="queryUsername">
+				Only include queries made by:
+			</label>
+			<select multiple class="form-control" name="queryUsername" id="queryUsername">
+				<option>1</option>
+				<option>2</option>
+				<option>3</option>
+				<option>4</option>
+				<option>5</option>
+			</select>
+			
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" id="onlyCommented" name="onlyCommented" value="true"
+					title ="Only include queries that have user-annotated comments associated with them." />
+					Commented Queries Only
+				</label>
+			</div>
+			
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" id="onlyDownloaded" name="onlyDownloaded" value="true" 
+					title ="Only include queries that were logged by a user initializing a download, rather than by previewing a query." />
+					Downloaded Queries Only
+				</label>
+			</div>
+			
+		</form>
+		<br />
+		
+		<label for="queryUsername">
+			Upload a file to modify queries on a large scale.
+		</label>
+		
+		<a href="/phenofront/userarea/changemetadatainstructions" class="btn btn-default btn-block fileDownloadSimpleRichExperience">Download File Formatting Instructions</a>
+		
+		<div id="preparing-file-modal" title="Preparing report..." style="display: none;">
+			We are preparing your report, please wait...
+			<!--Throw what you'd like for a progress indicator below-->
+			<div class="ui-progressbar-value ui-corner-left ui-corner-right" style="width: 100%; height:22px; margin-top: 20px;"></div>
+		</div>
+		
+		<div id="error-modal" title="Error" style="display: none;">
+			There was a problem generating your report, please try again.
+		</div>
+		
+		<label>
+			<input id="fileupload" type="file" name="file" data-url="/phenofront/userarea/changemetadatabyfile" />
+			Select file for large-scale metadata modification
+		</label>
+		<br />
+		
+		<a id="getQueries" class="btn btn-default btn-block">Filter Queries</a>
+		<br />
+		<div id="queries" class="hidden">
+		</div>
+		<button id="loadMoreQueries" class="btn btn-default btn-block hidden">Load More Queries</button>
+		<div id="noMoreQueries" class="hidden align-center">
+			<h3>
+				No More Queries
+			</h3>
+		</div>
+		
+	</div>
+</div>
+
+<script type="text/javascript" src="../../resources/js/getQueries_MOCKED.js" /></script>
+<script type="text/javascript" src="../../resources/js/getSnapshots_MOCKED.js" /></script>
+<script type="text/javascript" src="../../resources/js/queryElement.js" /></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$('#queryUsername').tooltip();
+	$('#onlyCommented').tooltip();
+	$('#onlyDownloaded').tooltip();
+	
+	var currentQueries = [];
+	var previousQuery = {};
+	$('#loadMoreQueries').click(function () {
+		var queries = getQueries_MOCKED();
+		addDisplayQueries(queries);
+	});
+	
+	$('#getQueries').click(function() {
+		var queries = getQueries_MOCKED();
+		querySuccess();
+		displayQueries(queries);
+	});
+	
+	function querySuccess() {
+		$('#queries').removeClass('hidden');
+		$('#queries').removeClass('alert alert-danger');
+		
+		// empty the current queries
+		currentQueries = [];
+		$('#currentQueries').val(currentQueries);
+	}
+	
+	function displayQueries(queries) {
+		$('#queries').empty();
+		
+		queries.forEach(function (query) {
+			var queryDiv = queryElement(query, '');
+			$('#queries').append(queryDiv);
+			
+			// repopulate current queries
+			currentQueries.push(query.id);
+		});
+		
+		$('#currentQueries').val(currentQueries);
+		
+		// Only show loadmore button if queries were actually returned
+		if (queries.length > 0) {
+			$('#loadMoreQueries').removeClass('hidden');
+			$('#noMoreQueries').addClass('hidden');
+		}
+		else {
+			$('#loadMoreQueries').addClass('hidden');
+			$('#noMoreQueries').removeClass('hidden');
+		}
+			
+	}
+	
+	function queryFailure(message) {
+		$('#queries').removeClass('hidden');
+		$('#queries').addClass('alert alert-danger');
+		$('#queries').text(message);
+		
+		$('#loadMoreQueries').addClass('hidden');
+		$('#noMoreQueries').addClass('hidden');
+		
+		currentQueries = [];
+		$('#currentQueries').val(currentQueries); // empty the current queries
+	}
+	
+	function addDisplayQueries(queries) {
+		
+		queries.forEach(function (query) {
+			var queryDiv = queryElement(query, '');
+			$('#queries').append(queryDiv);
+			
+			// repopulate current queries
+			currentQueries.push(query.id);
+		});
+		
+		$('#currentQueries').val(currentQueries);
+		
+		// Only show loadmore button if queries were actually returned
+		if (queries.length > 0) {
+			$('#loadMoreQueries').removeClass('hidden');
+			$('#noMoreQueries').addClass('hidden');
+		}
+		else {
+			$('#loadMoreQueries').addClass('hidden');
+			$('#noMoreQueries').removeClass('hidden');
+		}
+	}
+	
+	function addQueryFailure(message) {
+		var queryFailure = $('<div />', {
+			'class': 'alert alert-danger'
+		});
+		
+		var failureMessage = $('<h3 />', {
+			'text': message
+		});
+		
+		queryFailure.append(failureMessage);
+		
+		$('#queries').append($('<br />'))
+					 .append(queryFailure);
+		
+		$('#loadMoreQueries').addClass('hidden');
+		$('#noMoreQueries').addClass('hidden');
+	}
+});
+</script>
+</body>
+</html>

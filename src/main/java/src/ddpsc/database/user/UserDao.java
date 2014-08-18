@@ -21,49 +21,49 @@ import src.ddpsc.exceptions.UserException;
 public interface UserDao
 {
 
-	DbUser findByUsername(String username)
+	User findByUsername(String username)
 			throws CannotGetJdbcConnectionException, UserException, ObjectNotFoundException;
 
-	DbUser findByID(int userID)
+	User findByID(int userID)
 			throws CannotGetJdbcConnectionException, UserException, ObjectNotFoundException;
 
-	void addUser(DbUser user)
+	void addUser(User user)
 			throws UserException, CannotGetJdbcConnectionException;
 	
-	void removeUser(DbUser user)
+	void removeUser(User user)
 			throws CannotGetJdbcConnectionException;
 
-	List<DbUser> findAllUsers()
+	List<User> findAllUsers()
 			throws CannotGetJdbcConnectionException;
 
-	boolean userExists(DbUser user)
+	boolean userExists(User user)
 			throws CannotGetJdbcConnectionException;
 	
 	boolean usernameExists(String username)
 			throws CannotGetJdbcConnectionException;
 
-	void updateUser(DbUser oldUser, DbUser newUser)
+	void updateUser(User oldUser, User newUser)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 	
-	void changePassword(DbUser user, String password)
+	void changePassword(User user, String password)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 
-	void changeUsername(DbUser user, String username)
+	void changeUsername(User user, String username)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 
-	void changeAuthority(DbUser user, String authority)
+	void changeAuthority(User user, String authority)
 			throws UserException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 
-	void changeGroup(DbUser user, DbGroup group)
+	void changeGroup(User user, Group group)
 			throws ObjectNotFoundException, ObjectNotFoundException, CannotGetJdbcConnectionException;
 	
 	
 	
-	void addGroup(DbGroup group);
+	void addGroup(Group group);
 
-	void removeGroup(DbGroup group);
+	void removeGroup(Group group);
 
-	List<DbGroup> findAllGroups()
+	List<Group> findAllGroups()
 			throws CannotGetJdbcConnectionException;
 
 	boolean groupNameExists(String groupName)
@@ -72,10 +72,10 @@ public interface UserDao
 	boolean groupExists(int groupID)
 			throws CannotGetJdbcConnectionException;
 
-	DbGroup findGroupByName(String groupName)
+	Group findGroupByName(String groupName)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 
-	DbGroup findGroupByID(int userID)
+	Group findGroupByID(int userID)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 
 	

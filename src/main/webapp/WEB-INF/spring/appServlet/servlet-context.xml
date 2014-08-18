@@ -24,19 +24,38 @@
 		<beans:property name="suffix" value=".jsp" />
 	</beans:bean>
 	
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <beans:property name="maxUploadSize" value="100000" />
+    </beans:bean>
 	
 	<context:component-scan base-package="com.ddpsc.phenofront" />
 	
 	
-	<!-- Configures server access to the LemnaTec system -->
-	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" >
-		<beans:property name="dataSource" ref="dataSource" />
+	<!-- Configures server access to the metadata server -->
+	<beans:bean id="taggingDao" class="src.ddpsc.database.tagging.TaggingDaoImpl" >
+		<beans:property name="metadataDataSource" ref="metadataDataSource" />
 	</beans:bean>
 	
-	<beans:bean id="dataSource"
+	<beans:bean id="queryDao" class="src.ddpsc.database.queries.QueryDaoImpl" >
+		<beans:property name="metadataDataSource" ref="metadataDataSource" />
+	</beans:bean>
+	
+	<!-- Currently metadata and user profiles on same database -->
+	<beans:bean id="metadataDataSource"
+		class="src.ddpsc.config.Config"
+		factory-method="metdataDatabaseDataSource" />
+	
+	
+	
+	<!-- Configures server access to the LemnaTec system -->
+	<beans:bean id="snapshotDao" class="src.ddpsc.database.snapshot.SnapshotDaoImpl" >
+		<beans:property name="taggingData" ref="taggingDao" />
+	</beans:bean>
+	
+	<beans:bean id="snapshotDataSource"
 		class="src.ddpsc.config.Config"
 		factory-method="experimentDataSource" >
-		<beans:constructor-arg value="LemnaTest" />
+		<beans:constructor-arg value="LTSystem" />
 	</beans:bean>
 	
  		<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >

@@ -1,5 +1,7 @@
 package src.ddpsc.config;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
 import src.ddpsc.exceptions.MalformedConfigException;
@@ -40,12 +42,15 @@ public class UserDatabaseConfigReader extends ConfigReader
 	 * @see CONFIG_FILENAME
 	 * 
 	 * @throws MalformedConfigException			Thrown when the config file is incomplete
+	 * @throws IOException 
 	 */
-	public UserDatabaseConfigReader(String filename) throws MalformedConfigException
+	public UserDatabaseConfigReader(String filename) throws MalformedConfigException, IOException
 	{
 		super(filename);
 		
-		SetDefaults();
+		processFile();
+		
+		setDefaults();
 		
 		if (username == null || password == null || url == null)
 			throw new MalformedConfigException("Required fields are missing. Check the file '" + filename + "' for completeness.");
@@ -56,7 +61,7 @@ public class UserDatabaseConfigReader extends ConfigReader
 		}
 	}
 	
-	protected void ProcessLine(String name, String value) 
+	protected void processColumns(String name, String value)
 	{
 		if (name.equals("username"))
 			this.username = value;
@@ -76,7 +81,7 @@ public class UserDatabaseConfigReader extends ConfigReader
 	
 	// Defaults set at parameter initialization come after the call to super() and therefore overwrite
 	// anything set in super. So put them in their own method, checking for null.
-	private void SetDefaults()
+	private void setDefaults()
 	{
 		if (database == null)
 			database = DEFAULT_DATABASE;

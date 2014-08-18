@@ -1,5 +1,7 @@
 package src.ddpsc.config;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
 import src.ddpsc.exceptions.MalformedConfigException;
@@ -41,12 +43,15 @@ public class LemnaTechDatabaseConfigReader extends ConfigReader
 	 * @see CONFIG_FILENAME
 	 * 
 	 * @throws MalformedConfigException			Thrown when the config file is incomplete
+	 * @throws IOException 
 	 */
-	public LemnaTechDatabaseConfigReader(String filename) throws MalformedConfigException
+	public LemnaTechDatabaseConfigReader(String filename) throws MalformedConfigException, IOException
 	{
 		super(filename);
 		
-		SetDefaults();
+		processFile();
+		
+		setDefaults();
 		
 		if (username == null || password == null || url == null)
 			throw new MalformedConfigException("Required fields are missing. Check the file '" + filename + "' for completeness.");
@@ -57,7 +62,7 @@ public class LemnaTechDatabaseConfigReader extends ConfigReader
 		}
 	}
 	
-	protected void ProcessLine(String name, String value) 
+	protected void processColumns(String name, String value)
 	{
 		if (name.equals("username"))
 			this.username = value;
@@ -75,7 +80,7 @@ public class LemnaTechDatabaseConfigReader extends ConfigReader
 			this.port = value;
 	}
 	
-	private void SetDefaults()
+	private void setDefaults()
 	{
 		if (port == null)
 			port = DEFAULT_PORT;

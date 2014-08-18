@@ -1,24 +1,36 @@
 package com.ddpsc.phenofront;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,24 +38,31 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import src.ddpsc.authentication.CustomAuthenticationManager;
 import src.ddpsc.config.Config;
 import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.experiment.ExperimentDao;
-import src.ddpsc.database.snapshot.CustomQuerySettings;
+import src.ddpsc.database.queries.QueryFilter;
+import src.ddpsc.database.queries.Query;
+import src.ddpsc.database.queries.QueryDao;
+import src.ddpsc.database.queries.QueryMetadata;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.snapshot.SnapshotDao;
-import src.ddpsc.database.snapshot.SnapshotDaoImpl;
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.tagging.MetadataFileReader;
+import src.ddpsc.database.tagging.TaggingDao;
+import src.ddpsc.database.user.User;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ExperimentNotAllowedException;
 import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.NotImplementedException;
-import src.ddpsc.exceptions.UserException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
+import src.ddpsc.exceptions.UserException;
 import src.ddpsc.results.ResultsBuilder;
+
+import com.google.gson.Gson;
 
 /**
  * Controller responsible for handling users actions such as requesting experiments.
@@ -59,13 +78,25 @@ public class UserAreaController
 	
 	private static final PasswordEncoder encoder = new StandardPasswordEncoder();
 	
+	private static final int NUMBER_QUERIES = 25;
+	
+	private static final String METADATA_INSTRUCTIONS_FILEPATH = "metadata modification instructions.txt";
+	private static final String RESUME_DOWNLOAD_APPLICATION_FILEPATH = "ResumeDownloadApplication.jar";
+	
 	@Autowired
-	UserDao userDataSource;
+	UserDao userData;
 	
 	@Autowired
 	ExperimentDao experimentData;
 	
-	SnapshotDao snapshotData = new SnapshotDaoImpl();
+	@Autowired
+	QueryDao queryData;
+	
+	@Autowired
+	SnapshotDao snapshotData;
+	
+	@Autowired
+	TaggingDao taggingData;
 	
 	@Autowired
 	ServletContext servletContext;
@@ -87,13 +118,13 @@ public class UserAreaController
 			return "error";
 		}
 
-		DbUser user = null;
+		User user = null;
 		try {
-			user = userDataSource.findByUsername(username);
+			user = userData.findByUsername(username);
 			model.addAttribute("user", user);
 		}
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataGETExceptions(e, model, username, log, "retrieve the user's data");
+			return ControllerHelper.handleUserDataGETExceptions(e, model, username, "retrieve the user's data", log);
 		}
 		
 		try {
@@ -125,32 +156,32 @@ public class UserAreaController
 	 * @see Config
 	 * 
 	 * @param	user				The user logged loading the experiment
-	 * @param	experimentName		The experiment to load
+	 * @param	experiment			The experiment to load
 	 * @return 						Http response on whether the experiment will be loaded
+	 * @throws IOException 
 	 */
 	@RequestMapping(value = "/selection", method = RequestMethod.POST)
 	public @ResponseBody ResponseEntity<String> loadExperimentAction(
-			@ModelAttribute("user")			DbUser user,
-			@RequestParam("experimentName") String experimentName)
+			@ModelAttribute("user")		User user,
+			@RequestParam("experiment") String experiment) throws IOException
 	{
 		String username = user.getUsername();
-		log.info("Attempting to load the experiment " + experimentName + " for the user " + user.getUsername());
+		log.info("Attempting to load the experiment " + experiment + " for the user " + user.getUsername());
 		
 		if (ControllerHelper.isAnonymous(username))
 			return new ResponseEntity<String>("ERROR: " + ControllerHelper.ANONYMOUS_USER_MESSAGE, HttpStatus.FORBIDDEN);
 		
 		try {
-			Experiment experiment = user.getExperimentByExperimentName(experimentName);
-			user.setActiveExperiment(experiment);
+			Experiment experimentObject = user.getExperimentByExperimentName(experiment);
+			user.setActiveExperiment(experimentObject);
 			
-			DataSource experimentDataSouce = Config.experimentDataSource(experimentName);
-			snapshotData.setDataSource(experimentDataSouce);
+			snapshotData.setSnapshotExperiment(experiment);
 			
-			log.info("The experiment " + experimentName + " selected by user " + user.getUsername() + " loaded successfully.");
+			log.info("The experiment " + experiment + " selected by user " + user.getUsername() + " loaded successfully.");
 			return new ResponseEntity<String>("Experiment Loaded.", HttpStatus.OK);
 		}
 		catch (ExperimentNotAllowedException e) {
-			log.info("The experiment " + experimentName + " selected by user " + user.getUsername() + " does not exist or is not allowed.");
+			log.info("The experiment " + experiment + " selected by user " + user.getUsername() + " does not exist or is not allowed.");
 			return new ResponseEntity<String>("Experiment does not exist or is not allowed.", HttpStatus.BAD_REQUEST);
 		}
 		catch (MalformedConfigException e) {
@@ -194,173 +225,204 @@ public class UserAreaController
 		throw new NotImplementedException();
 	}
 	
-//	/**
-//	 * Displays the results of the last search.
-//	 * 
-//	 * Currently shows the most recent 50 entries of the selected experiment.
-//	 * 
-//	 * @param locale	Geographical area the user is from
-//	 * @param model		The internal system model to talk with the view
-//	 * @return 			The results page, or error
-//	 */
-//	@RequestMapping(value = "/userarea/results", method = RequestMethod.GET)
-//	public String resultsAction(Locale locale, Model model)
-//	{
-//		String username = ControllerHelper.currentUsername();
-//		log.info("Attempting to display the results of the last search for user " + username);
-//
-//		final int numSnapshots = 50;
-//		try {
-//			DateMidnight todayMidnight = new DateMidnight();
-//			model.addAttribute("date", todayMidnight.toString("EEEE, MMMM dd, YYYY"));
-//
-//			List<Snapshot> snapshots = snapshotData.findLastN_withTiles(numSnapshots);
-//			model.addAttribute("snapshots", snapshots);
-//
-//			log.info("The results of the last search found correctly for user " + username);
-//			return "userarea-results";
-//		}
-//		catch (CannotGetJdbcConnectionException e) {
-//			String connectionFailedMessage = "Could not retrieve the last " + numSnapshots + " snapshots for user "
-//					+ username + " because this server could not connect to the snapshot data server.";
-//			model.addAttribute("message", connectionFailedMessage);
-//			log.info(connectionFailedMessage);
-//			return "error";
-//		}
-//	}
-	
 	/**
+	 * Gives the user a preview of the query that can be made in the query builder.
 	 * 
+	 * Responds to the POST request with the CSV file of the user defined query.
+	 * 
+	 * Many parameters are optional. If they're excluded, it is assumed they take on
+	 * the broadest possible value (e.g, if startTime is null, then snapshots can go as far back
+	 * in history as need be). The booleans default to false.
+	 * 
+	 * Required parameters:
+	 * 		experiment
+	 * 
+	 * @param locale					Timezone of user
+	 * @param model						Active model for user instance
+	 * 
+	 * @param experiment		Name of the current experiment being queried
+	 * 
+	 * @param tags						Metadata tags used to either include or exclude snapshots from the result
+	 * @param tagRequirements			How many of the tags the query results will have
+	 * 
+	 * @param barcode				Returned snapshots have a barcode matching this regex pattern
+	 * @param measurementLabel			Returned snapshots have a measurement label matchign this regex pattern
+	 * @param startTime					No snapshots occur before this time
+	 * @param endTime					No snapshots occur after this time
+	 * 
+	 * @param includeWatering			Whether to include snapshots that are only watering data
+	 * 
+	 * @param visibleListImages			Whether to include visible light images in the returned snapshots
+	 * @param includeFluorescentImages	Whether to include fluorescent images in the returned snapshots
+	 * @param includeNearInfraredImages	Whether to include near IR images in the returned snapshots
+	 * 
+	 * @return							An HTTP response containing the query as a CSV
+	 * 
+	 * @throws IOException						Thrown if the user disconnects from the server
 	 */
 	@RequestMapping(value = "/userarea/querypreview", method = RequestMethod.POST)
-	public @ResponseBody ResponseEntity<String> previewAction(
+	public @ResponseBody ResponseEntity<String> queryPreview(
 			Locale locale,
 			Model model,
-			@RequestParam(value = "activeExperiment",	required = false) String activeExperimentName,
+			@RequestParam(value = "experiment",			required = true) String experiment,
 			
-			@RequestParam(value = "plantBarcode",		required = false,	defaultValue = "") String plantBarcode,
+			@RequestParam(value = "barcode",			required = false,	defaultValue = "") String barcode,
 			@RequestParam(value = "measurementLabel",	required = false,	defaultValue = "") String measurementLabel,
 			@RequestParam(value = "startTime",			required = false,	defaultValue = "") String startTime,
 			@RequestParam(value = "endTime",			required = false,	defaultValue = "") String endTime,
-			@RequestParam(value = "userRestriction",	required = false,	defaultValue = "") String restrictedUsers,
 			
-			@RequestParam(value = "watering",	defaultValue = "false")	boolean includeWatering,
-			@RequestParam(value = "vis",		defaultValue = "false")	boolean visibileLightImages,
-			@RequestParam(value = "nir",		defaultValue = "false")	boolean nearInfraredImages,
-			@RequestParam(value = "fluo",		defaultValue = "false")	boolean fluorescentImages
-			)
-					throws IOException, ExperimentNotAllowedException
+			@RequestParam(value = "includeWatering",	required = false, 	defaultValue = "false")	boolean includeWatering,
+			
+			@RequestParam(value = "includeVisible",		defaultValue = "false")	boolean includeVisibleLightImages,
+			@RequestParam(value = "includeFluorescent",	defaultValue = "false")	boolean includeFluorescentImages,
+			@RequestParam(value = "includeInfrared",	defaultValue = "false")	boolean includeNearInfraredImages )
+					throws IOException
 	{
 		String username = ControllerHelper.currentUsername();
-		log.info("Attempting to return the preview results of the custom query for user " + username);
+		log.info("Requesting a custom query preview for user " + username
+				+ "\nExperiment: " + experiment
+				+ "\nPlant Barcode: " + barcode
+				+ "\nMeasurement Label: " + measurementLabel
+				+ "\nStart Time: " + startTime
+				+ "\nEnd Time: " + endTime
+				+ "\nInclude Watering?: " + includeWatering
+				+ "\nInclude Visible?: " + includeVisibleLightImages
+				+ "\nInclude Fluorescent?: " + includeFluorescentImages
+				+ "\nInclude Infrared?: " + includeNearInfraredImages );
 		
-		DbUser user = null;
 		try {
-			user = userDataSource.findByUsername(username);
-		}
-		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, username, log, "to return the preview a custom query");
-		}
-		
-		try {
-			// Setup the snapshot data to pull from the appropriate experiment
-			Set<Experiment> allExperiments = experimentData.findAll();
-			user.setAllowedExperiments(allExperiments);
+			User user = userData.findByUsername(username);
 			
-			Experiment activeExperiment = experimentData.getByName(activeExperimentName);
-			user.setActiveExperiment(activeExperiment);
+			Experiment activeExperiment = experimentData.getByName(experiment);
+			snapshotData.setSnapshotExperiment(experiment);
 			
-			snapshotData.setDataSource(Config.experimentDataSource(activeExperimentName));
-			
-			// If none of the user's experiments match the active experiment
+			// If the experiment isn't valid
 			if (activeExperiment == null) {
 				log.info("The active experiment for the user " + username + " was found to not be set."
 						+ "The system doesn't know where to look. Terminating custom query preview.");
+				return new ResponseEntity<String>("Invalid experiment name.", HttpStatus.BAD_REQUEST);
 			}
-			
-			CustomQuerySettings querySettings = new CustomQuerySettings(plantBarcode, measurementLabel, startTime, endTime, restrictedUsers, includeWatering);
-			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs(querySettings);
-			log.info("The custom query preview for user " + username + " with active experiment " + activeExperimentName + " is successful.");
-			return new ResponseEntity<String>(Snapshot.toCSV(snapshots, true), HttpStatus.OK);
+			else {
+				
+				log.info("Querying database for snaphot preview.");
+				Query query = new Query(
+						experiment,
+						barcode,
+						measurementLabel,
+						startTime,
+						endTime,
+						includeWatering,
+						includeVisibleLightImages,
+						includeFluorescentImages,
+						includeNearInfraredImages );
+				
+				Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
+				List<Snapshot> snapshots = snapshotData.executeCustomQuery(query);
+				
+				int numberTiles = 0;
+				for (Snapshot snapshot : snapshots)
+					numberTiles += snapshot.getTiles().size();
+				
+				// Gather information on the query
+				QueryMetadata metadata = new QueryMetadata(
+						user.getUserId(),
+						user.getUsername(),
+						timeOfQuery,
+						snapshots.size(),
+						numberTiles,
+						"");
+				query.metadata = metadata;
+				
+				log.info("The custom query preview for user " + username + " with active experiment " + experiment + " is successful.");
+				
+				Map<String, Object> queryStructure = new HashMap<String, Object>();
+				queryStructure.put("query", query);
+				queryStructure.put("snapshots", snapshots);
+				String json = (new Gson()).toJson(queryStructure);
+				
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.APPLICATION_JSON);
+				return new ResponseEntity<String>(json, headers, HttpStatus.CREATED);
+			}
 		}
 		
 		
-		catch (CannotGetJdbcConnectionException e) {
-			log.error("Could not access the experiments server in search of experiments under the name " + activeExperimentName + " for user " + username + ". Terminating mass download.", e);
-			return new ResponseEntity<String>("Cannot connect to authentication server.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (MalformedConfigException e) {
-			log.fatal(e.getMessage(), e);
-			return new ResponseEntity<String>("Experiment database access misconfigured.", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		catch (ObjectNotFoundException e) {
-			log.error(e.getMessage(), e);
-			return new ResponseEntity<String>("Experiment " + activeExperimentName + " not found.", HttpStatus.BAD_REQUEST);
+		catch (Exception e) {
+			return ControllerHelper.handleCustomQueryPOSTExceptions(e, username, experiment, measurementLabel, barcode, log);
 		}
 	}
-
+	
 	/**
-	 * Sends the user to the query builder page, where they build a custom snapshot query. Upon submission, a key is provided
-	 * to the user which validates their download (for use with wget and other command line tools)
+	 * Sends the user a download of all files found by the supplied query
 	 * 
-	 * These keys are stored in memory.
+	 * Does not require the user to be logged in. Instead, it requires a valid download key.
+	 * New download keys are issued every time the user enters the query builder or resume download pages
 	 * 
-	 * TODO: Determine if the one unique download feature is to be implemented
-	 */
-	@RequestMapping(value = "/userarea/querybuilder", method = RequestMethod.GET)
-	public String queryBuilderAction(
-									Locale	locale,
-									Model	model,
-			@ModelAttribute("user") DbUser	user)
-	{
-		String username = user.getUsername();
-		log.info("Attempting to retrieve download key for user " + username);
-		
-		String downloadKey = DownloadManager.generateRandomKey(user);
-		model.addAttribute("downloadKey", downloadKey);
-		
-		Experiment activeExperiment = user.getActiveExperiment();
-		model.addAttribute("activeExperiment", activeExperiment.getExperimentName());
-		
-		log.info("Retrieved download key for user " + username + " and queried the active experiment " + activeExperiment.getExperimentName());
-		return "userarea-querybuilder";
-	}
-
-	/**
-	 * This action handles mass downloading of images. Manually sets up experiment.
+	 * Many parameters are optional. If they're excluded, it is assumed they take on
+	 * the broadest possible value (e.g, if startTime is null, then snapshots can go as far back
+	 * in history as need be).
 	 * 
-	 * Requires a valid download key.
+	 * @param locale					Timezone of user
+	 * @param model						Active model for user instance
 	 * 
-	 * @param locale			Geographical location of the user
-	 * @param model
+	 * @param downloadKey				A number that maps to a user generating a download link from the query builder
 	 * 
-	 * @throws IOException						Thrown if the client times out
-	 * @throws ExperimentNotAllowedException	Thrown if the experiment is not allowed by the user, or does not exist
+	 * @param experiment				Name of the current experiment being queried
+	 * 
+	 * @param tags						Metadata tags used to either include or exclude snapshots from the result
+	 * @param tagRequirements				Whether the tags act as inclusion or exclusion
+	 * 
+	 * @param plantBarcode				Returned snapshots have a barcode matching this regex pattern
+	 * @param measurementLabel			Returned snapshots have a measurement label matchign this regex pattern
+	 * @param startTime					No snapshots occur before this time
+	 * @param endTime					No snapshots occur after this time
+	 * 
+	 * @param includeWatering			Whether to include snapshots that are only watering data
+	 * 
+	 * @param visibleListImages			Whether to include visible light images in the returned snapshots
+	 * @param includeFluorescentImages	Whether to include fluorescent images in the returned snapshots
+	 * @param includeNearInfraredImages	Whether to include near IR images in the returned snapshots
+	 * 
+	 * @return							A TCP download of the queried files
+	 * 
+	 * @throws IOException						Thrown if the user disconnects from the server
 	 */
 	@RequestMapping(value = "/massdownload", method = RequestMethod.GET)
 	public void massDownloadAction(
 			HttpServletResponse response,
 			Locale locale,
 			Model model,
-			@RequestParam(value = "activeExperiment",	required = false) String activeExperimentName,
+			
+			@RequestParam(value = "downloadKey",		required = true) String downloadKey,
+			
+			@RequestParam(value = "experiment",			required = false) String experiment,
 			
 			@RequestParam(value = "plantBarcode",		required = false,	defaultValue = "") String plantBarcode,
 			@RequestParam(value = "measurementLabel",	required = false,	defaultValue = "") String measurementLabel,
 			@RequestParam(value = "startTime",			required = false,	defaultValue = "") String startTime,
 			@RequestParam(value = "endTime",			required = false,	defaultValue = "") String endTime,
-			@RequestParam(value = "userRestriction",	required = false,	defaultValue = "") String restrictedUsers,
 			
-			@RequestParam(value = "downloadKey",		required = true) String downloadKey,
+			@RequestParam(value = "tags",			required = false,	defaultValue = "")		String tags,
+			@RequestParam(value = "tagRequirements",required = false, 	defaultValue = "None")	String tagRequirements,
 			
-			@RequestParam(value = "vis",		defaultValue = "false")	boolean visibileLightImages,
-			@RequestParam(value = "nir",		defaultValue = "false")	boolean nearInfraredImages,
-			@RequestParam(value = "fluo",		defaultValue = "false")	boolean fluorescentImages,
-			@RequestParam(value = "watering",	defaultValue = "false")	boolean includeWatering)
-					throws IOException, ExperimentNotAllowedException
+			@RequestParam(value = "watering",	required = false,		defaultValue = "false")	boolean includeWatering,
+			
+			@RequestParam(value = "vis",		defaultValue = "false")	boolean includeVisibleLightImages,
+			@RequestParam(value = "fluo",		defaultValue = "false")	boolean includeFluorescentImages,
+			@RequestParam(value = "nir",		defaultValue = "false")	boolean includeNearInfraredImages)
+					throws IOException
 	{
-		log.info("Attempting to execute a mass download.");
+		log.info("Requesting a mass download for download key ='" + downloadKey + "': "
+				+ "\nExperiment: " + experiment
+				+ "\nPlant Barcode: " + plantBarcode
+				+ "\nMeasurement Label: " + measurementLabel
+				+ "\nStart Time: " + startTime
+				+ "\nEnd Time: " + endTime
+				+ "\nInclude Watering?: " + includeWatering
+				+ "\nInclude Visible?: " + includeVisibleLightImages
+				+ "\nInclude Fluorescent?: " + includeFluorescentImages
+				+ "\nInclude Infrared?: " + includeNearInfraredImages );
 		
-		// TODO: Reimplement 1 download per user limit? Yes
 		if (downloadKey == null) {
 			log.info("The download key was null. Terminating mass download.");
 			response.sendError(403, "Permission denied.");
@@ -375,26 +437,22 @@ public class UserAreaController
 			return;
 		}
 		
-		DbUser user = null;
+		User user = null;
 		try {
-			user = userDataSource.findByUsername(System.getProperty(downloadKey));
+			user = userData.findByUsername(System.getProperty(downloadKey));
 		}
 		catch (Exception e) {
-			ControllerHelper.handleUserDataGETExceptions(e, response, "unknown", log, "execute a mass download");
+			ControllerHelper.handleUserDataGETExceptions(e, response, "unknown", "execute a mass download", log);
 			return;
 		}
 		
 		try {
 			// Setup the snapshot data to pull from the appropriate experiment
-			Set<Experiment> allExperiments = experimentData.findAll();
-			user.setAllowedExperiments(allExperiments);
-		    String username = user.getUsername();	
-			Experiment activeExperiment = experimentData.getByName(activeExperimentName);
-			user.setActiveExperiment(activeExperiment);	// TODO All these lines are because of a deprecated, but not yet removed, "allowed experiments" functionality, booo
+		    String username = user.getUsername();
+			Experiment activeExperiment = experimentData.getByName(experiment);
+			snapshotData.setSnapshotExperiment(experiment);
 			
-			snapshotData.setDataSource(Config.experimentDataSource(activeExperimentName));
-			
-			// If none of the user's experiments match the active experiment
+			// If the experiment isn't valid
 			if (activeExperiment == null) {
 				log.info("The active experiment for the user " + username + " was found to not be set."
 						+ "The system doesn't know where to look. Terminating mass download.");
@@ -403,109 +461,190 @@ public class UserAreaController
 				return;
 			}
 			
+			// Begin download response
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
-			// TODO: Add filename option
 			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
 			response.flushBuffer();
 			
 		    log.info("Querying database for snapshots and tiles.");
-			CustomQuerySettings querySettings = new CustomQuerySettings(plantBarcode, measurementLabel, startTime, endTime, restrictedUsers, includeWatering);
-			List<Snapshot> snapshots = snapshotData.findCustomQueryAnyTime_imageJobs_withTiles(querySettings);
+		    Query query = new Query(
+					experiment,
+					plantBarcode,
+					measurementLabel,
+					startTime,
+					endTime,
+					includeWatering,
+					includeVisibleLightImages,
+					includeFluorescentImages,
+					includeNearInfraredImages);
+		    
+		    Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
+			List<Snapshot> snapshots = snapshotData.executeCustomQuery(query);
+			
+			int numberTiles = 0;
+			for (Snapshot snapshot : snapshots)
+				numberTiles += snapshot.getTiles().size();
+			
+			// Gather information on the query
+			QueryMetadata metadata = new QueryMetadata(
+					user.getUserId(),
+					user.getUsername(),
+					timeOfQuery,
+					snapshots.size(),
+					numberTiles,
+					"");
+			query.metadata = metadata;
+			
+			int queryId = queryData.addQuery(query);
+			query.id = queryId;
+			
+			Timestamp timeOfDownloadStart = new Timestamp(DateTime.now().getMillis());
+			queryData.setDownloadStart(queryId, timeOfDownloadStart);
+			
+			try {
+			    log.info("Got snapshots and tiles. Building results.");
+				ResultsBuilder results = new ResultsBuilder(
+						response.getOutputStream(),
+						snapshots,
+						activeExperiment);
+				
+			    log.info("Writing zip archive.");
+				long size_bytes = results.writeZipArchive();
+				response.flushBuffer();
+				queryData.setQuerySize(queryId, size_bytes);
+				
+				Timestamp timeOfDownloadEnd = new Timestamp(DateTime.now().getMillis());
+				queryData.setDownloadEnd(queryId, timeOfDownloadEnd);
+				queryData.setInterrupted(queryId, false);
+				
+				log.info("The mass download for user " + username + " with active experiment " + experiment + " is successful.");
+			}
+			
+			catch (IOException e)
+			{
+				log.info("The mass download for user " + username + " was interrupted because the connection was lost.");
+				queryData.setInterrupted(queryId, true);
+			}
+		}
+		
+		catch (Exception e) {
+			ControllerHelper.handleCustomQueryPOSTExceptions(
+					e,
+					response,
+					"mass download snapshots", 
+					experiment,
+					measurementLabel,
+					plantBarcode,
+					log);
+		}
+	}
+	
+	/**
+	 * Gives the user a preview of the query that can be made in the query builder.
+	 * 
+	 * Responds to the POST request with the CSV file of the user defined query.
+	 * 
+	 * Many parameters are optional. If they're excluded, it is assumed they take on
+	 * the broadest possible value (e.g, if startTime is null, then snapshots can go as far back
+	 * in history as need be).
+	 * 
+	 * @param locale					Timezone of user
+	 * @param model						Active model for user instance
+	 * 
+	 * @param downloadKey				A number that maps to a user generating a download link from the query builder
+	 * @param experiment				Name of the current experiment being queried
+	 * @param snapshotIds				A CSV list of the snapshot IDs to download
+	 * 
+	 * @return							A TCP download of the requested snapshots
+	 * 
+	 * @throws IOException						Thrown if the user disconnects from the server
+	 */
+	@RequestMapping(value = "/snapshots", method = RequestMethod.GET)
+	public void downloadSnapshotsAction(
+			HttpServletResponse response,
+			Locale locale,
+			Model model,
+			@RequestParam(value = "downloadKey",		required = true)	String downloadKey,
+			@RequestParam(value = "experiment",			required = true)	String experiment,
+			@RequestParam(value = "snapshotIds",		required = true)	List<Integer> snapshotIds
+			)
+				throws IOException
+	{
+		log.info("Attempting to execute snapshots defined download for download key ='" + downloadKey + "'.");
+		
+		if (downloadKey == null) {
+			log.info("The download key was null. Terminating snapshots defined download.");
+			response.sendError(403, "Permission denied.");
+			response.flushBuffer();
+			return;
+		}
+		
+		if (System.getProperty(downloadKey) == null) {
+			log.info("The download key for the user was found to be null. Terminating snapshots defined download.");
+			response.sendError(400, "Invalid download key");
+			response.flushBuffer();
+			return;
+		}
+		
+		User user = null;
+		try {
+			user = userData.findByUsername(System.getProperty(downloadKey));
+		}
+		catch (Exception e) {
+			ControllerHelper.handleUserDataGETExceptions(e, response, "unknown", "execute snapshots defined download", log);
+			return;
+		}
+		
+		try {
+			// Setup the snapshot data to pull from the appropriate experiment
+		    String username = user.getUsername();
+			Experiment activeExperiment = experimentData.getByName(experiment);
+			snapshotData.setSnapshotExperiment(experiment);
+			
+			// If the experiment isn't valid
+			if (activeExperiment == null) {
+				log.info("The active experiment for the user " + username + " was found to not be set."
+						+ "The system doesn't know where to look. Terminating snapshots defined download.");
+				response.sendError(403, "Invalid experiment selection");
+				response.flushBuffer();
+				return;
+			}
+			
+			// Begin download response
+			response.setHeader("Transfer-Encoding", "chunked");
+			response.setHeader("Content-type", "text/plain");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+			response.flushBuffer();
+			
+		    log.info("Querying database for snapshots and tiles.");
+			
+			List<Snapshot> snapshots = snapshotData.findById(snapshotIds);
+			
 		    log.info("Got snapshots and tiles. Building results.");
 			ResultsBuilder results = new ResultsBuilder(
 					response.getOutputStream(),
 					snapshots,
-					activeExperiment,
-					nearInfraredImages,
-					visibileLightImages,
-                    fluorescentImages);
+					activeExperiment);
+			
 		    log.info("Writing zip archive.");
 			results.writeZipArchive();
 			response.flushBuffer();
-			log.info("The mass download for user " + username + " with active experiment " + activeExperimentName + " is successful.");
+			
+			log.info("The snapshots defined download for user " + username + " with active experiment " + experiment + " is successful.");
 		}
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Could not access the experiments server in search of experiments under the name " + activeExperimentName +". Terminating mass download.");
-			response.sendError(500, "Internal error: Could not access server.");
-			response.flushBuffer();
-			return;
-		}
-		catch (MalformedConfigException e) {
-			log.fatal(e.getMessage(), e);
-			response.sendError(400, "Improperly formed database configuration");
-			response.flushBuffer();
-		}
-		catch (ObjectNotFoundException e) {
-			log.error(e.getMessage(), e);
-			response.sendError(400, "Experiment not found.");
-			response.flushBuffer();
+		
+		catch (Exception e) {
+			ControllerHelper.handleCustomQueryPOSTExceptions(
+					e,
+					response,
+					"snapshots defined download", 
+					experiment,
+					"<NOT SPECIFIED BY USER>",
+					"<NOT SPECIFIED BY USER>",
+					log);
 		}
 	}
-
-	/**
-	 * Expects the date to be returned with the format of MM/dd/yyyy HH:mm. Only returns image snapshots.
-	 * 
-	 * Returns a list of new image snapshots to display to the page.
-	 * 
-	 * @param locale
-	 * @param model
-	 * @param startTime			return only snapshots after this date
-	 * @param endTime			return only snapshots before this date
-	 * @return
-	 */
-//	@RequestMapping(value = "/userarea/filterresults", method = RequestMethod.GET)
-//	public String filterResultsAction(
-//										Locale	locale,
-//										Model	model,
-//			@RequestParam("startTime")	String	startTime,
-//			@RequestParam("endTime")	String	endTime)
-//	{
-//		
-//		String username = ControllerHelper.currentUsername();
-//		log.info("Attempting to filter snapshots by date for user " + username);
-//		String filterMessage = "Filtered snapshots by dates: ";
-//		List<Snapshot> snapshots;
-//		
-//		if (validTime(endTime) && validTime(startTime)) {
-//			
-//			Timestamp endTimestamp = timestampFromString(endTime);
-//			Timestamp startTimestamp = timestampFromString(startTime);
-//			
-//			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp);
-//			
-//			String dateMessage = "Start time: " + startTime + " End time: " + endTime;
-//			log.info(filterMessage + dateMessage + " for user " + username);
-//			model.addAttribute("date", dateMessage);
-//		}
-//		
-//		else if (validTime(startTime)) {
-//			Timestamp startTimestamp = timestampFromString(startTime);
-//			
-//			snapshots = snapshotData.findAfterTimestamp_imageJobs(startTimestamp);
-//			
-//			String dateMessage = "Start time: " + startTime;
-//			log.info(filterMessage + dateMessage + " for user " + username);
-//			model.addAttribute("date", dateMessage);
-//		}
-//		
-//		else {
-//			// TODO: Determine why we're subtracting 3 days here
-//			Timestamp endTimestamp = timestampFromString(endTime);
-//			
-//			DateTime endDate = formatter.parseDateTime(endTime);
-//			Timestamp startTimestamp_3daysBefore = new Timestamp(endDate.minusDays(3).getMillis());
-//			
-//			snapshots = snapshotData.findBetweenTimes_imageJobs(endTimestamp, startTimestamp_3daysBefore);
-//			
-//			String dateMessage = "Start time: " + startTimestamp_3daysBefore + " End time: " + endTime;
-//			log.info(filterMessage + dateMessage + " for user " + username);
-//			model.addAttribute("date", dateMessage);
-//		}
-//		
-//		model.addAttribute("snapshots", snapshots);
-//		return "userarea-results";
-//	}
 	
 	/**
 	 * Method for getting a snapshot and all associated images in a chunked manner. That is, a stream which will allow for a
@@ -513,68 +652,273 @@ public class UserAreaController
 	 *
 	 * @param response			The HTTP response to this action
 	 * @param user				The user doing the downloading
-	 * @param snapshotID		The ID of the snapshot to download
+	 * @param snapshotId		The ID of the snapshot to download
 	 * 
 	 * @throws IOException		Thrown if the client times out
 	 */
 	@RequestMapping(value = "/userarea/stream/{id}")
 	public void streamSnapshot(
 									HttpServletResponse	response,
-			@ModelAttribute("user")	DbUser				user,
-			@PathVariable("id")		int					snapshotID)
+			@ModelAttribute("user")	User				user,
+			@PathVariable("id")		int					snapshotId)
 					throws IOException
 	{
-		// Download header
+		String username = user.getUsername();
+		String experiment = user.getActiveExperiment().getExperimentName();
+		log.info("Attempting to retrieve snapshot with id='" + snapshotId + "' for user " + username);
+		
+		// Begin response
 		response.setHeader("Transfer-Encoding", "chunked");
 		response.setHeader("Content-type", "text/plain");
-		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot" + snapshotID + ".zip\"");
-		
-		
-		List<Snapshot> snapshots = new ArrayList<Snapshot>();
-		try {
-			snapshots.add(snapshotData.findByID_withTiles(snapshotID));
-		}
-		catch (CannotGetJdbcConnectionException e) {
-			log.info("Streaming download of snapshot with ID='" + snapshotID + "' for user + " + user.getUsername()
-					+ " failed because this server could not connect to the user data server.");
-			response.flushBuffer();
-			return;
-		}
-		catch (ObjectNotFoundException e) {
-			log.info("Streaming download of snapshot with ID='" + snapshotID + "' for user + " + user.getUsername()
-					+ " failed because the user could not be found.");
-			response.flushBuffer();
-			return;
-		}
-		
-		// TODO: Read image inclusion from model
-		boolean vis = true;
-		boolean nir = true;
-		boolean fluo = true;
-		try {
-			ResultsBuilder results = new ResultsBuilder(response.getOutputStream(), snapshots, user.getActiveExperiment(), vis, nir, fluo);
-			results.writeZipArchive();
-		}
-		catch (IOException e) {
-			log.info("Streaming download of snapshot with ID='" + snapshotID + "' for user + " + user.getUsername()
-					+ " failed because the download was cancelled.");
-			response.flushBuffer();
-			return;
-		}
-		
-		log.info("Streaming download of snapshot with ID='" + snapshotID + "' for user + " + user.getUsername() + " succeeded.");
+		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot" + snapshotId + ".zip\"");
 		response.flushBuffer();
+		
+		try {
+			snapshotData.setSnapshotExperiment(experiment);
+			Snapshot snapshot = snapshotData.findById(snapshotId);
+			
+			ResultsBuilder results = new ResultsBuilder(
+					response.getOutputStream(),
+					Arrays.asList(new Snapshot[]{snapshot}),
+					user.getActiveExperiment());
+			
+			results.writeZipArchive();
+			
+			log.info("Streaming download of snapshot with ID='" + snapshotId + "' for user + " + user.getUsername() + " succeeded.");
+			response.flushBuffer();
+		}
+		
+		catch (Exception e) {
+			ControllerHelper.handleCustomQueryPOSTExceptions(
+					e,
+					response,
+					"download the snapshot with id='" + snapshotId + "'",
+					experiment,
+					"<NOT SPECIFIED BY USER>",
+					"<NOT SPECIFIED BY USER>",
+					log);
+		}
 	}
 	
-	@RequestMapping(value = "/userarea/status", method = RequestMethod.GET)
-	public String statusAction(
-			Locale locale,
-			Model model)
+	/**
+	 * Sends the user to the query builder page, where they build a custom snapshot query. Upon submission, a key is provided
+	 * to the user which validates their download (for use with wget and other command line tools)
+	 * 
+	 * These keys are stored in memory.
+	 */
+	@RequestMapping(value = "/userarea/querybuilder", method = RequestMethod.GET)
+	public String queryBuilderAction(
+									Locale	locale,
+									Model	model,
+			@ModelAttribute("user") User	user)
 	{
-		log.info("Accessing the status page. This is an unimplemented feature.");
-		return "status";
+		String username = user.getUsername();
+		log.info("Loading query buidler page for user " + username);
+		
+		String downloadKey = DownloadManager.generateRandomKey(user);
+		model.addAttribute("downloadKey", downloadKey);
+		
+		Experiment activeExperiment = user.getActiveExperiment();
+		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		
+		return "userarea-querybuilder";
 	}
+	
+	@RequestMapping(value = "/userarea/queryexplorer", method = RequestMethod.GET)
+	public String viewQueryHistory(Model model, @ModelAttribute("user") User user)
+	{
+		String username = user.getUsername();
+		log.info("Accessing the query history page for user " + username);
+		
+		List<User> users = userData.findAllUsers();
+		model.addAttribute("allUsers", users);
+		
+		model.addAttribute("experiment", user.getActiveExperiment().getExperimentName());
+		
+		log.info("Retrieved queries for query history page for user " + username);
+		return "userarea-queryexplorer";
+	}
+	
 
+	@RequestMapping(value = "/userarea/downloadresumeapplet")
+	public void retrieveDownloadResumeJar(HttpServletResponse response) throws IOException
+	{
+		String username = ControllerHelper.currentUsername();
+		log.info("Attempting to retrieve download resuming application for the user " + username);
+		
+		// Begin response
+		response.setHeader("Transfer-Encoding", "chunked");
+		response.setHeader("Content-type", "application/java-archive");
+		response.setHeader("Content-Disposition", "attachment; filename=\"ResumeDownloadApplication.jar\"");
+		response.flushBuffer();
+		
+		ClassPathResource c = new ClassPathResource("/");
+		File f = c.getFile();
+		System.out.println("DOWNLOAD FILE: " + f.getAbsolutePath() + "/" + RESUME_DOWNLOAD_APPLICATION_FILEPATH);
+		InputStream input = new FileInputStream(f.getAbsolutePath() + "/" + RESUME_DOWNLOAD_APPLICATION_FILEPATH);
+		FileCopyUtils.copy(input, response.getOutputStream());
+		response.flushBuffer();
+		
+		log.info("Successfully retrieved download resuming application for the user " + username);
+	}
+	
+	@RequestMapping(value = "/userarea/changemetadatainstructions")
+	public void retrieveInstructions(HttpServletResponse response) throws IOException
+	{
+		String username = ControllerHelper.currentUsername();
+		log.info("Attempting to retrieve metadata file modification structure instructions for the user " + username);
+		
+		// Begin response
+		response.setHeader("Transfer-Encoding", "chunked");
+		response.setHeader("Content-type", "text/plain");
+		response.setHeader("Content-Disposition", "attachment; filename=\"metadata modification instructions.text\"");
+		response.flushBuffer();
+		
+		ClassPathResource c = new ClassPathResource("/");
+		File f = c.getFile();
+		System.out.println("DOWNLOAD FILE " + f.getAbsolutePath() + "/" + METADATA_INSTRUCTIONS_FILEPATH);
+		InputStream input = new FileInputStream(f.getAbsolutePath() + "/" + METADATA_INSTRUCTIONS_FILEPATH);
+		FileCopyUtils.copy(input, response.getOutputStream());
+		response.flushBuffer();
+		
+		log.info("Successfully retrieved metadata file modification structure instructions for the user " + username);
+	}
+	
+	@RequestMapping(value = "/userarea/changemetadatabyfile", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<String> changeMetadataByFile(
+			@RequestParam("file") MultipartFile file) throws IOException
+	{
+		log.info("Attempting to change metadata as specified by an uploaded file.");
+		try {
+			
+			InputStream input = file.getInputStream();
+			BufferedReader fileReader = new BufferedReader(new InputStreamReader(input));
+			
+			MetadataFileReader changes = new MetadataFileReader(fileReader);
+			
+			for (Integer id : changes.queryCommentChanges.keySet())
+				queryData.setQueryComment(id, changes.queryCommentChanges.get(id));
+			
+			for (Integer id : changes.snapshotTagChanges.keySet())
+				taggingData.changeSnapshotTag(id, changes.experiment, changes.snapshotTagChanges.get(id));
+			
+			for (Integer id : changes.tileTagChanges.keySet())
+				taggingData.changeTileTag(id, changes.experiment, changes.tileTagChanges.get(id));
+			
+			log.info("Successfully changed metadata as specified by an uploaded file.");
+			return new ResponseEntity<String>("Metadata changed.", HttpStatus.OK);
+		}
+		
+		
+		catch (MalformedConfigException e) {
+			log.error("Could not read the metdata change file because it is not configured correctly. " + e.getMessage());
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	
+	@RequestMapping(value = "/userarea/changemetadata", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<String> changeMetadata(
+			Model model,
+			@RequestParam(value = "experiment",		required = true)	String experiment,
+			@RequestParam(value = "metadataType",	required = true)	String metadataType,
+			@RequestParam(value = "ids",			required = true)	List<Integer> ids,
+			@RequestParam(value = "metadata",		required = false)	String metadata,
+			@RequestParam(value = "deleteMetadata",	required = false)	boolean deleteMetadata )
+	{
+		String username = ControllerHelper.currentUsername();
+		log.info("Request to modify metadata from " + username + ": "
+				+ "\nExperiment: " + experiment
+				+ "\nMetadata Type: " + metadataType
+				+ "\nIDs: " + ids
+				+ "\nNew Metadata: " + metadata
+				+ "\nDelete Action?: " + deleteMetadata);
+		
+		if (metadataType.equals("query")) {
+			if (deleteMetadata == true)
+				queryData.setQueryComments(ids, "");
+			else
+				queryData.setQueryComments(ids, metadata);
+			
+			return new ResponseEntity<String>("Query comments changed.", HttpStatus.OK);
+		}
+		
+		if (metadataType.equals("snapshot")) {
+			if (deleteMetadata == true)
+				taggingData.removeSnapshotTags(ids, experiment);
+			else
+				taggingData.changeSnapshotTags(ids, experiment, metadata);
+			
+			return new ResponseEntity<String>("Snapshot tags changed.", HttpStatus.OK);
+		}
+		
+		if (metadataType.equals("tile")) {
+			if (deleteMetadata == true)
+				taggingData.removeTileTags(ids, experiment);
+			else
+				taggingData.changeTileTags(ids, experiment, metadata);
+			
+			return new ResponseEntity<String>("Tile tag changed.", HttpStatus.OK);
+		}
+		
+		log.fatal("Could not change metadata type " + metadataType + " for " + username + " because it is not recognized.");
+		return new ResponseEntity<String>("Failure. Invalid type of metadata.", HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
+	@RequestMapping(value = "/userarea/queries", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<String> getQueries(
+			Model model,
+			@RequestParam(value = "experiment",			required = true)							String experiment,
+			@RequestParam(value = "currentQueries",		required = false)							List<Integer> currentIds,
+			@RequestParam(value = "queryUsername",		required = false, defaultValue = "")		String filterByUsername,
+			@RequestParam(value = "onlyCommented",		required = false, defaultValue = "false")	boolean onlyCommented)
+	{
+		String username = ControllerHelper.currentUsername();
+		log.info("Request for queries from " + username + ": "
+				+ "\nExperiment: " + experiment
+				+ "\nCurrentQueries: " + currentIds
+				+ "\nOnly From Username: " + filterByUsername
+				+ "\nOnly Commented?: " + onlyCommented);
+		
+		QueryFilter queryFilter = new QueryFilter(experiment);
+		queryFilter.excludedIds		= currentIds;
+		queryFilter.username		= filterByUsername;
+		queryFilter.onlyCommented	= onlyCommented;
+		queryFilter.limit			= NUMBER_QUERIES;
+		
+		List<Query> queries = queryData.getQueries(queryFilter);
+		String jsonQueries = Query.toJSON(queries);
+		
+		log.info("Queries successfully retrieved for " + username);
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		return new ResponseEntity<String>(jsonQueries, headers, HttpStatus.CREATED);
+	}
+	
+	/**
+	 * Directs to a page with an applet to allow users to resume incomplete downloads
+	 * 
+	 * @param model			Internal system model to interact with the view
+	 * @return 				Resume download page with applet
+	 */
+	@RequestMapping(value = "/userarea/resumedownload", method = RequestMethod.GET)
+	public String resumeDownloadAction(
+									Model	model,
+			@ModelAttribute("user") User	user)
+	{
+		String username = ControllerHelper.currentUsername();
+		log.info("Loading resume download page for user " + username);
+		
+		String downloadKey = DownloadManager.generateRandomKey(user);
+		model.addAttribute("downloadKey", downloadKey);
+		
+		Experiment activeExperiment = user.getActiveExperiment();
+		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		
+		return "userarea-resumedownload";
+	}
+	
 	/**
 	 * Profile editing request. Interface for users changing their password, managing downloads, people in their group,
 	 * metadata etc... So far only password is implemented.
@@ -585,7 +929,7 @@ public class UserAreaController
 	@RequestMapping(value = "/userarea/profile", method = RequestMethod.GET)
 	public String profileAction(
 									Model	model,
-			@ModelAttribute("user") DbUser	user)
+			@ModelAttribute("user") User	user)
 	{
 		String username = ControllerHelper.currentUsername();
 		log.info("Attempting to access the profile of user " + username);
@@ -629,14 +973,14 @@ public class UserAreaController
 		}
 
 		try {
-			DbUser user = userDataSource.findByUsername(username);
+			User user = userData.findByUsername(username);
 
 			if (CustomAuthenticationManager.validateCredentials(oldPassword, user) == false) {
 				log.info("Password change for user " + username + " failed because the old password that was input was incorrect.");
 				return new ResponseEntity<String>("Current password is incorrect.", HttpStatus.BAD_REQUEST);
 			}
 			
-			this.userDataSource.changePassword(user, encoder.encode(newPassword));
+			this.userData.changePassword(user, encoder.encode(newPassword));
 			log.info("Password change for user " + username + " successful.");
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}

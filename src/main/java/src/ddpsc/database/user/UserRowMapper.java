@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
- * Maps over each row in a returned query and transforms it into a {@link DbUser} object.
+ * Maps over each row in a returned query and transforms it into a {@link User} object.
  * 
  * The values in the result set hash map are tied to the query from {@link UserDao.USER_QUERY_VARIABLES}.
  * Reference that static variable for determining what string to use to access data from the result set.
@@ -14,10 +14,10 @@ import org.springframework.jdbc.core.RowMapper;
  * @author shill, cjmcentee
  *
  */
-public class UserRowMapper implements RowMapper<DbUser>
+public class UserRowMapper implements RowMapper<User>
 {
 	@Override
-	public DbUser mapRow(ResultSet resultSet, int line) throws SQLException
+	public User mapRow(ResultSet resultSet, int line) throws SQLException
 	{
 		// The order and names of queried variables 
 		//		username
@@ -29,17 +29,17 @@ public class UserRowMapper implements RowMapper<DbUser>
 		//		group_name
 		//		user_id
 		
-		DbUser dbUser = new DbUser();
-		DbGroup group = new DbGroup();
+		User dbUser = new User();
+		Group group = new Group();
 		
-		dbUser.setUsername(resultSet.getString("username"));
-		dbUser.setPassword(resultSet.getString("password"));
-		dbUser.setEnabled(resultSet.getBoolean("enabled"));
-		dbUser.setAuthority(resultSet.getString("authority"));
-		dbUser.setUserId(resultSet.getInt("user_id"));
+		dbUser.setUsername(resultSet.getString(User.USERNAME));
+		dbUser.setPassword(resultSet.getString(User.PASSWORD));
+		dbUser.setEnabled(resultSet.getBoolean(User.ENABLED));
+		dbUser.setAuthority(resultSet.getString(User.AUTHORITY));
+		dbUser.setUserId(resultSet.getInt(User.USER_ID));
 		
-		group.setGroupID(resultSet.getInt("group_id"));
-		group.setOwner(new DbUser(resultSet.getString("owner")));
+		group.setGroupId(resultSet.getInt(User.GROUP_ID));
+		group.setOwner(new User(resultSet.getString("owner")));
 		group.setGroupName(resultSet.getString("group_name"));
 		
 		dbUser.setGroup(group);

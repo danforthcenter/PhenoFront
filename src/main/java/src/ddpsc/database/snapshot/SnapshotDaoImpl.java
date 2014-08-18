@@ -1,12 +1,11 @@
 package src.ddpsc.database.snapshot;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -15,11 +14,15 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowMapper;
 
+import src.ddpsc.config.Config;
+import src.ddpsc.database.queries.Query;
+import src.ddpsc.database.tagging.TaggingDao;
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileRowMapper;
+import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
+import src.ddpsc.utility.StringOps;
 
 /**
  * This class is responsible for building snapshot queries. Each user request should be defined in here.
@@ -42,20 +45,50 @@ public class SnapshotDaoImpl implements SnapshotDao
 {
 	private static final Logger log = Logger.getLogger(SnapshotDaoImpl.class);
 	
+	// From tiled_image table
+	public static final String CAMERA			= "camera_label";
+	// From tile table
+	public static final String TILE_ID			= "id";
+	public static final String RAW_IMAGE_OID	= "raw_image_oid";
+	public static final String NULL_IMAGE_OID	= "raw_null_image_oid";
+	public static final String DATA_FORMAT		= "dataformat";
+	public static final String WIDTH			= "width";
+	public static final String HEIGHT			= "height";
+	public static final String FLIP_TYPE		= "rotate_flip_type";
+	public static final String FRAME			= "frame";
+	public static final String VISIBLE_DATA_TYPE		= "1";
+	public static final String FLUORESCENT_DATA_TYPE	= "6";
+	public static final String INFRARED_DATA_TYPE		= "0";
+	
+	
 	private static final String TILE_QUERY_VARIABLES = "SELECT "
-			+ "tiled_image.camera_label, " 
-			+ "tile.raw_image_oid, "
-			+ "tile.raw_null_image_oid, "
-			+ "tile.dataformat, "
-			+ "tile.width, "
-			+ "tile.height, " 
-			+ "tile.rotate_flip_type, "
-			+ "tile.frame "
+			+ "tiled_image.snapshot_id, "
+			+ "tiled_image." + CAMERA + ", " 
+			+ "tile." + RAW_IMAGE_OID + ", "
+			+ "tile." + NULL_IMAGE_OID + ", "
+			+ "tile." + DATA_FORMAT + ", "
+			+ "tile." + WIDTH + ", "
+			+ "tile." + HEIGHT + ", " 
+			+ "tile." + FLIP_TYPE + ", "
+			+ "tile." + FRAME + ", "
+			+ "tile." + TILE_ID + " "
 			+ "FROM tiled_image, tile ";
+	
+	public static final String SNAPSHOT_ID			= "id";
+	public static final String ID_TAG				= "id_tag";
+	public static final String CAR_TAG				= "car_tag";
+	public static final String MEASUREMENT_LABEL	= "measurement_label";
+	public static final String TIMESTAMP			= "time_stamp";
+	public static final String WEIGHT_BEFORE		= "weight_before";
+	public static final String WEIGHT_AFTER			= "weight_after";
+	public static final String WATER_AMOUNT			= "water_amount";
+	public static final String COMPLETED			= "completed";
 	
 	private static final String SNAPSHOT_QUERY_VARIABLES = "SELECT * FROM snapshot ";
 	
-	DataSource dataSource;
+	private String experiment;
+	private DataSource snapshotDataSource;
+	private TaggingDao taggingData;
 	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
@@ -63,104 +96,24 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	/**
-	 * Returns an evenly distributed list of barcodes that contains no duplicates.
+	 * Gets a snapshot by ID number
 	 * 
-	 * If fewer than maxTags many unique barcodes exist, then it returns all available barcodes.
-	 * 
-	 * Even distribution is considered to be moving through a sorted list with equal space between
-	 * chosen barcodes. (E.g., if you want 10 barcodes out of 100 total, then the 0th, 10th, 20th,
-	 * etc. are selected.)
-	 * 
-	 * @param	maxTags			The maximum number of returned barcodes
-	 * @return					Example list of barcodes
-	 * 
-	 * @throws	CannotGetJdbcConnectionException		Thrown if the postgres server cannot be accessed
-	 */
-	public List<String> getBarcodes(int maxTags)
-			throws CannotGetJdbcConnectionException
-	{
-		String getBarcodes = "SELECT id_tag FROM snapshot";
-		List<String> barcodes = getTags(maxTags, getBarcodes); 
-		
-		return barcodes;
-	}
-	
-	/**
-	 * Returns an evenly distributed list of measurement labels that contains no duplicates.
-	 * 
-	 * If fewer than maxTags many unique measurement labels exist, then it returns all available measurement labels.
-	 * 
-	 * Even distribution is considered to be moving through a sorted list with equal space between
-	 * chosen measurement labels. (E.g., if you want 10 labels out of 100 total, then the 0th, 10th, 20th,
-	 * etc. are selected.)
-	 * 
-	 * @param	maxTags			The maximum number of returned measurement labels
-	 * @return					Example list of measurement labels
-	 * 
-	 * @throws	CannotGetJdbcConnectionException		Thrown if the postgres server cannot be accessed
-	 */
-	public List<String> getMeasurementLabels(int maxTags)
-			throws CannotGetJdbcConnectionException
-	{
-		String getMeasurementLabels = "SELECT measurement_label FROM snapshot";
-		List<String> measurementLabels = getTags(maxTags, getMeasurementLabels);
-		
-		return measurementLabels;
-	}
-	
-	private List<String> getTags(int maxTags, String getTags)
-			throws CannotGetJdbcConnectionException
-	{
-		JdbcTemplate database = new JdbcTemplate(dataSource);
-		List<String> tags = database.query(getTags, new StringRowMapper());
-		// Moving to and from a set removes duplicates
-		List<String> uniqueTags = new ArrayList<String>(new HashSet<String>(tags));
-		Collections.sort(uniqueTags);
-		
-		if (uniqueTags.size() <= maxTags)
-			return uniqueTags;
-		
-		else {
-			List<String> maxUniqueTags = new ArrayList<String>(maxTags);
-			float ratio = uniqueTags.size() / maxTags; // greater than 1
-			
-			for (int i = 0; i < maxTags; i++)
-				maxUniqueTags.add(uniqueTags.get((int) (i*ratio)));
-			
-			return maxUniqueTags;
-		}
-	}
-	
-	private class StringRowMapper implements RowMapper<String>
-	{
-		@Override
-		public String mapRow(ResultSet resultSet, int line) throws SQLException
-		{
-			// Expects the first entry in each row to be a string
-			// Ideally, the only entry in the row will be a string
-			return resultSet.getString(1);
-		}
-	}
-	
-	/**
-	 * Gets a snapshot by ID number, without it's associated images.
-	 * 
-	 * @param	id		The ID number of the returned snapshot
-	 * @return			The snapshot with the supplied ID number
+	 * @param	id						The ID number of the returned snapshot
+	 * @param	processingParameters	Additional query post-processing parameters 
+	 * @return							The snapshot with the supplied ID number
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 * @throws	ObjectNotFoundException				Thrown if the specified object could not be found in the databsae
 	 */
 	@Override
-	public Snapshot findByID(int id)
+	public Snapshot findById(int id)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
 		log.info("Attempting to find snapshot with ID='" + id + "'.");
 		
-		String findID = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE id='" + id + "'";
-		
-		List<Snapshot> snapshots = snapshotQuery(findID);
+		String findById = SNAPSHOT_QUERY_VARIABLES
+				+ " WHERE id='" + id + "'";
+		List<Snapshot> snapshots = snapshotQuery(findById);
 		
 		if (snapshots.size() == 0)
 			throw new ObjectNotFoundException("Snapshot with the ID=" + id + " could not be found.");
@@ -171,31 +124,39 @@ public class SnapshotDaoImpl implements SnapshotDao
 		return snapshot;
 	}
 	
-	
 	/**
-	 * Using ID, returns the snapshot preloaded with all associated tiles.
+	 * Gets all snapshots by the supplied ID numbers
 	 * 
-	 * @see Tile;
-	 * 
-	 * @param	id		ID of the returned snapshot
-	 * @return			Snapshot, with the supplied ID, preloaded with tiles
+	 * @param	id						The ID number of the returned snapshot
+	 * @param	processingParameters	Additional query post-processing parameters 
+	 * @return							The snapshots with the supplied ID numbers
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 * @throws	ObjectNotFoundException				Thrown if the specified object could not be found in the databsae
 	 */
 	@Override
-	public Snapshot findByID_withTiles(int id)
+	public List<Snapshot> findById(List<Integer> ids)
 			throws CannotGetJdbcConnectionException, ObjectNotFoundException
 	{
-		log.info("Attempting to find snapshot with ID='" + id + "' and preload tiles.");
+		log.info("Attempting to find + " + ids.size() + "-many snapshots by ID.");
 		
-		Snapshot snapshot = this.findByID(id);
-		snapshot.setTiles(this.findTiles(id));
+		String findById = SNAPSHOT_QUERY_VARIABLES
+				+ " WHERE id in (";
 		
-		log.info("Snapshot with ID='" + id + "' found and preload with tiles.");
-		return snapshot;
+		for (int i = 0; i < ids.size(); i++) {
+			int id = ids.get(i);
+			
+			if (i != 0)
+				findById += ", ";
+			findById += "'" + id + "'";
+		}
+		findById += ")";
+		List<Snapshot> snapshots = snapshotQuery(findById);
+		
+		log.info(ids.size() + "-many snapshots found by ID.");
+		return snapshots;
 	}
-
+	
 	/**
 	 * Gets a set of snapshots that occurred after the supplied time. 
 	 * 
@@ -204,8 +165,9 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * @see GregorianCalendar
 	 * @see Timestamp
 	 * 
-	 * @param	timestamp		The time before which all returned snapshots occurred
-	 * @return					All snapshots occurring after timestamp
+	 * @param	timestamp				The time before which all returned snapshots occurred
+	 * @param	processingParameters	Parameters for addition processing
+	 * @return							All snapshots occurring after timestamp
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
@@ -216,71 +178,11 @@ public class SnapshotDaoImpl implements SnapshotDao
 		log.info("Attempting to find snapshots after the time " + timestamp + ".");
 		
 		String getAfterTime = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE time_stamp > '" + timestamp + "'";
+				+ " WHERE time_stamp > '" + timestamp + "'";
 		
 		List<Snapshot> snapshots = snapshotQuery(getAfterTime);
 		
 		log.info("Snapshots after the time " + timestamp + " found.");
-		return snapshots;
-	}
-
-	/**
-	 * Gets a set of snapshots that occurred after the supplied time, preloaded with tiles.
-	 * 
-	 * NOTE: If you are using a java Calendar implementation that months start at 0, and days start at 1.
-	 * 
-	 * @see GregorianCalendar
-	 * @see Timestamp
-	 * @see Tile
-	 * 
-	 * @param	timestamp		The time before which all returned snapshots occurred
-	 * @return					All snapshots occurring after timestamp
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findAfterTimestamp_withTiles(Timestamp timestamp)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find snapshots after the time " + timestamp + " and preload tiles.");
-		
-		List<Snapshot> snapshots = this.findAfterTimestamp(timestamp);
-		loadTiles(snapshots);
-		
-		snapshots = Snapshot.tiledOnly(snapshots);
-		
-		log.info("Snapshots after the time " + timestamp + " found and preloaded with tiles.");
-		return snapshots;
-	}
-	
-	/**
-	 * Returns snapshots after the supplied time that were image jobs only.
-	 * 
-	 * NOTE: If you are using a java Calendar implementation that months start at 0, and days start at 1.
-	 * 
-	 * @see GregorianCalendar
-	 * @see Timestamp
-	 * @see Tile
-	 * 
-	 * @param	timestamp		A time before any of the returned snapshots
-	 * @return					The image-only job snapshots that come after the supplied time
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findAfterTimestamp_imageJobs(Timestamp timestamp)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find image only snapshots after the time " + timestamp + ".");
-		
-		String getAfterTimeImagesOnly = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp > '" + timestamp + "' "
-				+ "AND water_amount = -1";
-		
-		List<Snapshot> snapshots = snapshotQuery(getAfterTimeImagesOnly);
-		
-		log.info("Image only snapshots after the time " + timestamp + " found.");
 		return snapshots;
 	}
 
@@ -292,9 +194,10 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * @see GregorianCalendar
 	 * @see Timestamp
 	 * 
-	 * @param	startTime		The earliest time a snapshot will be from in the returned list
-	 * @param	endTime			The latest time a snapshot will be from in the returned list
-	 * @return					Snapshots between startTime and endTime
+	 * @param	startTime				The earliest time a snapshot will be from in the returned list
+	 * @param	endTime					The latest time a snapshot will be from in the returned list
+	 * @param	processingParameters	Parameters for addition processing
+	 * @return							Snapshots between startTime and endTime
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
@@ -305,9 +208,9 @@ public class SnapshotDaoImpl implements SnapshotDao
 		log.info("Attempting to find snapshots between the times " + startTime + " and " + endTime + ".");
 		
 		String getBetweenTimes = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp > '" + startTime + "' "
-				+ "AND time_stamp < '" + endTime   + "'";
+				+ " WHERE"
+					+ " time_stamp > '" + startTime + "'"
+				+ " AND time_stamp < '" + endTime   + "'";
 		
 		List<Snapshot> snapshots = snapshotQuery(getBetweenTimes);
 		
@@ -316,176 +219,6 @@ public class SnapshotDaoImpl implements SnapshotDao
 	}
 
 	/**
-	 * Returns all snapshots between startTime and endTime, preloaded with tiles.
-	 * 
-	 * NOTE: If you are using a java Calendar implementation that months start at 0, and days start at 1.
-	 * 
-	 * @see GregorianCalendar
-	 * @see Timestamp
-	 * 
-	 * @param	startTime		The earliest time a snapshot will be from in the returned list
-	 * @param	endTime			The latest time a snapshot will be from in the returned list
-	 * @return					Snapshots between startTime and endTime
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findBetweenTimes_withTiles(Timestamp startTime, Timestamp endTime)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find snapshots between the times " + startTime + " and " + endTime + " and preload the tiles.");
-		
-		List<Snapshot> snapshots = this.findBetweenTimes(startTime, endTime);
-		loadTiles(snapshots);
-		
-		snapshots = Snapshot.tiledOnly(snapshots);
-		
-		log.info("Snapshots between the times " + startTime + " and " + endTime + " found and preloaded with tiles.");
-		return snapshots;
-	}
-	
-	/**
-	 * Returns all snapshots between startTime and endTime that were image jobs only.
-	 * 
-	 * NOTE: If you are using a java Calendar implementation that months start at 0, and days start at 1.
-	 * 
-	 * @see GregorianCalendar
-	 * @see Timestamp
-	 * 
-	 * @param	startTime		The earliest time a snapshot will be from in the returned list
-	 * @param	endTime			The latest time a snapshot will be from in the returned list
-	 * @return					The image-only job snapshots that come between the supplied times
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findBetweenTimes_imageJobs(Timestamp startTime, Timestamp endTime)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find image only snapshots between the times " + startTime + " and " + endTime + ".");
-		
-		String getBetweenTimesImageOnly = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp > '" + startTime + "' "
-				+ "AND time_stamp <'" + endTime + "' "
-				+ "AND water_amount = -1";
-		
-		List<Snapshot> snapshots = snapshotQuery(getBetweenTimesImageOnly);
-		
-		log.info("Image only snapshots between the times " + startTime + " and " + endTime + " found.");
-		return snapshots;
-	}
-
-	/**
-	 * Returns all the tiles associated with the supplied snapshot ID.
-	 * 
-	 * @param 	snapshotID		ID of the snapshot the tiles are linked to
-	 * @return					All tiles with same snapshot ID as the supplied ID
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	public List<Tile> findTiles(int snapshotID)
-			throws CannotGetJdbcConnectionException
-	{
-		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
-				+ "WHERE "
-					+ "tiled_image.snapshot_id = " + snapshotID + " "
-				+ "AND tile.tiled_image_id = tiled_image.id";
-		
-		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
-		return tiles;
-	}
-	
-	/**
-	 * Returns all the tiles associated with the supplied snapshot ID.
-	 * 
-	 * @param 	snapshot		The snapshot the tiles are linked to
-	 * @return					All tiles with same snapshot ID as the supplied ID
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	public List<Tile> findTiles(Snapshot snapshot)
-			throws CannotGetJdbcConnectionException
-	{
-		String getTilesBySnapshotID = TILE_QUERY_VARIABLES
-				+ "WHERE tiled_image.snapshot_id = " + snapshot.getId() + " "
-				+ "AND tile.tiled_image_id = tiled_image.id";
-		
-		List<Tile> tiles = tileQuery(getTilesBySnapshotID);
-		return tiles;
-	}
-	
-	/**
-	 * Returns the last N-snapshots in the database.
-	 * 
-	 * @param	n			How many of the latest snapshots to return
-	 * @return				The last N-many snapshots
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findLastN(int n)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find the last " + n + "-many snapshots.");
-		
-		String getSnapshots = SNAPSHOT_QUERY_VARIABLES
-				+ "ORDER BY time_stamp DESC LIMIT " + n;
-		
-		List<Snapshot> snapshots = snapshotQuery(getSnapshots);
-		
-		log.info("Found the last " + n + "-many snapshots.");
-		return snapshots;
-	}
-	
-	/**
-	 * Returns the last N-snapshots in the database, preloaded with tiles.
-	 * 
-	 * @param	n			How many of the latest snapshots to return
-	 * @return				The last N-many snapshots
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findLastN_withTiles(int n)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find the last " + n + "-many snapshots and preload them with tiles.");
-		
-		List<Snapshot> snapshots = findLastN(n);
-		loadTiles(snapshots);
-		
-		snapshots = Snapshot.tiledOnly(snapshots);
-		
-		log.info("Found the last " + n + "-many snapshots and preloaded them with tiles.");
-		return snapshots;
-	}
-	
-	/**
-	 * Returns the last N-snapshots in the database that were image jobs only.
-	 * 
-	 * @param	n			How many of the latest snapshots to return
-	 * @return				The last N-many snapshots, image jobs only
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	@Override
-	public List<Snapshot> findLastN_imageJobs(int n)
-			throws CannotGetJdbcConnectionException
-	{
-		log.info("Attempting to find the last " + n + "-many image job only snapshots.");
-		
-		String getLastNImageJobs = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE water_amount = -1 "
-				+ "ORDER BY time_stamp DESC LIMIT " + n;
-		
-		List<Snapshot> snapshots = snapshotQuery(getLastNImageJobs);
-		
-		log.info("Found the last " + n + "-many image only snapshots.");
-		return snapshots;
-	}
-
-	/**
 	 * Returns snapshots defined landing within a particular timespan, with particular barcodes and measurement labels.
 	 * 
 	 * Any null input variables will simply be ignored. If one end of the time span is null, then it becomes unbounded.
@@ -495,78 +228,53 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * 
 	 * The measurement label, in particular, anchors to the start of the string.
 	 * 
-	 * @param	startTime			Time before all returned snapshots
-	 * @param	endTime				Time after all returned snapshots
-	 * @param	plantBarcode		Plant experiment identification
-	 * @param	measurementLabel	Type of measurement
-	 * @return						Snapshots meeting the specified criteria
+	 * @param	querySettings			Settings defining a customized query
+	 * @param	processingParameters	Parameters for addition processing
+	 * @return							Snapshots meeting the specified criteria
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
 	@Override
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs(final CustomQuerySettings querySettings)
-					throws CannotGetJdbcConnectionException
+	public List<Snapshot> executeCustomQuery(final Query querySettings)
+			throws CannotGetJdbcConnectionException
 	{
 		log.info("Attempting to fulfill a custom snapshot query with the variables: " + querySettings + ".");
 		
 		List<Snapshot> snapshots;
 		Timestamp startTime = querySettings.startTime;
 		Timestamp endTime = querySettings.endTime;
+		
 		if (startTime == null && endTime != null)
-			snapshots = findCustomQueryBeforeTime_imageJobs_HELPER(querySettings);
+			snapshots = findCustomQueryBeforeTime_HELPER(querySettings);
 			
 		else if (startTime != null && endTime == null)
-			snapshots = findCustomQueryAfterTime_imageJobs_HELPER(querySettings);
+			snapshots = findCustomQueryAfterTime_HELPER(querySettings);
 		
 		else if (startTime != null && endTime != null)
-			snapshots = findCustomQueryBetweenTime_imageJobs_HELPER(querySettings);
+			snapshots = findCustomQueryBetweenTime_HELPER(querySettings);
 
 		else
-			snapshots = findCustomQueryAnyTime_imageJobs_HELPER(querySettings);
+			snapshots = findCustomQueryAnyTime_HELPER(querySettings);
 		
 		log.info("Custom snapshot query fulfilled. " + snapshots.size() + "-many snapshots found. Variables: " + querySettings + ".");
-		
 		return snapshots;
 	}
 	
-	/**
-	 * Returns snapshots defined landing within a particular timespan, with particular barcodes and measurement labels.
-	 * Will preload snapshots with their associated tiles.
-	 * 
-	 * Any null input variables will simply be ignored. If one end of the time span is null, then it becomes unbounded.
-	 * If both are null, the it returns snapshots from any time.
-	 * 
-	 * The barcodes and measurement labels will match case-insensitive regular expressions.
-	 * 
-	 * The measurement label, in particular, anchors to the start of the string.
-	 * 
-	 * @param	startTime			Time before all returned snapshots
-	 * @param	endTime				Time after all returned snapshots
-	 * @param	plantBarcode		Plant experiment identification
-	 * @param	measurementLabel	Type of measurement
-	 * @return						Snapshots meeting the specified criteria
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs_withTiles(final CustomQuerySettings querySettings)
-					throws CannotGetJdbcConnectionException
-	{
-		List<Snapshot> snapshots = this.findCustomQueryAnyTime_imageJobs(querySettings);
-		log.info("Beginning to load tiles for " + snapshots.size() + " snapshots queried by the variables: " + querySettings + ".");
-		loadTiles(snapshots);
-		log.info("Tiles loaded for " + snapshots.size() + " snapshots queried by the variables: " + querySettings + ".");
-		
-		return Snapshot.tiledOnly(snapshots);
-	}
 	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// Setter / Getter Methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
-	public void setDataSource(DataSource dataSource)
+	public void setSnapshotExperiment(String experimentName) throws MalformedConfigException, IOException
 	{
-		this.dataSource = dataSource;
+		this.experiment = experimentName;
+		this.snapshotDataSource = Config.experimentDataSource(experimentName);
+	}
+	
+	public void setTaggingData(TaggingDao tagging)
+	{
+		this.taggingData = tagging;
 	}
 	
 	
@@ -575,18 +283,18 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// Helper Methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
-	protected List<Snapshot> findCustomQueryBeforeTime_imageJobs_HELPER(final CustomQuerySettings querySettings)
+	private List<Snapshot> findCustomQueryBeforeTime_HELPER(final Query querySettings)
 					throws CannotGetJdbcConnectionException
 	{
 		String sqlStatement = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp <= ? "
-				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~ ? "
-				+ "AND completed = 't' ";
+				+ " WHERE "
+					+ " time_stamp <= ? "
+				+ " AND id_tag ~ ? "
+				+ " AND measurement_label ~ ? "
+				+ " AND completed = 't' ";
 		
 		if (querySettings.includeWatering == false)
-			sqlStatement += "AND water_amount = -1 ";
+			sqlStatement += " AND water_amount = -1 ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -598,22 +306,21 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		return snapshotQuery(sqlStatement, statementSetter);
 	}
 	
-	protected List<Snapshot> findCustomQueryAfterTime_imageJobs_HELPER(final CustomQuerySettings querySettings)
+	private List<Snapshot> findCustomQueryAfterTime_HELPER(final Query querySettings)
 					throws CannotGetJdbcConnectionException
 	{
 		String sqlStatement = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp >= ? "
-				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~ ? "
-				+ "AND completed = 't' ";
+				+ " WHERE "
+					+ " time_stamp >= ? "
+				+ " AND id_tag ~ ? "
+				+ " AND measurement_label ~ ? "
+				+ " AND completed = 't' ";
 		
 		if (querySettings.includeWatering == false)
-			sqlStatement += "AND water_amount = -1 ";
+			sqlStatement += " AND water_amount = -1 ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -625,21 +332,20 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		return snapshotQuery(sqlStatement, statementSetter);
 	}
 	
-	protected List<Snapshot> findCustomQueryAnyTime_imageJobs_HELPER(final CustomQuerySettings querySettings)
+	private List<Snapshot> findCustomQueryAnyTime_HELPER(final Query querySettings)
 					throws CannotGetJdbcConnectionException
 	{
 		String sqlStatement = SNAPSHOT_QUERY_VARIABLES 
-				+ "WHERE "
-					+ "id_tag ~ ? "
-				+ "AND measurement_label ~ ? "
-				+ "AND completed = 't' ";
+				+ " WHERE "
+					+ " id_tag ~ ? "
+				+ " AND measurement_label ~ ? "
+				+ " AND completed = 't' ";
 		
 		if (querySettings.includeWatering == false)
-			sqlStatement += "AND water_amount = -1 ";
+			sqlStatement += " AND water_amount = -1 ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -650,23 +356,22 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		return snapshotQuery(sqlStatement, statementSetter);
 	}
 	
-	protected List<Snapshot> findCustomQueryBetweenTime_imageJobs_HELPER(final CustomQuerySettings querySettings)
+	private List<Snapshot> findCustomQueryBetweenTime_HELPER(final Query querySettings)
 					throws CannotGetJdbcConnectionException
 	{
 		String sqlStatement = SNAPSHOT_QUERY_VARIABLES
-				+ "WHERE "
-					+ "time_stamp >= ? "
-				+ "AND time_stamp <= ? "
-				+ "AND id_tag ~ ? "
-				+ "AND measurement_label ~ ? "
-				+ "AND completed = 't' ";
+				+ " WHERE "
+					+ " time_stamp >= ? "
+				+ " AND time_stamp <= ? "
+				+ " AND id_tag ~ ? "
+				+ " AND measurement_label ~ ? "
+				+ " AND completed = 't' ";
 		
 		if (querySettings.includeWatering == false)
-			sqlStatement += "AND water_amount = -1 ";
+			sqlStatement += " AND water_amount = -1 ";
 		
 		PreparedStatementSetter statementSetter = new PreparedStatementSetter() {
 			@Override
@@ -679,52 +384,130 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlStatement, statementSetter, new SnapshotRowMapper());
-	}
-	
-	/**
-	 * Loads the tiles to the supplied snapshots
-	 * 
-	 * @param	snapshots		The snapshots to load tiles into
-	 * 
-	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
-	 */
-	protected void loadTiles(List<Snapshot> snapshots)
-			throws CannotGetJdbcConnectionException
-	{
-		for (Snapshot snapshot : snapshots) {
-			snapshot.setTiles(findTiles(snapshot));
-		}
+		return snapshotQuery(sqlStatement, statementSetter);
 	}
 	
 	/**
 	 * Executes a query against the snapshot database and returns the resulting snapshots.
 	 * 
-	 * @param	sqlQuery	The SQL query to look for snapshots
-	 * @return				The snapshots resulting from the query
+	 * The SQL Query must be compatible with the supplied prepared statement setter.
+	 * 
+	 * @param	sqlStatement			The SQL query compatible with the supplied prepared statement setter
+	 * @param	preparedStatment		A prepared statement setter to inject values into the sqlQuery
+	 * @param	processingParameters	Processing parameters, this method only uses the relevant post-processing parameters
+	 * @return							The snapshots resulting from the query
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
-	protected List<Snapshot> snapshotQuery(String sqlQuery)
+	private List<Snapshot> snapshotQuery(String sqlStatement, PreparedStatementSetter statementSetter)
 			throws CannotGetJdbcConnectionException
 	{
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlQuery, new SnapshotRowMapper());
+		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		
+		doPost(snapshots);
+		
+		return snapshots;
 	}
 	
 	/**
-	 * Executes a query against the snapshot database and returns the resulting tiles.
+	 * Executes a query against the snapshot database and returns the resulting snapshots.
 	 * 
-	 * @param	sqlQuery	The SQL query to look for tiles
-	 * @return				The tiles resulting from the query
+	 * @param	sqlQuery				The SQL query to look for snapshots
+	 * @param	processingParameters	Processing parameters, this method only uses the relevant post-processing parameters
+	 * @return							The snapshots resulting from the query
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
-	protected List<Tile> tileQuery(String sqlQuery)
+	private List<Snapshot> snapshotQuery(String sqlQuery)
 			throws CannotGetJdbcConnectionException
 	{
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.query(sqlQuery, new TileRowMapper());
+		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlQuery, new SnapshotRowMapper());
+		
+		doPost(snapshots);
+		
+		return snapshots;
+	}
+	
+	/**
+	 * Returns all the tiles associated with the supplied snapshot ID.
+	 * 
+	 * @param 	snapshot		The snapshot the tiles are linked to
+	 * @return					All tiles with same snapshot ID as the supplied ID
+	 * 
+	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
+	 */
+	private List<Tile> loadTiles(List<Snapshot> snapshots, boolean includeVisible, boolean includeFluorescent, boolean includeInfrared)
+			throws CannotGetJdbcConnectionException
+	{
+		if (snapshots == null || snapshots.size() == 0)
+			return new ArrayList<Tile>();
+		
+		String experiment = snapshots.get(0).getExperiment();
+		
+		String getTiles = TILE_QUERY_VARIABLES
+				+ " WHERE tiled_image.snapshot_id in (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
+				+ " AND tile.tiled_image_id = tiled_image.id "
+				+ " AND tile."+DATA_FORMAT + " IN ";
+		
+		getTiles += " ( ";
+				boolean addComma = false;
+				if (includeVisible) {
+					getTiles += "'" + VISIBLE_DATA_TYPE + "'";
+					addComma = true;
+				}
+				
+				if (includeFluorescent) {
+					if (addComma)
+						getTiles += ", ";
+					getTiles += "'" + FLUORESCENT_DATA_TYPE + "'";
+					addComma = true;
+				}
+				
+				if (includeInfrared) {
+					if (addComma)
+						getTiles += ", ";
+					getTiles += "'" + INFRARED_DATA_TYPE + "'";
+					addComma = true;
+				}
+		getTiles += " ) ";
+		
+		JdbcTemplate tileDatabase = new JdbcTemplate(snapshotDataSource);
+		List<Tile> tiles = tileDatabase.query(getTiles, new TileRowMapper(snapshots)); // loads tiles into snapshots
+		
+		taggingData.loadTilesWithTags(tiles, experiment);
+		
+		return tiles;
+	}
+	
+	/**
+	 * Modifies the snapshots based on the processing parameters
+	 * 
+	 * Intended to be called after retrieving the snapshots from the database, this post processing
+	 * method fills in additional values on the snapshots that might be found in databases secondary
+	 * to the snapshot database, or values that are often optional (e.g., loading the tiles on top of the snapshots)
+	 * 
+	 * @param snapshots				Snapshots from the last database access
+	 * @param processingParameters	Parameters defining what additional processing must be done to the snapshots
+	 */
+	private void doPost(List<Snapshot> snapshots)
+	{
+		doPost(snapshots, true, true, true);
+	}
+	
+	private void doPost(List<Snapshot> snapshots, boolean includeVisible, boolean includeFluorescent, boolean includeInfrared)
+	{
+		for (Snapshot snapshot : snapshots)
+			snapshot.setExperiment(experiment);
+		
+		loadTags(snapshots);
+		
+		loadTiles(snapshots, includeVisible, includeFluorescent, includeInfrared);
+	}
+	
+	private void loadTags(List<Snapshot> snapshots)
+	{
+		taggingData.loadSnapshotsWithTags(snapshots);
 	}
 }

@@ -5,3 +5,6 @@ lib/
 lib/processing-2.1-windows64.zip
 lib/processing-2.1-macosx.zip
 src/main/webapp/WEB-INF/ltdatabase.conf
+src/main/webapp/WEB-INF/classes/userdatabase.conf
+src/main/webapp/WEB-INF/classes/ltdatabase.conf
+mysql user test values.sql

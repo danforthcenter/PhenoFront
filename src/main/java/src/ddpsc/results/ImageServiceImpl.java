@@ -9,9 +9,12 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -35,6 +38,47 @@ public class ImageServiceImpl implements ImageService{
 	public final static int VISWIDTH = 2454;
 	public final static int VISHEIGHT = 2056;
 	
+	public static void main(String[] args)
+	{
+		ImageServiceImpl imageConverter = new ImageServiceImpl();
+		
+		long startTime = System.currentTimeMillis();
+		// Output some converted files
+		String directory = "C:\\Development\\DDPSC\\PostgreSQL\\9.3\\data\\pgftp\\LemnaTest";
+		
+		List<File> files = listFilesForFolder(new File(directory + "\\2013-09-24"));
+		
+		for (File file : files) {
+			String filename = file.getName();
+			
+			try {
+				FileOutputStream output = new FileOutputStream(directory + "\\" + filename + ".png");
+				imageConverter.vis2Png(directory + "\\2013-09-24\\" + filename, output);
+			}
+			catch (Exception e) {
+				System.out.println("Cannot convert " + filename);
+			}
+		}
+		
+		long endTime = System.currentTimeMillis();
+		long processingTime_ms = endTime - startTime;
+		long processingTime_s  = (processingTime_ms / (1000)) % 60;
+		long processingTime_m  = (processingTime_ms / (1000 * 60)) % 60;
+		long processingTime_h  = processingTime_ms / (1000 * 60 * 60);
+		System.out.println("\nProcessing took " + processingTime_h + "h " + processingTime_m + "m " + processingTime_s + "s");
+		
+	}
+	
+	public static List<File> listFilesForFolder(final File folder)
+	{
+		List<File> files = new ArrayList<File>();
+		
+	    for (final File fileEntry : folder.listFiles())
+	        files.add(fileEntry);
+	    
+	    return files;
+	}
+	
 	/**
 	 * Converts the passed image to a png format. Expects the string to be prebuilt with the 
 	 * LTFileSystem conversion. If a file does not exist return.
@@ -44,9 +88,11 @@ public class ImageServiceImpl implements ImageService{
 	 */
 	@Override
 	public void nir2Png(String filename, OutputStream out) throws IOException, ZipException {
-		if (! new File(filename).exists()){
+		
+		if (! new File(filename).exists()) {
 			throw new FileNotFoundException(filename + " is not found.");
 		}
+		
 		InputStream in = readZipImageEntry(filename);
 		byte[] bytes = IOUtils.toByteArray(in);
 		in.close();
@@ -58,7 +104,6 @@ public class ImageServiceImpl implements ImageService{
 			}
 		}
 	    ImageIO.write(img, "png", out);
-		
 	}
 
 	/**
@@ -110,7 +155,8 @@ public class ImageServiceImpl implements ImageService{
 	 * @return
 	 * @throws ZipException
 	 */
-	private static InputStream readZipImageEntry(String filename) throws ZipException{
+	private static InputStream readZipImageEntry(String filename) throws ZipException
+	{
 		ZipFile zipFile = new ZipFile(filename);
 		FileHeader entry = zipFile.getFileHeader("data");
 		return zipFile.getInputStream(entry);

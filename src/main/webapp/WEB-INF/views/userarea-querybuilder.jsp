@@ -7,7 +7,6 @@
 <div class="container">
 	<div class="jumbotron"
 		style="padding-left: 30px; padding-right: 30px;">				
-		<p style="min-height:00px">
 	 
 		<h2>Image Batch Download</h2>
 		<p>
@@ -20,13 +19,14 @@
 		
 		<form role="form" id ="query-builder" class="select-data" method="GET" action="<c:url context="/phenofront" value="/massdownload" />" >
 			<div class="form-group">
-				<input type="hidden" value="${activeExperiment}" name="activeExperiment"/>
+				
+				<input type="hidden" value="${experiment}" name="experiment"/>
 	 			
 	 			
-				<label for="plantBarcode">
+				<label for="barcode">
 					Barcode Regex Search (DB.+, D[A]{3,}, .+AA, etc.)
 				</label>
-				<input type="text" name="plantBarcode" id="plantBarcode"
+				<input type="text" name="barcode" id="barcode"
 					class="form-control" placeholder="DBAA"
 					title="Find Snapshots where the barcode matches the input string, or Regex. Supports POSIX Extended Regex." />
 				
@@ -53,16 +53,6 @@
 				<input type="text" name="endTime" id="endTime"
 					class="form-control" placeholder=""
 					title="The latest a snapshot can occur. Click the box to choose a date." />
-				
-				<!--  
-				<label for="userRestriction">
-					Restrict By User:
-				</label>
-				
-				<input type="text" name="userRestriction" id="userRestriction"
-					class="form-control" placeholder="~~~~~NOT IMPLEMENTED YET~~~~~username1, usernam2, username3, etc."
-					title="A comma separated list of users. Removes any snapshots downloaded by a listed user.~~~~~NOT IMPLEMENTED YET~~~~~" />
-				-->
 			</div>
 			
 			<div class="form-group">
@@ -70,28 +60,28 @@
 			
 				<div class="checkbox">
 					<label>
-						<input type="checkbox" name="fluo" value="true" checked />
-						Include Fluorescent Images
-					</label>
-				</div>
-				
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" name="nir" value="true" checked />
-						Include Near Infrared Images
-					</label>
-				</div>
-				
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" name="vis" value="true" checked />
+						<input type="checkbox" name="includeVisible" value="true" checked />
 						Include Visible Light Images
 					</label>
 				</div>
 				
 				<div class="checkbox">
 					<label>
-						<input type="checkbox" name="watering" value="false" checked />
+						<input type="checkbox" name="includeFluorescent" value="true" checked />
+						Include Fluorescent Images
+					</label>
+				</div>
+				
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" name="includeInfrared" value="true" checked />
+						Include Near Infrared Images
+					</label>
+				</div>
+				
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" name="includeWatering" value="true" checked />
 						Include Watering Snapshots
 					</label>
 				</div>
@@ -103,12 +93,44 @@
 			<a id ="generateDownloadLink" class="btn btn-default btn-block btn-large">
 				Generate Download Link
 			</a>
+			
 			<br />
 			
-			<a id ="previewQuery" class="btn btn-default btn-block btn-large">
-				View Full Query Results
+<!--
+			<label for="newTag">
+					Add/Remove Tag:
+			</label>
+			<input type="text" name="newTag" id="newTag"
+				class="form-control" placeholder="my_new_tag1"
+				title="A new tag to add or remove from the database. Tags can only be composed of underscores or alphanumeric characters." />
+			
+			<div class="checkbox">
+				<label>
+					<input type="radio" name="addTag" value="true" checked />
+					Add tag
+				</label>
+			</div>
+			<div class="checkbox">
+				<label>
+					<input type="radio" name="addTag" value="false" />
+					Remove tag
+				</label>
+			</div>
+			
+			<a id="changeTag" class="btn btn-default btn-block btn-large">
+				Change Tag
 			</a>
-			<div class="queryPreview hidden"></div>
+			
+			<br />
+-->
+			
+			<a id="previewQuery" class="btn btn-default btn-block btn-large">
+				Preview Query
+			</a>
+			
+			<br />
+			
+			<div id="queryPreview" class ="hidden"></div>
 			
 		</form>
 	</div>
@@ -116,45 +138,57 @@
 </jsp:body>
 </tags:userarea-template>
 </body>
-<script type="text/javascript" src="<c:url value="/resources/js/computeRegex.js"/>"></script>
-<script type="text/javascript" src="<c:url value="/resources/js/convertToList.js"/>"></script>
-<script type="text/javascript" src="<c:url value="/resources/js/displayHTML.js"/>"></script>
+
+<script type="text/javascript" src="<c:url value="/resources/js/queryElement.js"/>"></script>
+
 <script>
 $(document).ready(function(){
 	
-    $("#plantBarcode").tooltip();
+    $("#barcode").tooltip();
     $("#measurementLabel").tooltip();
     $("#startTime").tooltip();
 	$("#endTime").tooltip();
-	$("#userRestriction").tooltip();
 	
 	$("#startTime").datetimepicker();
 	$("#endTime").datetimepicker();
 	
     // Generate download link
-    $( "#generateDownloadLink" ).click(function() {
+    $("#generateDownloadLink").click(function() {
         $(".downloadLink").removeClass("hidden").show().addClass("alert alert-success");
         var downloadURL = '<c:url context="/phenofront" value="/massdownload" />' + "?" + $("#query-builder").serialize();
         $(".downloadLink").html("<a href='"+ downloadURL + "'>Your Download Link </a>This link may only be used once.");
     });
     
+    // Helper methods for the preview operations
+ 	function displayQuery(query, snapshots) {
+ 		var query = queryElement(query, snapshots);
+ 		$("#queryPreview").empty();
+ 		$("#queryPreview").show();
+ 		
+ 		$("#queryPreview").removeClass("hidden alert alert-danger");
+ 		
+ 		$("#queryPreview").append(query);
+ 	}
+    
  	// Query preview
-    $('#previewQuery').click(function() {
-    	
+    $("#previewQuery").click(function() {
+    	console.log('<c:url context="/phenofront" value="/userarea/querypreview" />');
     	var form = $(this);
 		$.ajax({
 			type: "POST",
 			url: '<c:url context="/phenofront" value="/userarea/querypreview" />',
 			data: $("#query-builder").serialize(),
-			success: function(csv) {
-				$(".queryPreview").removeClass("hidden").show().addClass("alert alert-success");
-				var html = displayHTML(csv);
-				$(".queryPreview").html(html);
+			success: function(queryJSON) {
+				displayQuery(queryJSON["query"], queryJSON["snapshots"]);
 			},
 			error: function(xhr, status, error) {
-				form.find(".queryPreview").removeClass("hidden alert alert-success");
-				form.parent().find(".result").addClass("alert alert-danger");
-				form.parent().find(".result").text(xhr.responseText);
+				$("#queryPreview").empty();
+				$("#queryPreview").show();
+				
+				$("#queryPreview").removeClass("hidden");
+				$("#queryPreview").addClass("alert alert-danger");
+				
+				$("#queryPreview").text(xhr.responseText);
 			}
 		});
     });
