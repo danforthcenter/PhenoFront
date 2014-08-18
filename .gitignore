@@ -5,3 +5,4 @@ lib/
 lib/processing-2.1-windows64.zip
 lib/processing-2.1-macosx.zip
 src/main/webapp/WEB-INF/ltdatabase.conf
+src/main/resources/log4j.xml
