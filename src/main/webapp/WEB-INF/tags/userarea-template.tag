@@ -55,11 +55,13 @@
 				
 				<!-- Only administrators get the user management option -->
 				<!-- Testing authority=admin doesn't work on user management page, authority!=user fixes it even if it seems ridiculous to test admin by testing not-user -->
+				<!--
 				<c:if test = "${ src.ddpsc.database.user.user.getAuthority() != 'ROLE_USER'}">
 					<li <c:if test = "${ active == 'User Management'}">class = "active"</c:if>>
 						<a href="<c:url context= "/phenofront/admin" value="/users"/>">User Management</a>
 					</li>
 				</c:if>
+				-->
 
 				<li>
 					<a href="<c:url value="/j_spring_security_logout"/>">Log-out</a>
