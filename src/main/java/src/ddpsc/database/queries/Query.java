@@ -14,7 +14,7 @@ import com.google.gson.Gson;
 
 public class Query
 {
-	private static final DateTimeFormatter javascriptTimeFormat = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss");
+	private static final DateTimeFormatter javascriptTimeFormat = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
 	
 	// CSV labels
 	public static String QUERY_ID = "query id";
