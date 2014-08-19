@@ -1,9 +1,22 @@
 package src.ddpsc.database.tile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Tile
 {
+	// CSV labels
+	public static final String ID				= "id";
+	public static final String CAMERA			= "camera label";
+	public static final String RAW_IMAGE_OID	= "raw image id";
+	public static final String NULL_IMAGE_OID	= "null image id";
+	public static final String DATA_FORMAT		= "data format";
+	public static final String WIDTH			= "width";
+	public static final String HEIGHT			= "height";
+	public static final String FLIP_TYPE		= "flip type";
+	public static final String FRAME			= "frame";
+	
+	private int		id;
 	private String	cameraLabel;
 	private int		rawImageOid; // maybe just go fetch the path
 	private int		rawNullImageOid;
@@ -13,6 +26,7 @@ public class Tile
 	private int		rotateFlipType;
 	private int		frame;
 	private String	imagePath;
+	private String	tag;
 	
 	public Tile()
 	{
@@ -55,16 +69,30 @@ public class Tile
 				+ "]";
 	}
 	
-	public static String toCSVString(List<Tile> tiles, String delimiter)
+	public static String toCSV(List<Tile> tiles, String delimiter)
 	{
 		String csv = "";
 		for (Tile tile : tiles)
 			csv += tile.cameraLabel + "_" + tile.rawImageOid + delimiter;
 		
-		csv = csv.substring(0, csv.length()); // TODO: What does this do? csv.length() - 1 would take off the last element, but THIS?
 		return csv;
 	}
 	
+	public static List<Integer> getIds(List<Tile> tiles)
+	{
+		List<Integer> ids = new ArrayList<Integer>(tiles.size());
+		for (Tile tile : tiles)
+			ids.add(tile.id);
+		return ids;
+	}
+	
+	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Get/Set Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	public String getNullImagePath()
 	{
 		return this.imagePath + "/" + new Integer(this.rawNullImageOid).toString();
@@ -163,5 +191,25 @@ public class Tile
 	public void setFrame(int frame)
 	{
 		this.frame = frame;
+	}
+	
+	public int getId()
+	{
+		return id;
+	}
+	
+	public void setId(int id)
+	{
+		this.id = id;
+	}
+	
+	public void setTag(String tag)
+	{
+		this.tag = tag;
+	}
+	
+	public String getTag()
+	{
+		return tag;
 	}
 }

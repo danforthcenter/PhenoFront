@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title> Applet Test HTML </title>
+	</head>
+	<body>
+
+		Here is the applet:
+		
+		<br />
+		<!-- 
+		<script src= "https://www.java.com/js/deployJava.js"></script>
+		<script>
+			var attributes = {code:'src.ddpsc.resumeDownloadApplet.JResumeDownloadApplet.class', archive:'..\lib\JResumeDownloadApplet.jar', width:600, height:325};
+			var parameters = { fontSize:16, permissions:'sandbox' };
+			var version = '1.6';
+			deployJava.runApplet(attributes, parameters, version);
+		</script>
+		-->
+		<object type="application/x-java-applet" height="325" width="600">
+			<param name="code" value="src.ddpsc.resumeDownloadApplet.JResumeDownloadApplet" />
+			<param name="archive" value="..\lib\JResumeDownloadApplet.jar" />
+		</object>
+		 
+	</body>
+</html>

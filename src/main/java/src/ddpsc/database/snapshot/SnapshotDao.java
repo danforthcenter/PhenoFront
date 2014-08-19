@@ -1,12 +1,15 @@
 package src.ddpsc.database.snapshot;
 
+import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.EnumSet;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
+import src.ddpsc.database.queries.Query;
+import src.ddpsc.database.tagging.TaggingDao;
+import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
 /**
@@ -19,47 +22,13 @@ import src.ddpsc.exceptions.ObjectNotFoundException;
  */
 public interface SnapshotDao
 {
-	public void setDataSource(DataSource dataSource);
+	public void setSnapshotExperiment(String experimentName) 	throws MalformedConfigException, IOException;
 	
 	
-	
-	public List<String> getBarcodes(int maxTags) throws CannotGetJdbcConnectionException;
-	
-	public List<String> getMeasurementLabels(int maxTags) throws CannotGetJdbcConnectionException;
-	
-	
-	
-	public Snapshot findByID(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
-	
-	public Snapshot findByID_withTiles(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
-	
-	
-	
+	public Snapshot findById(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
+	public List<Snapshot> findById(List<Integer> ids) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 	public List<Snapshot> findAfterTimestamp(Timestamp timestamp) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findAfterTimestamp_withTiles(Timestamp timestamp) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findAfterTimestamp_imageJobs(Timestamp timestamp) throws CannotGetJdbcConnectionException;
-	
-	
-	
 	public List<Snapshot> findBetweenTimes(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
 	
-	public List<Snapshot> findBetweenTimes_withTiles(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findBetweenTimes_imageJobs(Timestamp startTime, Timestamp endTime) throws CannotGetJdbcConnectionException;
-	
-	
-	
-	public List<Snapshot> findLastN(int n) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findLastN_withTiles(int n) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findLastN_imageJobs(int n) throws CannotGetJdbcConnectionException;
-	
-	
-	
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs(CustomQuerySettings querySettings) throws CannotGetJdbcConnectionException;
-	
-	public List<Snapshot> findCustomQueryAnyTime_imageJobs_withTiles(CustomQuerySettings querySettings) throws CannotGetJdbcConnectionException;
+	public List<Snapshot> executeCustomQuery(Query querySettings) throws CannotGetJdbcConnectionException;
 }

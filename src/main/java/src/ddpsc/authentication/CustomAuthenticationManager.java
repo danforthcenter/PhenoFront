@@ -7,7 +7,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import src.ddpsc.database.user.UserDao;
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.User;
 import src.ddpsc.exceptions.UserException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
@@ -54,7 +54,7 @@ public class CustomAuthenticationManager implements AuthenticationManager
 			log.info("Attempting to authenticate the user " + auth.getName());
 			
 			String username = auth.getName();
-			DbUser user = userDao.findByUsername(username);
+			User user = userDao.findByUsername(username);
 			
 			if ( ! user.isEnabled())
 				throw new DisabledException("The account for the user " + username + " is disabled.");
@@ -92,7 +92,7 @@ public class CustomAuthenticationManager implements AuthenticationManager
 	 * @param rawPassword	The raw input password, probably typed by the website user
 	 * @return				Whether the raw password matches the user's password
 	 */
-	public static boolean validateCredentials(String rawPassword, DbUser user)
+	public static boolean validateCredentials(String rawPassword, User user)
 	{
 		PasswordEncoder passwordEncoder = new StandardPasswordEncoder();
 		
@@ -107,17 +107,17 @@ public class CustomAuthenticationManager implements AuthenticationManager
 	 * @param		access		An integer value representing the access of the user
 	 * @return 					A collection of granted authorities
 	 */
-	public Collection<GrantedAuthority> getAuthorities(DbUser user)
+	public Collection<GrantedAuthority> getAuthorities(User user)
 	{
 		Set<GrantedAuthority> authList = new HashSet<GrantedAuthority>();
 		
 		// Everyone is at least a user
-		authList.add(new SimpleGrantedAuthority(DbUser.USER));
+		authList.add(new SimpleGrantedAuthority(User.USER_AUTHORITY));
 		
 		
 		if (user.isAdmin()) {
-			log.info("Granted the authority of: " + DbUser.ADMIN + " to the user " + user.getUsername());
-			authList.add(new SimpleGrantedAuthority(DbUser.ADMIN));
+			log.info("Granted the authority of: " + User.ADMIN_AUTHORITY + " to the user " + user.getUsername());
+			authList.add(new SimpleGrantedAuthority(User.ADMIN_AUTHORITY));
 		}
 		
 		return authList;

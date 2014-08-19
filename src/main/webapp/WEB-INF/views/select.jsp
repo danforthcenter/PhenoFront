@@ -12,7 +12,7 @@
 			the PI or the system administrator.
 			</p>
 			<form id = "selection">
-				<select class="form-control" name="experimentName" id="experimentName">
+				<select class="form-control" name="experiment" id="experiment">
 			      <c:forEach var='experiment' items='${allowed}'>
 			      	<option value="${experiment.experimentName }">${ experiment.experimentName }</option>
 			      </c:forEach>
@@ -20,7 +20,9 @@
 				
 				<div class="result hidden"></div>
 				
-				<button type="submit" class="btn btn-default btn-block btn-large">Submit</button>
+				<br />
+				
+				<button type="submit" class="btn btn-default btn-block">Submit</button>
 			</form>
 		</div>
 	</div>

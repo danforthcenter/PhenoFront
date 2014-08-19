@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import src.ddpsc.database.user.DbGroup;
-import src.ddpsc.database.user.DbUser;
+import src.ddpsc.database.user.Group;
+import src.ddpsc.database.user.User;
 import src.ddpsc.database.user.UserDao;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
@@ -32,7 +32,7 @@ import src.ddpsc.exceptions.UserException;
  * @author shill, cjmcentee
  */
 
-@Controller
+@Controller 
 @RequestMapping(value="/admin")
 public class AdminController
 {
@@ -56,15 +56,15 @@ public class AdminController
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String homeAction(Model model)
 	{
-		List<DbGroup> groups = new ArrayList<DbGroup>();
-		List<DbUser> users = new ArrayList<DbUser>();
+		List<Group> groups = new ArrayList<Group>();
+		List<User> users = new ArrayList<User>();
 		
 		try {
 			groups = ud.findAllGroups();
 			users = ud.findAllUsers();
 		}
 		catch (CannotGetJdbcConnectionException e) {
-			return ControllerHelper.handleJdbcException(model, log, "retrieve all user and group data");
+			return ControllerHelper.handleJdbcException(model, "retrieve all user and group data", log);
 		}
 		
 		model.addAttribute("users", users);
@@ -114,14 +114,14 @@ public class AdminController
 		
 		// Try to change password
 		try {
-			DbUser user = ud.findByID(userId);
+			User user = ud.findByID(userId);
 			ud.changePassword(user, encoder.encode(newPassword));
 			log.info("Change password for user ID=" + userId + " succeeded without errors.");
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the password of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, "change the password of", log);
 		}
 	}
 	
@@ -142,21 +142,21 @@ public class AdminController
 			@RequestParam("authority") String newAuthority)
 	{
 		// Validate input	
-		if (DbUser.authorityInvalid(newAuthority)) {
+		if (User.authorityInvalid(newAuthority)) {
 			log.info("Change authority for user ID=" + userId + " failed because the new authority isn't valid.");
 			return new ResponseEntity<String>("Not a valid authority.", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to change authority
 		try {
-			DbUser user = ud.findByID(userId);
+			User user = ud.findByID(userId);
 			ud.changeAuthority(user, newAuthority);
 			log.info("Change authority for user ID=" + userId + " succeeded without errors.");
 		    return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the authority of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, "change the authority of", log);
 		}
 		
 	}
@@ -178,14 +178,14 @@ public class AdminController
 			@RequestParam("username") String newUsername)
 	{
 		// Validate input	
-		if (DbUser.usernameInvalid(newUsername)) {
+		if (User.usernameInvalid(newUsername)) {
 			log.info("Change username for user ID=" + userId + " failed because the new username isn't valid.");
 			return new ResponseEntity<String>("New username is not valid.", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to change the username
 		try {
-			DbUser user = ud.findByID(userId);
+			User user = ud.findByID(userId);
 			
 			if (user.getUsername().equals(newUsername)) {
 				log.info("Change username for user ID=" + userId + " failed because the new username is the same as the current username.");
@@ -205,7 +205,7 @@ public class AdminController
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the username of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, "change the username of", log);
 		}
 	}
 	
@@ -228,7 +228,7 @@ public class AdminController
 			@RequestParam("groupname") String newGroupName)
 	{
 		try {
-			DbGroup group = null;
+			Group group = null;
 			try {
 				group = ud.findGroupByName(newGroupName);
 			}
@@ -237,13 +237,13 @@ public class AdminController
 				return new ResponseEntity<String>("User data corrupted.", HttpStatus.BAD_REQUEST);
 			}
 			
-			DbUser user = ud.findByID(userId);
+			User user = ud.findByID(userId);
 			ud.changeGroup(user, group);
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "change the group of");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, "change the group of", log);
 		}
 	}
 	
@@ -259,13 +259,13 @@ public class AdminController
 			@RequestParam("userid") int userId)
 	{
 		try {
-			DbUser user = ud.findByID(userId);
+			User user = ud.findByID(userId);
 			ud.removeUser(user);
 			return new ResponseEntity<String>("Success!", HttpStatus.OK);
 		}
 		
 		catch (Exception e) {
-			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, log, "remove");
+			return ControllerHelper.handleUserDataPOSTExceptions(e, userId, "remove", log);
 		}
 	}
 	
@@ -298,19 +298,19 @@ public class AdminController
 			return new ResponseEntity<String>("Error, the new user's passwords do not match.", HttpStatus.BAD_REQUEST);
 		}
 		
-		if (DbUser.usernameInvalid(username)) {
+		if (User.usernameInvalid(username)) {
 			log.info("Could not add user to system because users cannot have empty usernames.");
 			return new ResponseEntity<String>("Error, the new user's username cannot be empty.", HttpStatus.BAD_REQUEST);
 		}
 		
-		if (DbUser.authorityInvalid(authority)) {
+		if (User.authorityInvalid(authority)) {
 			log.info("Could not add user to system because users must have a valid authority.");
 			return new ResponseEntity<String>("Error, the new user's authority is invalid.", HttpStatus.BAD_REQUEST);
 		}
 		
 		// Try to add the user
 		try {
-			DbUser newUser = new DbUser();
+			User newUser = new User();
 			newUser.setUsername(username);
 			newUser.setPassword(encoder.encode(password));
 			newUser.setEnabled(true);

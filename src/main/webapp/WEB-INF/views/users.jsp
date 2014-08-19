@@ -1,7 +1,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ page session="false"%>
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags"%>
-<tags:admin-template>
+<tags:userarea-template>
 	<jsp:attribute name="active">User Management</jsp:attribute>
 	<jsp:body>
 	<div class="container">
@@ -157,7 +157,7 @@
 		</div>
 	</div>
 	</jsp:body>
-</tags:admin-template>
+</tags:userarea-template>
 </body>
 <!-- page specific JS -->
 <script type="text/javascript">

@@ -41,15 +41,15 @@ public class SnapshotRowMapper implements RowMapper<Snapshot>{
 		
 		Snapshot snapshot = new Snapshot();
 		
-		snapshot.setId(resultSet.getInt(1));
-		snapshot.setPlantBarcode(resultSet.getString(4));
-		snapshot.setCarTag(resultSet.getString(9));
-		snapshot.setMeasurementLabel(resultSet.getString(10));
-		snapshot.setTimeStamp(resultSet.getTimestamp(11));
-		snapshot.setWeightBefore(resultSet.getFloat(12));
-		snapshot.setWeightAfter(resultSet.getFloat(13));
-		snapshot.setWaterAmount(resultSet.getFloat(14));
-		snapshot.setCompleted(resultSet.getBoolean(15));
+		snapshot.setId(resultSet.getInt(SnapshotDaoImpl.SNAPSHOT_ID));
+		snapshot.setPlantBarcode(resultSet.getString(SnapshotDaoImpl.ID_TAG));
+		snapshot.setCarTag(resultSet.getString(SnapshotDaoImpl.CAR_TAG));
+		snapshot.setMeasurementLabel(resultSet.getString(SnapshotDaoImpl.MEASUREMENT_LABEL));
+		snapshot.setTimeStamp(resultSet.getTimestamp(SnapshotDaoImpl.TIMESTAMP));
+		snapshot.setWeightBefore(resultSet.getFloat(SnapshotDaoImpl.WEIGHT_BEFORE));
+		snapshot.setWeightAfter(resultSet.getFloat(SnapshotDaoImpl.WEIGHT_AFTER));
+		snapshot.setWaterAmount(resultSet.getFloat(SnapshotDaoImpl.WATER_AMOUNT));
+		snapshot.setCompleted(resultSet.getBoolean(SnapshotDaoImpl.COMPLETED));
 		return snapshot;
 	}
 } 

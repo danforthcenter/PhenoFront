@@ -1,0 +1,74 @@
+#
+#	This is a metadata modification file
+#
+#	The format of this file that of ONE or TWO whitespace separated columns
+# 
+#	'#' is the comment character, empty lines are ignored
+#
+#	TO DELETE METADATA:
+#		To delete metadata, a line will have one column with only 
+#		the identifier string [see: 1]
+#
+#
+#	TO ADD METADATA:
+#		To add metadata, a line will have two columns. The first column
+#		will be the identifier string [see: 1], the second column will
+#		have the metadata.
+#		
+#		Metadata additions cannot have line breaks in them. They must stay
+#		all on the same line.
+#
+#		If you are editing metadata for snapshots or tiles, this file must include
+#		the a row with the first column being "EXPERIMENT_NAME" and the second column
+#		being the actual name of the experiment. The experiment can only be set ONCE.
+#		More than one EXPERIMENT_NAME lines will throw an error.
+#
+#		Only snapshots or tiles from a single experiment can be modified per file.
+#
+#
+#	(1): The identifier
+#		To indicate whether you wish to modify query, snapshot, or tile metadata,
+#		the first column must be of the appropriate form. The form matches this regex:
+#				(snapshot|query|tile)#(\\d+)
+#
+#		Valid Identifiers:
+#				query#452
+#				tile#23532
+#				snapshot#2657
+#
+#		Invalid Identifiers:
+#				queries#6434			'queries' should be 'query'
+#				wrongType#4643			'wrongType' is way off
+#				query # 3532			no spaces allowed
+#				snapshot# 3453			no spaces allowed
+#				snapshot #3453			no spaces allowed
+#
+#
+#	Example columns:
+#		This column deletes the comment in the query with id = '53352'
+#				query#53352
+#
+#		This column adds the comment 'New comment' to the query with id = '53352'
+#				query#53352				New comment
+#
+#		This column is the same as the previous, the amount of whitespace doesn't matter
+#				query#53352	New comment
+#
+#		This column is invalid because the identifier is malformed
+#				query#53352New			comment
+#
+#		This column is invalid because the identifier is malformed
+#				mispelledname#53352		New comment
+#
+#		This column sets the experiment to 'ExampleExperimentName1'
+#				EXPERIMENT_NAME			ExampleExperimentName1
+#
+#		This column, assuming the EXPERIMENT_NAME is set, deletes any tags on tile with id = '45'
+#				tile#45
+#
+#		This column adds the tag 'This tile is now tagged' to tile with id = '45'
+#				tile#45					This tile is now tagged
+#
+#
+
+
