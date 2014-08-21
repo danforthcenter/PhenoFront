@@ -155,7 +155,7 @@ public class TaggingDaoImpl implements TaggingDao
 		if (snapshots.size() == 0)
 			return;
 		
-		String experiment = snapshots.get(0).getExperiment();
+		String experiment = snapshots.get(0).experiment;
 		String snapshotTable = addSnapshotTable(experiment);
 		
 		List<Integer> snapshotIds = Snapshot.getIds(snapshots);

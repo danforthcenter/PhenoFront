@@ -21,7 +21,7 @@ class SnapshotsTagLoader implements ResultSetExtractor<List<Snapshot>>
 	{
 		for (int index = 0; index < snapshots.size(); index++) {
 			Snapshot snapshot = snapshots.get(index);
-			if (snapshot.getId() == id)
+			if (snapshot.id == id)
 				return index;
 		}
 		

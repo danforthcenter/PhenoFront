@@ -247,7 +247,8 @@ public class QueryDaoImpl implements QueryDao
 	@Override
 	public void setQueryComment(int queryId, String newComment)
 	{
-		setQueryComments(Arrays.asList(new Integer[]{queryId}), newComment);
+		if (queryId != -1)
+			setQueryComments(Arrays.asList(new Integer[]{queryId}), newComment);
 	}
 	
 	@Override
@@ -255,7 +256,8 @@ public class QueryDaoImpl implements QueryDao
 	{
 		log.info("Attempting to change the interruption status on the query ID='" + queryId + "' to: '" + time + "'.");
 		
-		setMetadataVariable(queryId, DOWNLOAD_BEGIN, time.toString());
+		if (queryId != -1)
+			setMetadataVariable(queryId, DOWNLOAD_BEGIN, time.toString());
 		
 		log.info("Changed the interruption status on the query ID='" + queryId + "' to: '" + time + "'.");
 	}
@@ -265,7 +267,8 @@ public class QueryDaoImpl implements QueryDao
 	{
 		log.info("Attempting to change the download finished time on the query ID='" + queryId + "' to: '" + time + "'.");
 		
-		setMetadataVariable(queryId, DOWNLOAD_END, time.toString());
+		if (queryId != -1)
+			setMetadataVariable(queryId, DOWNLOAD_END, time.toString());
 		
 		log.info("Changed the download finished time on the query ID='" + queryId + "' to: '" + time + "'.");
 	}
@@ -276,7 +279,15 @@ public class QueryDaoImpl implements QueryDao
 		String wasInterrupedString = wasInterrupted ? "true" : "false";
 		log.info("Attempting to change the interruption status on the query ID='" + queryId + "' to: '" + wasInterrupedString + "'.");
 		
-		setMetadataVariable(queryId, INTERRUPTED, wasInterrupedString);
+		if (queryId != -1) {
+			String changeVariable = "UPDATE " + METADATA_TABLE
+					+ " SET " + INTERRUPTED + " = " + wasInterrupted + ""
+					+ " WHERE " + QUERY_ID + " ='" + queryId + "'"
+					+ " LIMIT 1";
+			
+			log.info("Set metadata variable: [" + changeVariable + "]");
+			modifyQuerySystem(changeVariable);
+		}
 		
 		log.info("Changed the interruption status on the query ID='" + queryId + "' to: '" + wasInterrupedString + "'.");
 	}
@@ -287,7 +298,8 @@ public class QueryDaoImpl implements QueryDao
 		String bytesString = Long.toString(bytes);
 		log.info("Attempting to change query size on the query ID='" + queryId + "' to: '" + bytesString + "'.");
 		
-		setMetadataVariable(queryId, SIZE, bytesString);
+		if (queryId != -1)
+			setMetadataVariable(queryId, SIZE, bytesString);
 		
 		log.info("Changed the query size on the query ID='" + queryId + "' to: '" + bytesString + "'.");
 	}

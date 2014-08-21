@@ -2,7 +2,6 @@ package src.ddpsc.database.snapshot;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,7 +14,134 @@ import src.ddpsc.database.tile.Tile;
  */
 public class Snapshot
 {
-	// CSV labels
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Fields
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public final int		id;
+	public final String		experiment;
+	
+	public final String		plantBarcode;
+	public final String		measurementLabel;
+	public final String		carTag;
+	public final Timestamp	timestamp;
+	
+	public final float		weightBefore;
+	public final float		weightAfter;
+	public final float		waterAmount;
+	
+	public final boolean	completed;
+	
+	private List<Tile>		tiles;
+	private String			tag;
+	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Constructors
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public Snapshot(
+			int			id,
+			String		experiment,
+			
+			String		plantBarcode,
+			String		measurementLabel,
+			String		carTag,
+			Timestamp	timeStamp,
+			
+			float		weightBefore,
+			float		weightAfter,
+			float		waterAmount,
+			
+			boolean		completed)
+	{
+		this.id = id;
+		this.experiment = experiment;
+		
+		this.plantBarcode = plantBarcode;
+		this.measurementLabel = measurementLabel;
+		this.carTag = carTag;
+		this.timestamp = timeStamp;
+		
+		this.weightBefore = weightBefore;
+		this.weightAfter = weightAfter;
+		this.waterAmount = waterAmount;
+		
+		this.completed = completed;
+		
+		this.tiles = new ArrayList<Tile>();
+		this.tag = "";
+	}
+	
+	
+	@Override
+	public String toString()
+	{
+		return "Snapshot ["
+				+ "experiment=" + experiment + ", "
+				+ "id=" + id + ", "
+				+ "plantBarcode=" + plantBarcode + ", "
+				+ "carTag=" + carTag + ", "
+				+ "timeStamp=" + timestamp + ", "
+				+ "weightBefore=" + weightBefore + ", "
+				+ "weightAfter=" + weightAfter + ", "
+				+ "waterAmount=" + waterAmount + ", " 
+				+ "completed=" + completed + ", "
+				+ "measurementLabel=" + measurementLabel + ", "
+				+ "tiles=" + tiles + ", "
+				+ "tag=" + tag
+				+ "]";
+	}
+	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Static List Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	/**
+	 * Returns the supplied collection of snapshots, but only those which have tiles loaded
+	 * 
+	 * @param		snapshots	List of snapshots to check for tiles
+	 * @return					All the snapshots with tiles
+	 */
+	public static ArrayList<Snapshot> tiledOnly(Collection<Snapshot> snapshots)
+	{
+		// Remove snapshots with zero tiles
+		ArrayList<Snapshot> snapshotsWithTiles = new ArrayList<Snapshot>(snapshots.size());
+
+		for (Snapshot snapshot : snapshots)
+			if (snapshot.getTiles().size() > 0)
+				snapshotsWithTiles.add(snapshot);
+
+		return snapshotsWithTiles;
+	}
+	
+	public static List<Integer> getIds(List<Snapshot> snapshots)
+	{
+		List<Integer> ids = new ArrayList<Integer>(snapshots.size());
+		for (Snapshot snapshot : snapshots)
+			ids.add(snapshot.id);
+		
+		return ids;
+	}
+	
+	public static List<Tile> getTiles(List<Snapshot> snapshots)
+	{
+		List<Tile> tiles = new ArrayList<Tile>();
+		for (Snapshot snapshot : snapshots)
+			tiles.addAll(snapshot.getTiles());
+		
+		return tiles;
+	}
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// CSV
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	public static final String ID				= "id";
 	public static final String EXPERIMENT		= "experiment";
 	
@@ -47,107 +173,6 @@ public class Snapshot
 			+ "," + TAG
 			+ "," + TILES
 			+ "\n";
-	
-	private int			id;
-	private String		experiment;
-	
-	private	String		plantBarcode;
-	private String		measurementLabel;
-	private Timestamp	timestamp;
-	
-	private String		carTag;
-	private boolean		completed;
-	
-	private float		weightBefore;
-	private float		weightAfter;
-	private float		waterAmount;
-	
-	private List<Tile>	tiles;
-	private String		tag;
-	
-	public Snapshot()
-	{
-		this.tiles = new ArrayList<Tile>();
-	}
-	
-	public Snapshot(
-			String		experimentName,
-			String		plantBarcode,
-			String		carTag,
-			Timestamp	timeStamp,
-			float		weightBefore,
-			float		weightAfter,
-			float		waterAmount,
-			boolean		completed,
-			int			id,
-			String		measurementLabel)
-	{
-		this.experiment = experimentName;
-		this.plantBarcode = plantBarcode;
-		this.carTag = carTag;
-		this.timestamp = timeStamp;
-		this.weightBefore = weightBefore;
-		this.weightAfter = weightAfter;
-		this.waterAmount = waterAmount;
-		this.completed = completed;
-		this.measurementLabel = measurementLabel;
-		this.id = id;
-		
-		this.tiles = new ArrayList<Tile>();
-	}
-	
-	/**
-	 * Returns the supplied collection of snapshots, but only those which have tiles loaded
-	 * 
-	 * @param		snapshots	List of snapshots to check for tiles
-	 * @return					All the snapshots with tiles
-	 */
-	public static ArrayList<Snapshot> tiledOnly(Collection<Snapshot> snapshots)
-	{
-		// Remove snapshots with zero tiles
-		ArrayList<Snapshot> snapshotsWithTiles = new ArrayList<Snapshot>(snapshots.size());
-
-		for (Snapshot snapshot : snapshots)
-			if (snapshot.getTiles().size() > 0)
-				snapshotsWithTiles.add(snapshot);
-
-		return snapshotsWithTiles;
-	}
-	
-	public static List<Integer> getIds(List<Snapshot> snapshots)
-	{
-		List<Integer> ids = new ArrayList<Integer>(snapshots.size());
-		for (Snapshot snapshot : snapshots)
-			ids.add(snapshot.id);
-		
-		return ids;
-	}
-		
-	@Override
-	public String toString()
-	{
-		return "Snapshot ["
-				+ "experiment=" + experiment + ", "
-				+ "id=" + id + ", "
-				+ "plantBarcode=" + plantBarcode + ", "
-				+ "carTag=" + carTag + ", "
-				+ "timeStamp=" + timestamp + ", "
-				+ "weightBefore=" + weightBefore + ", "
-				+ "weightAfter=" + weightAfter + ", "
-				+ "waterAmount=" + waterAmount + ", " 
-				+ "completed=" + completed + ", "
-				+ "measurementLabel=" + measurementLabel + ", "
-				+ "tiles=" + tiles + ", "
-				+ "tag=" + tag
-				+ "]";
-	}
-	
-	
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
-	// CSV Methods
-	// ////////////////////////////////////////////////
-	// ////////////////////////////////////////////////
 	/**
 	 * Converts a series of snapshots into CSV form, includes headers
 	 * 
@@ -194,7 +219,7 @@ public class Snapshot
 				+ "," + measurementLabel
 				+ "," + tag);
 		
-		data.append(tilesToCSV());
+		data.append(tilesNames());
 		
 		if (addHeader)
 			return CSV_HEADER + data.toString();
@@ -202,11 +227,11 @@ public class Snapshot
 			return data.toString();
 	}
 	
-	private String tilesToCSV()
+	private String tilesNames()
 	{
 		StringBuilder tilesEntry = new StringBuilder("");
 		if (tiles != null && tiles.size() > 0)
-			tilesEntry.append("," + Tile.toCSV(tiles, ";"));
+			tilesEntry.append("," + Tile.namesList(tiles, ";"));
 		else
 			tilesEntry.append(",");
 		
@@ -219,106 +244,6 @@ public class Snapshot
 	// Get/Set Methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
-	public void setMeasurementLabel(String measurementLabel)
-	{
-		this.measurementLabel = measurementLabel;
-	}
-	
-	public String getMeasurementLabel()
-	{
-		return measurementLabel;
-	}
-	
-	public String getPlantBarcode()
-	{
-		return plantBarcode;
-	}
-	
-	public void setPlantBarcode(String plantBarcode)
-	{
-		this.plantBarcode = plantBarcode;
-	}
-	
-	public String getCarTag()
-	{
-		return carTag;
-	}
-	
-	public void setCarTag(String carTag)
-	{
-		this.carTag = carTag;
-	}
-	
-	public Timestamp getTimeStamp()
-	{
-		return timestamp;
-	}
-	
-	public void setTimeStamp(Timestamp timeStamp)
-	{
-		this.timestamp = timeStamp;
-	}
-	
-	public float getWeightBefore()
-	{
-		return weightBefore;
-	}
-	
-	public void setWeightBefore(float weightBefore)
-	{
-		this.weightBefore = weightBefore;
-	}
-	
-	public float getWeightAfter()
-	{
-		return weightAfter;
-	}
-	
-	public void setWeightAfter(float weightAfter)
-	{
-		this.weightAfter = weightAfter;
-	}
-	
-	public float getWaterAmount()
-	{
-		return waterAmount;
-	}
-	
-	public void setWaterAmount(float waterAmount)
-	{
-		this.waterAmount = waterAmount;
-	}
-	
-	public boolean getCompleted()
-	{
-		return completed;
-	}
-	
-	public void setCompleted(boolean completed)
-	{
-		this.completed = completed;
-	}
-	
-	public String getExperiment()
-	{
-		return experiment;
-	}
-	
-	public void setExperiment(String experimentName)
-	{
-		this.experiment = experimentName;
-	}
-	
-	public int getId()
-	{
-		return id;
-	}
-	
-	public void setId(int id)
-	{
-		this.id = id;
-	}
-	
 	public void setTiles(List<Tile> tiles)
 	{
 		this.tiles = tiles;

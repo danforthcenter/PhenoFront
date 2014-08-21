@@ -25,7 +25,7 @@ var  WATER_AMOUNT	= "water amount";
 var  TILES			= "tiles";
 var  TAG			= "tag";
 
-function queryElement(query, snapshots)
+function queryElement(query, snapshots, downloadKey)
 {
 	var panel = $('<form />', {
 		'class': 'panel-default query-panel',
@@ -33,10 +33,16 @@ function queryElement(query, snapshots)
 	});
 	
 	// Form values for AJAX
+	var queryLogging = $('<input />', {
+		'type': 'hidden',
+		'name': 'logQuery',
+		'value': false
+	});
+	
 	var queryId = $('<input />', {
 		'type': 'hidden',
 		'name': 'ids',
-		'value': query.id,
+		'value': query.id
 	});
 	
 	var queryExperiment = $('<input />', {
@@ -67,17 +73,29 @@ function queryElement(query, snapshots)
 		'id': 'collapseQuery' + query.id
 	});
 	
-	header.append(queryTitle(query));
+	// Generated download link that serializes this form
+	var url = '/phenofront/massdownload' + '?' + form.serialize(); 
+	var downloadLinkRow = $('<div />', {'class': 'row' })
+		.append($('<div />', {'class': 'col-sm-4', 'text': 'Download Link' }))
+		.append($('<a />',   {'class': 'col-sm-8', 'text': 'Full Download', 'href': url }));
 	
-	body.append(queryTable(query))
+	header.append(queryTitle(query));
+	console.log("change applied");
+	var table = queryTable(query);
+	var metadataTable = metadataTable(query.metadata);
+		metadataTable.append(downloadLinkRow);
+	
+	body.append(queryTable)
 		.append($('<hr />'))
-		.append(metadataTable(query.metadata))
+		.append(metadataTable)
 		.append(queryComment(query, panel))
 		.append($('<br />'))
 		.append(snapshotsButton(query, snapshots));
 	
 	panel.append(header)
 		 .append(body)
+		 .append(downloadKey)
+		 .append(queryLogging)
 		 .append(queryId)
 		 .append(queryExperiment)
 		 .append(queryTypeMetadata);
@@ -143,9 +161,10 @@ function metadataTable(metadata)
 	
 	var table = $('<div />', {
 		'class': 'data-packed'
-	})
-		.append(userRow)
-		.append(dateRow);
+	});
+	
+	table.append(userRow)
+		 .append(dateRow);
 	
 	if (metadata.bytes != 0)
 		table.append(sizeRow);
@@ -716,8 +735,8 @@ function imageType(dataFormat)
 function plainRow(rowLabel, rowValue)
 {
 	var row = $('<div />', {'class': 'row' })
-		.append($('<div />', {'class': 'col-sm-3', 'text': rowLabel }))
-		.append($('<div />', {'class': 'col-sm-3', 'text': rowValue }));
+		.append($('<div />', {'class': 'col-sm-4', 'text': rowLabel }))
+		.append($('<div />', {'class': 'col-sm-8', 'text': rowValue }));
 	
 	return row;
 }

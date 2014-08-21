@@ -21,7 +21,7 @@ class TilesTagLoader implements ResultSetExtractor<List<Tile>>
 	{
 		for (int index = 0; index < tiles.size(); index++) {
 			Tile tile = tiles.get(index);
-			if (tile.getId() == id)
+			if (tile.id == id)
 				return index;
 		}
 		
@@ -42,7 +42,7 @@ class TilesTagLoader implements ResultSetExtractor<List<Tile>>
 			int idIndex = indexById(id, this.tiles);
 			
 			if (idIndex != -1) {
-				tiles.get(idIndex).setTag(tag);
+				tiles.get(idIndex).tag = tag;
 			}
 		}
 		

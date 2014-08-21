@@ -16,8 +16,11 @@
 			View past queries and downloads and modify their associated metadata.
 		</p>
 		
+		<!-- Download key in the event the user desires to complete an incomplete download -->
+		<input type="hidden" name="downloadKey" value="${ downloadKey }" id="downloadKey" />
+		
 		<div class="panel-default">
-			<div class="panel-heading" type="button" data-toggle="collapse" data-target="#collapseMassModify">
+			<div class="panel-heading" data-toggle="collapse" data-target="#collapseMassModify">
 				<div class="panel-title">
 					Modify Metadata Via FileUpload
 				</div>
@@ -33,7 +36,7 @@
 		</div>
 		
 		<div class="panel-default">
-			<div class="panel-heading" type="button" data-toggle="collapse" data-target="#collapseQueryHistory">
+			<div class="panel-heading" data-toggle="collapse" data-target="#collapseQueryHistory">
 				<div class="panel-title">
 					Explore Query History
 				</div>
@@ -193,7 +196,7 @@ $(document).ready(function() {
 		$('#queries').empty();
 		
 		queries.forEach(function (query) {
-			var queryDiv = queryElement(query, '');
+			var queryDiv = queryElement(query, '', $('#downloadKey'));
 			$('#queries').append(queryDiv);
 			
 			// repopulate current queries
@@ -229,7 +232,7 @@ $(document).ready(function() {
 	function addDisplayQueries(queries) {
 		
 		queries.forEach(function (query) {
-			var queryDiv = queryElement(query, '');
+			var queryDiv = queryElement(query, '', $('#downloadKey'));
 			$('#queries').append(queryDiv);
 			
 			// repopulate current queries

@@ -75,7 +75,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			+ "FROM tiled_image, tile ";
 	
 	public static final String SNAPSHOT_ID			= "id";
-	public static final String ID_TAG				= "id_tag";
+	public static final String BARCODE				= "id_tag";
 	public static final String CAR_TAG				= "car_tag";
 	public static final String MEASUREMENT_LABEL	= "measurement_label";
 	public static final String TIMESTAMP			= "time_stamp";
@@ -403,7 +403,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			throws CannotGetJdbcConnectionException
 	{
 		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
-		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper(experiment));
 		
 		doPost(snapshots);
 		
@@ -423,7 +423,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			throws CannotGetJdbcConnectionException
 	{
 		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
-		List<Snapshot> snapshots = snapshotDatabase.query(sqlQuery, new SnapshotRowMapper());
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlQuery, new SnapshotRowMapper(experiment));
 		
 		doPost(snapshots);
 		
@@ -444,7 +444,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 		if (snapshots == null || snapshots.size() == 0)
 			return new ArrayList<Tile>();
 		
-		String experiment = snapshots.get(0).getExperiment();
+		String experiment = snapshots.get(0).experiment;
 		
 		String getTiles = TILE_QUERY_VARIABLES
 				+ " WHERE tiled_image.snapshot_id in (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
@@ -498,11 +498,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 	
 	private void doPost(List<Snapshot> snapshots, boolean includeVisible, boolean includeFluorescent, boolean includeInfrared)
 	{
-		for (Snapshot snapshot : snapshots)
-			snapshot.setExperiment(experiment);
-		
 		loadTags(snapshots);
-		
 		loadTiles(snapshots, includeVisible, includeFluorescent, includeInfrared);
 	}
 	

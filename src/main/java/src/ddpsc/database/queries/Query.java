@@ -14,7 +14,8 @@ import com.google.gson.Gson;
 
 public class Query
 {
-	private static final DateTimeFormatter javascriptTimeFormat = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+	private static final DateTimeFormatter javascriptTimePickerFormat = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
+	private static final DateTimeFormatter javascriptTimeJSONFormat = DateTimeFormat.forPattern("MMM dd, yyyy hh:mm:ss aa");
 	
 	// CSV labels
 	public static String QUERY_ID = "query id";
@@ -185,9 +186,18 @@ public class Query
 	private Timestamp interpretDateString(String timeString)
 	{
 		if (timeString != null && ! timeString.equals("")) {
-			DateTime timeDate = javascriptTimeFormat.parseDateTime(timeString);
-			return new Timestamp(timeDate.getMillis());
+			// DateTimeFormatter doesn't have a ".isParsable" method, so we have to do it the nasty way
+			try {
+				DateTime timeDate = javascriptTimePickerFormat.parseDateTime(timeString);
+				return new Timestamp(timeDate.getMillis());
+			}
+			
+			catch (IllegalArgumentException e) { // Try the other format
+				DateTime timeDate = javascriptTimeJSONFormat.parseDateTime(timeString);
+				return new Timestamp(timeDate.getMillis());
+			}
 		}
+		
 		else
 			return null;
 	}

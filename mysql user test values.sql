@@ -171,3 +171,7 @@ JOIN query_metadata AS m ON q.query_id = m.query_id
 JOIN users AS u ON u.USER_ID = m.user_id
 ORDER BY date DESC
 LIMIT 10;
+
+UPDATE query_metadata SET interrupted = false WHERE query_id ='6' LIMIT 1;
+
+SELECT * FROM queries AS q NATURAL JOIN query_metadata WHERE q.query_id = '6';
