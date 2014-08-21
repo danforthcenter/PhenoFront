@@ -95,11 +95,12 @@ public class Tile
 	// ////////////////////////////////////////////////
 	public static final String SNAPSHOT_ID		= "parent snapshot id";
 	public static final String ID				= "id";
+	public static final String NAME				= "name";
 	public static final String WIDTH			= "width";
 	public static final String HEIGHT			= "height";
 	public static final String SPECTRUM			= "spectrum";
 	public static final String PERSPECTIVE		= "perspective";
-	public static final String NAME				= "name";
+	public static final String TAG				= "tag";
 	
 	public static final String CSV_HEADER = SNAPSHOT_ID
 			+ "," + ID
@@ -108,6 +109,7 @@ public class Tile
 			+ "," + SPECTRUM
 			+ "," + PERSPECTIVE
 			+ "," + NAME
+			+ "," + TAG
 			+ "\n";
 	
 	public static String toCSV(List<Tile> tiles, boolean addHeader)
@@ -137,6 +139,7 @@ public class Tile
 				+ "," + getSpectrum()
 				+ "," + getPerspective()
 				+ "," + getName()
+				+ "," + tag
 				+ "\n");
 		
 		if (addHeader)
@@ -171,7 +174,7 @@ public class Tile
 	
 	public String getPerspective()
 	{
-		return "Not implemented";
+		return Integer.toString(frame);
 	}
 	
 	public String getSpectrum()
