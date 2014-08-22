@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 	`date_download_begin`	DATETIME,
 	`date_download_complete`DATETIME,
 	`interrupted`			BOOL,
+	`missed_snapshots`		TEXT,
 
 	`bytes`					BIGINT,
 	`number_snapshots`		INT,

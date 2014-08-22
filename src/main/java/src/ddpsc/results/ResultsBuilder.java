@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -23,6 +24,7 @@ import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileFileLTSystemUtil;
+import src.ddpsc.utility.Tuple;
 
 /**
  * Manages the results and conversion of images. 
@@ -65,7 +67,7 @@ public class ResultsBuilder
 			boolean convertJPEG)
 	{
 		this.requestStream = out;
-		this.snapshots = snapshots;
+		this.snapshots = new ArrayList<Snapshot>(snapshots);
 		this.experiment = experiment;
 		this.convertJPEG = convertJPEG;
 		this.threadStreams = new HashMap<String, InputStream>();
@@ -79,79 +81,93 @@ public class ResultsBuilder
 	 * 
 	 * @throws IOException
 	 */
-	public long writeZipArchive() throws IOException
+	public DownloadZipResult writeZipArchive()
 	{
 		long size_bytes = 0;
-		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
+		List<Snapshot> downloadedSnapshots = new ArrayList<Snapshot>();
 		
-		// Add snapshots CSV file
-		String snapshotCSV = "SnapshotInfo.csv";
-		archive.putNextEntry(new ZipEntry(snapshotCSV));
-		archive.write(Snapshot.toCSV(snapshots, true).getBytes());
-		log.info("Snapshot CSV data added to the zip archive.");
-		
-		// Add tiles CSV file
-		List<Tile> tiles = Snapshot.getTiles(snapshots);
-		String tileCSV = "TileInfo.csv";
-		archive.putNextEntry(new ZipEntry(tileCSV));
-		archive.write(Tile.toCSV(tiles, true).getBytes());
-		log.info("Tile CSV data added to the zip archive.");
-		
-		// Add images
-		for (Snapshot snapshot : snapshots) {
+		try {
+			ZipOutputStream archive = new ZipOutputStream(this.requestStream);
 			
-			log.info("Adding snapshot " + snapshot.id + " to the zip archive.");
-			String prefixName = "snapshot" + snapshot.id + "/";
-			this.threadStreams.clear(); // Reset from previous snapshot processing
+			// Add snapshots CSV file
+			String snapshotCSV = "SnapshotInfo.csv";
+			archive.putNextEntry(new ZipEntry(snapshotCSV));
+			archive.write(Snapshot.toCSV(snapshots, true).getBytes());
+			log.info("Snapshot CSV data added to the zip archive.");
 			
-			this.processImages(
-					snapshot.getTiles(),
-					new DateTime(snapshot.timestamp),
-					this.experiment,
-					prefixName);
+			// Add tiles CSV file
+			List<Tile> tiles = Snapshot.getTiles(snapshots);
+			String tileCSV = "TileInfo.csv";
+			archive.putNextEntry(new ZipEntry(tileCSV));
+			archive.write(Tile.toCSV(tiles, true).getBytes());
+			log.info("Tile CSV data added to the zip archive.");
 			
-			for (String imageName : this.threadStreams.keySet()){
-				try{
-					ZipEntry nextImage = new ZipEntry(imageName);
-					size_bytes += nextImage.getSize();
-					archive.putNextEntry(nextImage);
+			// Add images
+			for (Snapshot snapshot : snapshots) {
+				
+				log.info("Adding snapshot " + snapshot.id + " to the zip archive.");
+				String prefixName = "snapshot" + snapshot.id + "/";
+				this.threadStreams.clear(); // Reset from previous snapshot processing
+				
+				this.processImages(
+						snapshot.getTiles(),
+						new DateTime(snapshot.timestamp),
+						this.experiment,
+						prefixName);
+				
+				for (String imageName : this.threadStreams.keySet()){
+					try{
+						ZipEntry nextImage = new ZipEntry(imageName);
+						archive.putNextEntry(nextImage);
+						
+						log.info("Waiting to write " + imageName + " to zip.");
+						byte[] imageBytes = IOUtils.toByteArray(this.threadStreams.get(imageName));
+						archive.write(imageBytes);
+						size_bytes += imageBytes.length;
+						
+						log.info(imageName + " written to zip.");
+						archive.flush();
+					}
 					
-					
-					log.info("Waiting to write " + imageName + " to zip.");
-					archive.write(IOUtils.toByteArray(this.threadStreams.get(imageName)));
-					
-					log.info(imageName + " written to zip.");
-					archive.flush();
+					catch(java.util.zip.ZipException e){
+						// TODO: Determine why this is thrown and how to handle it
+						log.error("Uncaught zip error " + e.getMessage());
+						System.err.println(e.getMessage());
+					}
 				}
 				
-				catch(java.util.zip.ZipException e){
-					// TODO: Determine why this is thrown and how to handle it
-					log.error("Uncaught zip error " + e.getMessage());
-					System.err.println(e.getMessage());
+				// Pauses all the open threads
+				// TODO: Why are there any open threads
+				try {
+					log.info("Accessing this thread group.");
+					synchronized (this.group) {
+						log.info("In thread group for snapshot " + snapshot.id + " there are " + group.activeCount() + " open threads.");
+						if (group.activeCount() > 0)
+							group.wait();
+					}
 				}
-			}
-			
-			// Pauses all the open threads
-			// TODO: Why are there any open threads
-			try {
-				log.info("Accessing this thread group.");
-				synchronized (this.group) {
-					log.info("In thread group for snapshot " + snapshot.id + " there are " + group.activeCount() + " open threads.");
-					if (group.activeCount() > 0)
-						group.wait();
+				
+				catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			}
+				
+				downloadedSnapshots.add(snapshot);
+			}		
+			log.info("All snapshots added the zip archive.");
 			
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}		
-		log.info("All snapshots added the zip archive.");
+			archive.finish();
+			log.info("Archive finished.");
+			
+			snapshots.removeAll(downloadedSnapshots);
+			return new DownloadZipResult(size_bytes, Snapshot.getIds(snapshots), true);
+		}
 		
-		archive.finish();
-		log.info("Archive finished.");
-		
-		return size_bytes;
+		catch (IOException e) {
+			log.info("Building zip file for download cancelled prematurely.");
+			
+			snapshots.removeAll(downloadedSnapshots);
+			return new DownloadZipResult(size_bytes, Snapshot.getIds(snapshots), false);
+		}
 	}
 	
 	/**

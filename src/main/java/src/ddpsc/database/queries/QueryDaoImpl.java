@@ -59,6 +59,7 @@ import src.ddpsc.utility.StringOps;
  *			`date_download_begin`	DATETIME,				when the query began downloading
  *			`date_download_complete`DATETIME,				when the download finished
  *			`interrupted`			BOOL,					whether the download was interrupted
+ *			`missed_snapshots`		TEXT,					a list of snapshot ids that didn't get downloaded
  *		
  *			`bytes`					BIGINT,					how large the download was
  *			`number_snapshots`		INT,					how many snapshots the query contained
@@ -112,6 +113,7 @@ public class QueryDaoImpl implements QueryDao
 	public static String DOWNLOAD_BEGIN	= "date_download_begin";
 	public static String DOWNLOAD_END	= "date_download_complete";
 	public static String INTERRUPTED	= "interrupted";
+	public static String MISSED_SNAPSHOTS= "missed_snapshots";
 	
 	public static String SIZE			= "bytes";
 	public static String NUM_SNAPSHOTS	= "number_snapshots";
@@ -293,6 +295,18 @@ public class QueryDaoImpl implements QueryDao
 	}
 	
 	@Override
+	public void setMissedSnapshots(int queryId, List<Integer> missedSnapshots)
+	{
+		log.info("Attempting to change the missing snapshots on the query ID='" + queryId + "' to " + missedSnapshots + ".");
+		
+		String missedSnapshots_CSV = StringOps.idsAsCSV(missedSnapshots, false);
+		if (queryId != -1)
+			setMetadataVariable(queryId, MISSED_SNAPSHOTS, missedSnapshots_CSV);
+		
+		log.info("Changed the missing snapshots on the query ID='" + queryId + "' to " + missedSnapshots + ".");
+	}
+	
+	@Override
 	public void setQuerySize(int queryId, long bytes)
 	{
 		String bytesString = Long.toString(bytes);
@@ -340,6 +354,7 @@ public class QueryDaoImpl implements QueryDao
 				+ " m."+DOWNLOAD_BEGIN + ", "
 				+ " m."+DOWNLOAD_END + ", "
 				+ " m."+INTERRUPTED + ", "
+				+ " m."+MISSED_SNAPSHOTS + ", "
 				+ " m."+SIZE + ", "
 				+ " m."+NUM_SNAPSHOTS + ", "
 				+ " m."+NUM_TILES + ", "

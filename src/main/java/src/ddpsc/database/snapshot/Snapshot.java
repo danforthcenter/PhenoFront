@@ -221,6 +221,8 @@ public class Snapshot
 		
 		data.append(tilesNames());
 		
+		data.append("\n");
+		
 		if (addHeader)
 			return CSV_HEADER + data.toString();
 		else

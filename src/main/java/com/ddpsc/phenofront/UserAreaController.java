@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +61,9 @@ import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.NotImplementedException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
+import src.ddpsc.results.DownloadZipResult;
 import src.ddpsc.results.ResultsBuilder;
+import src.ddpsc.utility.Tuple;
 
 import com.google.gson.Gson;
 
@@ -499,7 +502,7 @@ public class UserAreaController
 			}
 			
 			Timestamp timeOfDownloadStart = new Timestamp(DateTime.now().getMillis());
-			
+			DownloadZipResult downloadedZip = new DownloadZipResult(-1, new ArrayList<Integer>(), false);
 			
 			try {
 			    log.info("Got snapshots and tiles. Building results.");
@@ -510,26 +513,28 @@ public class UserAreaController
 						convertJPEG);
 				
 			    log.info("Writing zip archive.");
-				long size_bytes = results.writeZipArchive();
+				downloadedZip = results.writeZipArchive();
+				
 				response.flushBuffer();
-				Timestamp timeOfDownloadEnd = new Timestamp(DateTime.now().getMillis());
-				
-				// Permanently log the query
-				if (logQuery) {
-					queryData.setQuerySize(queryId, size_bytes);
-					queryData.setDownloadStart(queryId, timeOfDownloadStart);
-					queryData.setDownloadEnd(queryId, timeOfDownloadEnd);
-					queryData.setInterrupted(queryId, false);
-				}
-				
-				log.info("The mass download for user " + username + " with active experiment " + experiment + " is successful.");
 			}
 			
-			catch (IOException e)
-			{
+			catch (IOException e) {
 				log.info("The mass download for user " + username + " was interrupted because the connection was lost.");
-				queryData.setInterrupted(queryId, true);
 			}
+			
+			Timestamp timeOfDownloadEnd = new Timestamp(DateTime.now().getMillis());
+			
+			// Permanently log the query
+			if (logQuery) {
+				queryData.setQuerySize(queryId, downloadedZip.size);
+				queryData.setDownloadStart(queryId, timeOfDownloadStart);
+				queryData.setDownloadEnd(queryId, timeOfDownloadEnd);
+				queryData.setInterrupted(queryId, ! downloadedZip.succeeded);
+				queryData.setMissedSnapshots(queryId, downloadedZip.missedSnapshots);
+			}
+			
+			log.info("The mass download for user " + username + " with active experiment " + experiment + " is successful.");
+			
 		}
 		
 		catch (Exception e) {
@@ -615,10 +620,12 @@ public class UserAreaController
 				return;
 			}
 			
+			Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
+			
 			// Begin download response
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots " + timeOfQuery + ".zip\"");
 			response.flushBuffer();
 			
 		    log.info("Querying database for snapshots and tiles.");
@@ -675,7 +682,7 @@ public class UserAreaController
 		// Begin response
 		response.setHeader("Transfer-Encoding", "chunked");
 		response.setHeader("Content-type", "text/plain");
-		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot" + snapshotId + ".zip\"");
+		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot " + snapshotId + ".zip\"");
 		response.flushBuffer();
 		
 		try {

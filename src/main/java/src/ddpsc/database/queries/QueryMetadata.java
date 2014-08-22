@@ -3,8 +3,10 @@ package src.ddpsc.database.queries;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.List;
 
 import src.ddpsc.database.user.User;
+import src.ddpsc.utility.StringOps;
 
 public class QueryMetadata
 {
@@ -45,6 +47,8 @@ public class QueryMetadata
 	public Timestamp downloadBegin;
 	public Timestamp downloadEnd;
 	public boolean interrupted;
+	public List<Integer> missedSnapshots;
+	
 	public long bytes;
 	
 	QueryMetadata()
@@ -109,6 +113,7 @@ public class QueryMetadata
 		metadata.downloadBegin = sqlResult.getTimestamp(QueryDaoImpl.DOWNLOAD_BEGIN);
 		metadata.downloadEnd = sqlResult.getTimestamp(QueryDaoImpl.DOWNLOAD_END);
 		metadata.interrupted = sqlResult.getBoolean(QueryDaoImpl.INTERRUPTED);
+		metadata.missedSnapshots = StringOps.CSVAsIds(sqlResult.getString(QueryDaoImpl.MISSED_SNAPSHOTS));
 		metadata.bytes = sqlResult.getLong(QueryDaoImpl.SIZE);
 		
 		return metadata;
