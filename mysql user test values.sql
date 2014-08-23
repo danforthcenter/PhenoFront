@@ -66,6 +66,8 @@ DESCRIBE queries;
 
 SHOW TABLES;
 
+SELECT * FROM query_metadata;
+
 SELECT * FROM tags NATURAL JOIN lemnatest_tiles;
 
 SELECT * FROM users WHERE user_id = '3';

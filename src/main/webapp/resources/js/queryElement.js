@@ -27,6 +27,14 @@ var  TAG			= "tag";
 
 function queryElement(query, snapshots, downloadKey)
 {
+	var downloadKey_clone = $('<input />', {
+		'type': 'hidden',
+		'name': 'downloadKey',
+		'value': downloadKey.val(),
+		'id': 'downloadKey_clone'
+	});
+	console.log("download key value " + downloadKey.val());
+	
 	var panelForm = $('<form />', {
 		'class': 'panel-default query-panel',
 		'role': 'form'
@@ -70,7 +78,7 @@ function queryElement(query, snapshots, downloadKey)
 	// The primary form containing the entire query and all associated data
 	panelForm.append(header)
 		 	 .append(body)
-		 	 .append(downloadKey)
+		 	 .append(downloadKey_clone)
 		 	 .append(queryId)
 		 	 .append(queryExperiment)
 		 	 .append(queryTypeMetadata);
@@ -80,7 +88,7 @@ function queryElement(query, snapshots, downloadKey)
 	
 	// The body of the query form, all the data of the query
 	var table = queryTable(query);
-	var queryMetadataTable = metadataTable(query, downloadKey);
+	var queryMetadataTable = metadataTable(query, downloadKey_clone);
 	
 	body.append(queryTable)
 		.append($('<hr />'))
