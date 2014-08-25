@@ -8,4 +8,3 @@ src/main/webapp/WEB-INF/ltdatabase.conf
 src/main/webapp/WEB-INF/classes/userdatabase.conf
 src/main/webapp/WEB-INF/classes/ltdatabase.conf
 mysql user test values.sql
-src/main/java/src/ddpsc/database/tile/LTSystem.java
