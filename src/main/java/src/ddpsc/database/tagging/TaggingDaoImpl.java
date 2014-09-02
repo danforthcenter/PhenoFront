@@ -43,6 +43,8 @@ public class TaggingDaoImpl implements TaggingDao
 {
 	private static final Logger log = Logger.getLogger(TaggingDaoImpl.class);
 	
+	public static final int MAX_TAGS_PER_QUERY = 10000;
+	
 	private DataSource metadataDataSource;
 	
 	
@@ -152,6 +154,19 @@ public class TaggingDaoImpl implements TaggingDao
 	public void loadSnapshotsWithTags(List<Snapshot> snapshots)
 	{
 		log.info("Attempting to load " + snapshots.size() + "-many snapshots with tags.");
+		
+		for (int i = 0; i < snapshots.size() / MAX_TAGS_PER_QUERY; i++) {
+			List<Snapshot> snapshotsSubList = snapshots.subList(
+					i*MAX_TAGS_PER_QUERY,
+					Math.min((i + 1)*MAX_TAGS_PER_QUERY, snapshots.size()));
+			loadSnapshotsWithTags_HELPER(snapshotsSubList);
+		}
+		
+		log.info(snapshots.size() + "-many snapshots have been loaded with tags.");
+	}
+	
+	private void loadSnapshotsWithTags_HELPER(List<Snapshot> snapshots)
+	{
 		if (snapshots.size() == 0)
 			return;
 		
@@ -167,8 +182,6 @@ public class TaggingDaoImpl implements TaggingDao
 		
 		JdbcTemplate taggingDatabase = new JdbcTemplate(metadataDataSource);
 		taggingDatabase.query(tagQuery, new SnapshotsTagLoader(snapshots)); // Modifies the snapshots parameter to have the ids found in the table
-		
-		log.info(snapshots.size() + "-many snapshots have been loaded with tags.");
 	}
 	
 	@Override
