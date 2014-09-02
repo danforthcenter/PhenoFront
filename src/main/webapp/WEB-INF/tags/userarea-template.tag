@@ -8,12 +8,16 @@
 
 <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/bootstrap.min.css"/>"></link>
 <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/jquery-ui-1.10.3.custom.min.css"/>"></link>
+<link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/ladda-themeless.min.css"/>"></link>
 <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/custom.css"/>"></link>
+
 
 <script type="text/javascript" src="<c:url value="/resources/js/jquery-1.10.2.min.js"/>"></script>
 <script type="text/javascript" src="<c:url value="/resources/js/jquery-ui-1.10.3.custom.min.js"/>"></script>
 <script type="text/javascript" src="<c:url value="/resources/js/jquery-ui-timepicker-addon.js"/>"></script>
 <script type="text/javascript" src="<c:url value="/resources/js/bootstrap.min.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/js/spin.min.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/js/ladda.min.js"/>"></script>
 
 </head>
 <div class="navbar navbar-inverse navbar-fixed-top">

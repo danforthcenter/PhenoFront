@@ -33,7 +33,6 @@ function queryElement(query, snapshots, downloadKey)
 		'value': downloadKey.val(),
 		'id': 'downloadKey_clone'
 	});
-	console.log("download key value " + downloadKey.val());
 	
 	var panelForm = $('<form />', {
 		'class': 'panel-default query-panel',

@@ -103,8 +103,11 @@
 			<br />
 			
 			
-			<a id="previewQuery" class="btn btn-default btn-block btn-large">
-				Preview Query
+			<a id="previewQuery" class="btn btn-default btn-block ladda-button"
+				data-size="l"
+				data-style="slide-left"
+				data-spinner-color="#FF0000">
+				<span class="ladda-label">Preview Query</span>
 			</a>
 			
 			<br />
@@ -150,15 +153,19 @@ $(document).ready(function(){
  	}
     
  	// Query preview
-    $("#previewQuery").click(function() {
-    	console.log('<c:url context="/phenofront" value="/userarea/querypreview" />');
-    	var form = $(this);
+ 	Ladda.bind("#previewQuery");
+    $("#previewQuery").click(function(e) {
+    	e.preventDefault();
+    	var laddaEffect = Ladda.create(this);
+    	laddaEffect.start();
+    	
 		$.ajax({
 			type: "POST",
 			url: '<c:url context="/phenofront" value="/userarea/querypreview" />',
 			data: $("#query-builder").serialize(),
 			success: function(queryJSON) {
 				displayQuery(queryJSON["query"], queryJSON["snapshots"]);
+				laddaEffect.stop();
 			},
 			error: function(xhr, status, error) {
 				$("#queryPreview").empty();
@@ -168,6 +175,7 @@ $(document).ready(function(){
 				$("#queryPreview").addClass("alert alert-danger");
 				
 				$("#queryPreview").text(xhr.responseText);
+				laddaEffect.stop();
 			}
 		});
     });
