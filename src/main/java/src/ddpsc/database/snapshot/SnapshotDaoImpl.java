@@ -306,7 +306,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryAfterTime_HELPER(final Query querySettings)
@@ -332,7 +332,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryAnyTime_HELPER(final Query querySettings)
@@ -356,7 +356,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryBetweenTime_HELPER(final Query querySettings)
@@ -384,7 +384,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	/**
@@ -399,13 +399,13 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
-	private List<Snapshot> snapshotQuery(String sqlStatement, PreparedStatementSetter statementSetter)
+	private List<Snapshot> snapshotQuery(String sqlStatement, PreparedStatementSetter statementSetter, Query querySettings)
 			throws CannotGetJdbcConnectionException
 	{
 		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
 		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper(experiment));
 		
-		doPost(snapshots);
+		doPost(snapshots, querySettings.includeVisible, querySettings.includeFluorescent, querySettings.includeInfrared);
 		
 		return snapshots;
 	}
@@ -444,10 +444,13 @@ public class SnapshotDaoImpl implements SnapshotDao
 		if (snapshots == null || snapshots.size() == 0)
 			return new ArrayList<Tile>();
 		
+		if (includeVisible == false && includeFluorescent == false && includeInfrared == false)
+			return new ArrayList<Tile>();
+		
 		String experiment = snapshots.get(0).experiment;
 		
 		String getTiles = TILE_QUERY_VARIABLES
-				+ " WHERE tiled_image.snapshot_id in (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
+				+ " WHERE tiled_image.snapshot_id IN (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
 				+ " AND tile.tiled_image_id = tiled_image.id "
 				+ " AND tile."+DATA_FORMAT + " IN ";
 		

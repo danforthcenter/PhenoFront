@@ -404,9 +404,9 @@ public class UserAreaController
 			
 			@RequestParam(value = "includeWatering",	required = false,	defaultValue = "false")	boolean includeWatering,
 			
-			@RequestParam(value = "includeVisible",		required = true,	defaultValue = "false")	boolean includeVisibleLightImages,
-			@RequestParam(value = "includeFluorescent",	required = true,	defaultValue = "false")	boolean includeFluorescentImages,
-			@RequestParam(value = "includeInfrared",	required = true,	defaultValue = "false")	boolean includeNearInfraredImages,
+			@RequestParam(value = "includeVisible",		required = false,	defaultValue = "false")	boolean includeVisibleLightImages,
+			@RequestParam(value = "includeFluorescent",	required = false,	defaultValue = "false")	boolean includeFluorescentImages,
+			@RequestParam(value = "includeInfrared",	required = false,	defaultValue = "false")	boolean includeNearInfraredImages,
 			
 			@RequestParam(value = "logQuery",			required = false,	defaultValue = "false")	boolean logQuery,
 			
