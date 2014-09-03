@@ -73,7 +73,7 @@ public class UserProfileServerConnectionTest
 			ListAssert.assertContains(columns, new MySQLColumn(User.USERNAME,	MySQLColumn.VARCHAR(45),		MySQLColumn.NEVER_NULL,	MySQLColumn.UNIQUE_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(User.PASSWORD,	MySQLColumn.VARCHAR(256),		MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(User.ENABLED,	MySQLColumn.TINYINT(1),			MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
-			ListAssert.assertContains(columns, new MySQLColumn(User.GROUP_ID,	MySQLColumn.INT_UNSIGNED(10),			MySQLColumn.CAN_NULL,	MySQLColumn.MULTIPLE_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.GROUP_ID,	MySQLColumn.INT_UNSIGNED(10),	MySQLColumn.CAN_NULL,	MySQLColumn.MULTIPLE_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(User.AUTHORITY,	MySQLColumn.VARCHAR(25),		MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
 		}
 		catch (MalformedConfigException e) {
