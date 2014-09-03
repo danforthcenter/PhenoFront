@@ -9,12 +9,14 @@ public class MySQLColumn
 	public static String INT(int d) {				return "int("+d+")"; }
 	public static String INT_UNSIGNED(int d) {		return "int("+d+") unsigned"; }
 	public static String TINYINT(int d) {			return "tinyint("+d+")"; }
+	public static String BOOLEAN() {				return "tinyint(1)"; }
 	
 	public final static String DATETIME				= "datetime";
 	public final static String TEXT					= "text";
 	
 	// Keys
 	public final static String PRIMARY_KEY			= "PRI";
+	public final static String UNIQUE_KEY			= "UNI";
 	public final static String MULTIPLE_KEY			= "MUL";
 	public final static String NOT_KEY				= "";
 	

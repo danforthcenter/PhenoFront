@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS `queries` (
 	`include_visible`		BOOL NOT NULL,
 	`include_fluorescent`	BOOL NOT NULL,
 	`include_infrared`		BOOL NOT NULL,
+
 	PRIMARY KEY (`query_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 	
 	PRIMARY KEY (`metadata_id`),
 	INDEX (`comment`(2)), 			-- To check for commented / not commented
+
 	FOREIGN KEY (`query_id`) REFERENCES `queries` (`query_id`) ON DELETE CASCADE,
 	FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -75,8 +77,9 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 -- Table structure for table `tags`
 --
 CREATE TABLE IF NOT EXISTS `tags` (
-	`tag_id`   INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`tag_name` VARCHAR(255),
+	`tag_id`		INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`tag_name`		VARCHAR(255),
+
 	PRIMARY KEY (`tag_id`),
 	KEY (`tag_name`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -85,9 +88,10 @@ CREATE TABLE IF NOT EXISTS `tags` (
 -- Table structure for table `groups`
 --
 CREATE TABLE IF NOT EXISTS `groups` (
-  `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `owner_id` int(10) unsigned NOT NULL,
-  `group_name` varchar(45) NOT NULL,
+  `group_id`		int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `owner_id`		int(10) unsigned NOT NULL,
+  `group_name`		varchar(45) NOT NULL,
+
   PRIMARY KEY (`group_id`),
   UNIQUE KEY `group_name` (`group_name`),
   KEY `owner_id` (`owner_id`)
@@ -108,12 +112,13 @@ INSERT INTO `groups` (`group_id`, `owner_id`, `group_name`) VALUES
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `USER_ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `USERNAME` varchar(45) NOT NULL,
-  `PASSWORD` varchar(256) NOT NULL,
-  `ENABLED` tinyint(1) NOT NULL,
-  `GROUP_ID` int(10) unsigned DEFAULT NULL,
-  `AUTHORITY` varchar(25) NOT NULL,
+  `USER_ID`			int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `USERNAME`		varchar(45) NOT NULL,
+  `PASSWORD`		varchar(256) NOT NULL,
+  `ENABLED`			tinyint(1) NOT NULL,
+  `GROUP_ID`		int(10) unsigned DEFAULT NULL,
+  `AUTHORITY`		varchar(25) NOT NULL,
+
   PRIMARY KEY (`USER_ID`),
   UNIQUE KEY `USERNAME` (`USERNAME`),
   KEY `GROUP_ID` (`GROUP_ID`)

@@ -1,7 +1,9 @@
 package src.ddpsc.database.tile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Tile
 {
@@ -79,6 +81,15 @@ public class Tile
 	// Static List Methods
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
+	public static Map<Integer, Tile> getTileIdMap(List<Tile> tiles)
+	{
+		Map<Integer, Tile> map = new HashMap<Integer, Tile>(tiles.size());
+		for (Tile tile : tiles)
+			map.put(tile.id, tile);
+		
+		return map;
+	}
+	
 	public static List<Integer> getIds(List<Tile> tiles)
 	{
 		List<Integer> ids = new ArrayList<Integer>(tiles.size());

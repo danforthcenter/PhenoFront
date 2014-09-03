@@ -3,7 +3,9 @@ package src.ddpsc.database.snapshot;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import src.ddpsc.database.tile.Tile;
 
@@ -117,6 +119,16 @@ public class Snapshot
 				snapshotsWithTiles.add(snapshot);
 
 		return snapshotsWithTiles;
+	}
+	
+	public static Map<Integer, Snapshot> getSnapshotIdMap(List<Snapshot> snapshots)
+	{
+		Map<Integer, Snapshot> snapshotMap = new HashMap<Integer, Snapshot>(snapshots.size());
+		
+		for (Snapshot snapshot : snapshots)
+			snapshotMap.put(snapshot.id, snapshot);
+		
+		return snapshotMap;
 	}
 	
 	public static List<Integer> getIds(List<Snapshot> snapshots)
