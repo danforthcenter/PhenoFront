@@ -155,7 +155,9 @@ public class TaggingDaoImpl implements TaggingDao
 	{
 		log.info("Attempting to load " + snapshots.size() + "-many snapshots with tags.");
 		
+		log.info("i ranging up to " + snapshots.size() / MAX_TAGS_PER_QUERY);
 		for (int i = 0; i < snapshots.size() / MAX_TAGS_PER_QUERY; i++) {
+			log.info("i from " + i*MAX_TAGS_PER_QUERY + " to " + Math.min((i + 1)*MAX_TAGS_PER_QUERY, snapshots.size()));
 			List<Snapshot> snapshotsSubList = snapshots.subList(
 					i*MAX_TAGS_PER_QUERY,
 					Math.min((i + 1)*MAX_TAGS_PER_QUERY, snapshots.size()));
@@ -252,6 +254,22 @@ public class TaggingDaoImpl implements TaggingDao
 		
 		log.info("Attempting to load " + tiles.size() + "-many tiles with tags.");
 		
+		log.info("tile tags index ranging up to " + tiles.size() / MAX_TAGS_PER_QUERY);
+		for (int i = 0; i < tiles.size() / MAX_TAGS_PER_QUERY; i++) {
+			
+			log.info("tile tags index from " + i*MAX_TAGS_PER_QUERY + " to " + Math.min((i + 1)*MAX_TAGS_PER_QUERY, tiles.size()));
+			
+			List<Tile> tilesSubList = tiles.subList(
+					i*MAX_TAGS_PER_QUERY,
+					Math.min((i + 1)*MAX_TAGS_PER_QUERY, tiles.size()));
+			loadTilessWithTags_HELPER(tilesSubList, experiment);
+		}
+		
+		log.info(tiles.size() + "-many tiles have been loaded with tags.");
+	}
+	
+	private void loadTilessWithTags_HELPER(List<Tile> tiles, String experiment)
+	{
 		String tileTable = addTileTable(experiment);
 		List<Integer> tileIds = Tile.getIds(tiles);
 		
@@ -262,8 +280,6 @@ public class TaggingDaoImpl implements TaggingDao
 		
 		JdbcTemplate taggingDatabase = new JdbcTemplate(metadataDataSource);
 		taggingDatabase.query(tagQuery, new TilesTagLoader(tiles)); // Modifies the snapshots parameter to have the ids found in the table
-		
-		log.info(tiles.size() + "-many tiles have been loaded with tags.");
 	}
 	
 	@Override
