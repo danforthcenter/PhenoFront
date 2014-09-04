@@ -372,10 +372,7 @@ public class TaggingDaoImpl implements TaggingDao
 		
 		log.info("Checking for experiment metadata for " + experiments.size() + "-many experiments.");
 		
-		String getMetadata = "SELECT "
-				+ NUMBER_SNAPSHOTS + ", "
-				+ NUMBER_TILES + ", "
-				+ LAST_UPDATED
+		String getMetadata = "SELECT * "
 				+ " FROM " + EXPERIMENT_TABLE
 				+ " WHERE " + EXPERIMENT_ID + " IN (" + StringOps.idsAsCSV(Experiment.getIds(experiments)) + ") "; 
 		
@@ -390,7 +387,7 @@ public class TaggingDaoImpl implements TaggingDao
 	{
 		log.info("Attempting to update metadata for " + experiments.size() + "-many expirments.");
 		
-		String updateMetadata = "INSERT INTO " + EXPERIMENT_TABLE
+		String updateMetadata = "REPLACE INTO " + EXPERIMENT_TABLE
 				+ "( "
 					+ EXPERIMENT_ID + ", "
 					+ EXPERIMENT_NAME + ", "
@@ -399,10 +396,7 @@ public class TaggingDaoImpl implements TaggingDao
 					+ LAST_UPDATED
 				+ ") "
 				+ " VALUES "
-					+ experimentSQLValues(experiments)
-				+ " ON DUPLICATE KEY UPDATE "
-				+ EXPERIMENT_NAME + " =VALUES(" + EXPERIMENT_NAME + "), "
-				+ EXPERIMENT_ID   + " =VALUES(" + EXPERIMENT_ID   + ") ";
+					+ experimentSQLValues(experiments);
 		
 		JdbcTemplate metadataDatabse = new JdbcTemplate(metadataDataSource);
 		int numberRowsChanged = metadataDatabse.update(updateMetadata);
@@ -423,11 +417,11 @@ public class TaggingDaoImpl implements TaggingDao
 				sqlValues.append(",");
 			sqlValues.append(
 					"( "
-						+ experiment.id + ", "
-						+ experiment.name + ", "
-						+ experiment.numberSnapshots + ", "
-						+ experiment.numberTiles + ", "
-						+ experiment.lastUpdated
+						+ "'" + experiment.id + "', "
+						+ "'" + experiment.name + "', "
+						+ "'" + experiment.numberSnapshots + "', "
+						+ "'" + experiment.numberTiles + "', "
+						+ "'" + experiment.lastUpdated.toString() + "'"
 					+ ") ");
 			
 			i++;

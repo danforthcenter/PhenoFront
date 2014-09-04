@@ -17,7 +17,7 @@
 		</p>
 		
 		<!-- Download key in the event the user desires to complete an incomplete download -->
-		<input type="hidden" name="downloadKey" value="${ downloadKey }" id="downloadKey" />
+		<input type="hidden" name="downloadKey" value="${downloadKey}" id="downloadKey" />
 		
 		<div class="panel-default">
 			<div class="panel-heading" data-toggle="collapse" data-target="#collapseMassModify">

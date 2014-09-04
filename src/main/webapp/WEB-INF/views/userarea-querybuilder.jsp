@@ -20,7 +20,7 @@
 		<form role="form" id ="query-builder" class="select-data" method="GET" action="<c:url context="/phenofront" value="/massdownload" />" >
 			<div class="form-group">
 				
-				<input type="hidden" name="downloadKey" value="${ downloadKey }" id="downloadKey" />
+				<input type="hidden" name="downloadKey" value="${downloadKey}" id="downloadKey" />
 				<input type="hidden" name="experiment" value="${experiment}" />
 	 			<input type="hidden" name="logQuery" value="true" />
 	 			
