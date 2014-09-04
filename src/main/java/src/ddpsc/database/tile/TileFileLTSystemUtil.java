@@ -37,7 +37,7 @@ public final class TileFileLTSystemUtil
 	 */
 	public static final String getTileFilename(Tile tile, DateTime date, Experiment experiment)
 	{
-		return LTSystem.fileroot + "/" + experiment.getExperimentName() + "/" + date.toString("YYYY-MM-dd") + "/blob" + tile.rawImageOid;
+		return LTSystem.fileroot + "/" + experiment.name + "/" + date.toString("YYYY-MM-dd") + "/blob" + tile.rawImageOid;
 	}
 	
 	/**
@@ -51,6 +51,6 @@ public final class TileFileLTSystemUtil
 	 */
 	public static final String getTileFilename(String imageOid, String date, Experiment experiment)
 	{
-		return LTSystem.fileroot + "/"+ experiment.getExperimentName() + "/" + date + "/" + imageOid;
+		return LTSystem.fileroot + "/"+ experiment.name + "/" + date + "/" + imageOid;
 	}
 }

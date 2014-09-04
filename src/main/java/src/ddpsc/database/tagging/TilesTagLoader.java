@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 
 import src.ddpsc.database.tile.Tile;
 
-class TilesTagLoader implements ResultSetExtractor<List<Tile>>
+class TilesTagLoader implements ResultSetExtractor<Boolean>
 {
 	Map<Integer, Tile> tiles;
 	public TilesTagLoader(List<Tile> tiles)
@@ -19,7 +19,7 @@ class TilesTagLoader implements ResultSetExtractor<List<Tile>>
 		this.tiles = Tile.getTileIdMap(tiles);
 	}
 	
-	public List<Tile> extractData(ResultSet resultSet) throws SQLException, DataAccessException
+	public Boolean extractData(ResultSet resultSet) throws SQLException, DataAccessException
 	{
 		// The query execute returns the following values in order
 		//		tag_name
@@ -30,6 +30,6 @@ class TilesTagLoader implements ResultSetExtractor<List<Tile>>
 			tiles.get(id).tag = tag;
 		}
 		
-		return new ArrayList<Tile>(tiles.values());
+		return resultSet.first();
 	}
 }

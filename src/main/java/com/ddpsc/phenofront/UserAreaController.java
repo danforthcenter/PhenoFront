@@ -63,7 +63,6 @@ import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
 import src.ddpsc.results.DownloadZipResult;
 import src.ddpsc.results.ResultsBuilder;
-import src.ddpsc.utility.Tuple;
 
 import com.google.gson.Gson;
 
@@ -109,9 +108,11 @@ public class UserAreaController
 	 * 
 	 * @param model			Internal system model to interact with the view
 	 * @return 				An experiment selection page, or error page
+	 * @throws IOException 
+	 * @throws MalformedConfigException 
 	 */
 	@RequestMapping(value = "/selectexperiment", method = RequestMethod.GET)
-	public String selectAction(Model model)
+	public String selectAction(Model model) throws MalformedConfigException, IOException
 	{
 		String username = ControllerHelper.currentUsername();
 		log.info("Selecting experiments for user " + username);
@@ -132,6 +133,8 @@ public class UserAreaController
 		
 		try {
 			Set<Experiment> allExperiments = experimentData.findAll();
+			experimentData.generateExperimentMetadata(allExperiments);
+			taggingData.setExperimentMetadata(allExperiments);
 			
 			user.setAllowedExperiments(allExperiments);
 			Set<Experiment> allowedExperiments = user.getAllowedExperiments();
@@ -676,7 +679,7 @@ public class UserAreaController
 					throws IOException
 	{
 		String username = user.getUsername();
-		String experiment = user.getActiveExperiment().getExperimentName();
+		String experiment = user.getActiveExperiment().name;
 		log.info("Attempting to retrieve snapshot with id='" + snapshotId + "' for user " + username);
 		
 		// Begin response
@@ -732,7 +735,7 @@ public class UserAreaController
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
-		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		model.addAttribute("experiment", activeExperiment.name);
 		
 		return "userarea-querybuilder";
 	}
@@ -749,7 +752,7 @@ public class UserAreaController
 		List<User> users = userData.findAllUsers();
 		model.addAttribute("allUsers", users);
 		
-		model.addAttribute("experiment", user.getActiveExperiment().getExperimentName());
+		model.addAttribute("experiment", user.getActiveExperiment().name);
 		
 		log.info("Retrieved queries for query history page for user " + username);
 		return "userarea-queryexplorer";
@@ -930,7 +933,7 @@ public class UserAreaController
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
-		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		model.addAttribute("experiment", activeExperiment.name);
 		
 		return "userarea-resumedownload";
 	}

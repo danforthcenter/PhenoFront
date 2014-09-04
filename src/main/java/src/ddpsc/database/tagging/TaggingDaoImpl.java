@@ -1,6 +1,8 @@
 package src.ddpsc.database.tagging;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -8,6 +10,8 @@ import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import src.ddpsc.database.experiment.Experiment;
+import src.ddpsc.database.experiment.ExperimentRowMapper;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.utility.StringOps;
@@ -22,6 +26,7 @@ import src.ddpsc.utility.StringOps;
  * 			tags						describes each user defined tag
  * 			<experimentName>_snapshots	holds any user tagged snapshots from the LemnaTec system
  * 			<experimentName>_tiles		holds any user tagged tiles from the LemnaTec system
+ * 			`experiment_metadata`		data describing each experiment
  * 
  * (where <experimentName> is the database name of the LemnaTec database)
  * 
@@ -37,6 +42,14 @@ import src.ddpsc.utility.StringOps;
  * 			tile_id			INT			a unique ID, matches ID of a tile in the LemnaTec database
  * 			tag_id			INT			an ID, referencing a tag
  * 
+ * 		Table `experiment_metadata`:
+ * 			`experiment_id`			INT(10) UNSIGNED NOT NULL,	unique id
+ * 			`experiment_name`		VARCHAR(45) NOT NULL,		the experiment name
+ * 
+ * 			`number_snapshots`		INT UNSIGNED NOT NULL,		number of snapshots since the last check
+ * 			`number_tiles`			INT UNSIGNED NOT NULL,		number of tiles since the last check
+ * 			`last_synchronized`		DATETIME,					last time the service checked the lemnatec database
+ * 
  * @author cjmcentee
  */
 public class TaggingDaoImpl implements TaggingDao
@@ -47,27 +60,35 @@ public class TaggingDaoImpl implements TaggingDao
 	
 	private DataSource metadataDataSource;
 	
-	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// MySQL Table Description
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// The tag table
-	public static String TAG_TABLE = "tags";		// Table name
-	public static String TAG_NAME = "tag_name";		// Tag name variable name
-	public static String TAG_ID = "tag_id";			// Tag ID variable name
-													// Has tag ID variable, found in the relation table below
+	public final static String TAG_TABLE = "tags";			// Table name
+	public final static String TAG_NAME = "tag_name";		// Tag name variable name
+	public final static String TAG_ID = "tag_id";			// Tag ID variable name
+															// Has tag ID variable, found in the relation table below
 	
 	// The snapshots table
 	private String snapshotTable(String experiment) { return experiment + SNAPSHOT_TABLE_SUFFIX; }
-	public static String SNAPSHOT_TABLE_SUFFIX = "_snapshots";	// Table name suffix
-	public static String SNAPSHOT_ID = "snapshot_id";			// Snapshot ID variable name
+	public final static String SNAPSHOT_TABLE_SUFFIX = "_snapshots";	// Table name suffix
+	public final static String SNAPSHOT_ID = "snapshot_id";				// Snapshot ID variable name
 	
 	// The tiles table
 	private String tileTable(String experiment) { return experiment + TILE_TABLE_SUFFIX; }
-	public static String TILE_TABLE_SUFFIX = "_tiles";	// Table name suffix
-	public static String TILE_ID = "tile_id";			// Tile ID variable name
+	public final static String TILE_TABLE_SUFFIX = "_tiles";	// Table name suffix
+	public final static String TILE_ID = "tile_id";				// Tile ID variable name
+	
+	// The experiment table
+	public final static String EXPERIMENT_TABLE = "experiment_metadata";
+	
+	public final static String EXPERIMENT_ID = "experiment_id";
+	public final static String EXPERIMENT_NAME = "experiment_name";
+	public final static String NUMBER_SNAPSHOTS = "number_snapshots";
+	public final static String NUMBER_TILES = "number_tiles";
+	public final static String LAST_UPDATED = "last_synchronized";
 	
 	
 	// ////////////////////////////////////////////////
@@ -183,7 +204,7 @@ public class TaggingDaoImpl implements TaggingDao
 				+ " WHERE snapshot."+SNAPSHOT_ID + " IN (" + StringOps.idsAsCSV(snapshotIds) + ")";
 		
 		JdbcTemplate taggingDatabase = new JdbcTemplate(metadataDataSource);
-		taggingDatabase.query(tagQuery, new SnapshotsTagLoader(snapshots)); // Modifies the snapshots parameter to have the ids found in the table
+		taggingDatabase.query(tagQuery, new SnapshotsTagLoader(snapshots));
 	}
 	
 	@Override
@@ -279,7 +300,7 @@ public class TaggingDaoImpl implements TaggingDao
 				+ " WHERE tile."+TILE_ID + " IN (" + StringOps.idsAsCSV(tileIds) + ") ";
 		
 		JdbcTemplate taggingDatabase = new JdbcTemplate(metadataDataSource);
-		taggingDatabase.query(tagQuery, new TilesTagLoader(tiles)); // Modifies the snapshots parameter to have the ids found in the table
+		taggingDatabase.query(tagQuery, new TilesTagLoader(tiles));
 	}
 	
 	@Override
@@ -337,6 +358,83 @@ public class TaggingDaoImpl implements TaggingDao
 		log.info("Successfully removed tags from " + tileIds.size() + "-many tiles.");
 	}
 	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Experiment Operations
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	@Override
+	public void loadExperimentsWithTags(Collection<Experiment> experiments)
+	{
+		if (experiments.size() == 0)
+			return;
+		
+		log.info("Checking for experiment metadata for " + experiments.size() + "-many experiments.");
+		
+		String getMetadata = "SELECT "
+				+ NUMBER_SNAPSHOTS + ", "
+				+ NUMBER_TILES + ", "
+				+ LAST_UPDATED
+				+ " FROM " + EXPERIMENT_TABLE
+				+ " WHERE " + EXPERIMENT_ID + " IN (" + StringOps.idsAsCSV(Experiment.getIds(experiments)) + ") "; 
+		
+		JdbcTemplate metadataDatabase = new JdbcTemplate(metadataDataSource);
+		metadataDatabase.query(getMetadata, new ExperimentMetadataLoader(experiments));
+		
+		log.info("Found experiments with metadata.");
+	}
+	
+	@Override
+	public int setExperimentMetadata(Collection<Experiment> experiments)
+	{
+		log.info("Attempting to update metadata for " + experiments.size() + "-many expirments.");
+		
+		String updateMetadata = "INSERT INTO " + EXPERIMENT_TABLE
+				+ "( "
+					+ EXPERIMENT_ID + ", "
+					+ EXPERIMENT_NAME + ", "
+					+ NUMBER_SNAPSHOTS + ", "
+					+ NUMBER_TILES + ", "
+					+ LAST_UPDATED
+				+ ") "
+				+ " VALUES "
+					+ experimentSQLValues(experiments)
+				+ " ON DUPLICATE KEY UPDATE "
+				+ EXPERIMENT_NAME + " =VALUES(" + EXPERIMENT_NAME + "), "
+				+ EXPERIMENT_ID   + " =VALUES(" + EXPERIMENT_ID   + ") ";
+		
+		JdbcTemplate metadataDatabse = new JdbcTemplate(metadataDataSource);
+		int numberRowsChanged = metadataDatabse.update(updateMetadata);
+		
+		log.info("Successfully updated metadata for " + experiments.size() + "-many expirments.");
+		
+		return numberRowsChanged;
+	}
+	
+	private static String experimentSQLValues(Collection<Experiment> experiments)
+	{
+		StringBuilder sqlValues = new StringBuilder();
+		
+		int i = 0;
+		for (Experiment experiment : experiments) {
+			
+			if (i != 0)
+				sqlValues.append(",");
+			sqlValues.append(
+					"( "
+						+ experiment.id + ", "
+						+ experiment.name + ", "
+						+ experiment.numberSnapshots + ", "
+						+ experiment.numberTiles + ", "
+						+ experiment.lastUpdated
+					+ ") ");
+			
+			i++;
+		}
+		
+		return sqlValues.toString();
+	}
 	
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////

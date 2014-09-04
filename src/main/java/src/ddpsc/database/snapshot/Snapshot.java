@@ -287,4 +287,64 @@ public class Snapshot
 	{
 		return tag;
 	}
+
+
+	public int getId()
+	{
+		return id;
+	}
+
+
+	public String getExperiment()
+	{
+		return experiment;
+	}
+
+
+	public String getPlantBarcode()
+	{
+		return plantBarcode;
+	}
+
+
+	public String getMeasurementLabel()
+	{
+		return measurementLabel;
+	}
+
+
+	public String getCarTag()
+	{
+		return carTag;
+	}
+
+
+	public Timestamp getTimestamp()
+	{
+		return timestamp;
+	}
+
+
+	public float getWeightBefore()
+	{
+		return weightBefore;
+	}
+
+
+	public float getWeightAfter()
+	{
+		return weightAfter;
+	}
+
+
+	public float getWaterAmount()
+	{
+		return waterAmount;
+	}
+
+
+	public boolean isCompleted()
+	{
+		return completed;
+	}
 }

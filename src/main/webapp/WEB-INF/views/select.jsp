@@ -14,7 +14,7 @@
 			<form id = "selection">
 				<select class="form-control" name="experiment" id="experiment">
 			      <c:forEach var='experiment' items='${allowed}'>
-			      	<option value="${experiment.experimentName }">${ experiment.experimentName }</option>
+			      	<option value="${experiment.experimentName}">${experiment.experimentName} Snapshots:${experiment.numberSnapshots} Tiles:${experiment.numberTiles}</option>
 			      </c:forEach>
 				</select>
 				

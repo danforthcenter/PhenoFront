@@ -48,6 +48,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// From tiled_image table
 	public static final String CAMERA			= "camera_label";
 	// From tile table
+	public static final String TILE_TABLE		= "tile";
 	public static final String TILE_ID			= "id";
 	public static final String RAW_IMAGE_OID	= "raw_image_oid";
 	public static final String NULL_IMAGE_OID	= "raw_null_image_oid";
@@ -74,6 +75,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			+ "tile." + TILE_ID + " "
 			+ "FROM tiled_image, tile ";
 	
+	public static final String SNAPSHOT_TABLE		= "snapshot";
 	public static final String SNAPSHOT_ID			= "id";
 	public static final String BARCODE				= "id_tag";
 	public static final String CAR_TAG				= "car_tag";

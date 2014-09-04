@@ -314,7 +314,7 @@ public class User
 	public Experiment getExperimentByExperimentName(String experimentName) throws ExperimentNotAllowedException
 	{
 		for (Experiment experiment : getAllowedExperiments()) {
-			if (experiment.getExperimentName().equals(experimentName)) {
+			if (experiment.name.equals(experimentName)) {
 				return experiment;
 			}
 		}
@@ -380,6 +380,12 @@ public class User
 			allowedExperiments = experiments;
 	}
 	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Get / Set Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	public String getUsername()
 	{
 		return username;

@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 
 import src.ddpsc.database.snapshot.Snapshot;
 
-class SnapshotsTagLoader implements ResultSetExtractor<List<Snapshot>>
+class SnapshotsTagLoader implements ResultSetExtractor<Boolean>
 {
 	Map<Integer, Snapshot> snapshots;
 	public SnapshotsTagLoader(List<Snapshot> snapshots)
@@ -19,7 +19,7 @@ class SnapshotsTagLoader implements ResultSetExtractor<List<Snapshot>>
 		this.snapshots = Snapshot.getSnapshotIdMap(snapshots);
 	}
 	
-	public List<Snapshot> extractData(ResultSet resultSet) throws SQLException, DataAccessException
+	public Boolean extractData(ResultSet resultSet) throws SQLException, DataAccessException
 	{
 		// The query execute returns the following values in order
 		//		tag_name
@@ -30,6 +30,6 @@ class SnapshotsTagLoader implements ResultSetExtractor<List<Snapshot>>
 			snapshots.get(id).setTag(tag);
 		}
 		
-		return new ArrayList<Snapshot>(snapshots.values());
+		return resultSet.first();
 	}
 }

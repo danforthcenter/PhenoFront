@@ -41,8 +41,7 @@
 	</beans:bean>
 	
 	<!-- Currently metadata and user profiles on same database -->
-	<beans:bean id="metadataDataSource"
-		class="src.ddpsc.config.Config"
+	<beans:bean id="metadataDataSource" class="src.ddpsc.config.Config"
 		factory-method="metdataDatabaseDataSource" />
 	
 	
@@ -52,22 +51,20 @@
 		<beans:property name="taggingData" ref="taggingDao" />
 	</beans:bean>
 	
-	<beans:bean id="snapshotDataSource"
-		class="src.ddpsc.config.Config"
+	<beans:bean id="snapshotDataSource" class="src.ddpsc.config.Config"
 		factory-method="experimentDataSource" >
 		<beans:constructor-arg value="LTSystem" />
 	</beans:bean>
 	
- 		<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >
+ 	<beans:bean id="experimentDao" class="src.ddpsc.database.experiment.ExperimentDaoImpl" >
 		<beans:property name="experimentSource" ref="experimentSource" />
+		<beans:property name="taggingData" ref="taggingDao" />
 	</beans:bean>
 
-	<beans:bean id="experimentSource"
-		class="src.ddpsc.config.Config"
+	<beans:bean id="experimentSource" class="src.ddpsc.config.Config"
 		factory-method="experimentDataSource" >
 		<beans:constructor-arg value="LTSystem" />
 	</beans:bean>
- 	
  	
 </beans:beans>
 

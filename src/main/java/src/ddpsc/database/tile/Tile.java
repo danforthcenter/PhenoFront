@@ -199,4 +199,64 @@ public class Tile
 		else
 			return "Unknown";
 	}
+
+	public String getTag()
+	{
+		return tag;
+	}
+
+	public void setTag(String tag)
+	{
+		this.tag = tag;
+	}
+
+	public int getParentSnapshotId()
+	{
+		return parentSnapshotId;
+	}
+
+	public int getId()
+	{
+		return id;
+	}
+
+	public String getCameraLabel()
+	{
+		return cameraLabel;
+	}
+
+	public int getRawImageOid()
+	{
+		return rawImageOid;
+	}
+
+	public int getRawNullImageOid()
+	{
+		return rawNullImageOid;
+	}
+
+	public int getWidth()
+	{
+		return width;
+	}
+
+	public int getHeight()
+	{
+		return height;
+	}
+
+	public int getDataFormat()
+	{
+		return dataFormat;
+	}
+
+	public int getFrame()
+	{
+		return frame;
+	}
+
+	public int getRotateFlipType()
+	{
+		return rotateFlipType;
+	}
 }

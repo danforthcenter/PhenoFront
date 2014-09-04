@@ -10,7 +10,7 @@ class QueryRowMapper implements RowMapper<Query>
 	@Override
 	public Query mapRow(ResultSet rs, int rowNum) throws SQLException
 	{
-		Query query = Query.fromResultSet(rs);
+		Query query = QueryDaoImpl.fromResultSet(rs);
 		return query;
 	}
 }

@@ -404,4 +404,42 @@ public class QueryDaoImpl implements QueryDao
 		log.info("Set metadata variable: [" + changeVariable + "]");
 		modifyQuerySystem(changeVariable);
 	}
+
+	public static QueryMetadata fromResultSetMetadata(ResultSet sqlResult) throws SQLException
+	{
+		QueryMetadata metadata = new QueryMetadata(
+				sqlResult.getInt(METADATA_ID),
+				sqlResult.getString(User.USERNAME),
+				sqlResult.getTimestamp("date"),
+				sqlResult.getInt(NUM_SNAPSHOTS),
+				sqlResult.getInt(NUM_TILES),
+				sqlResult.getString(COMMENT));
+		
+		metadata.downloadBegin = sqlResult.getTimestamp(DOWNLOAD_BEGIN);
+		metadata.downloadEnd = sqlResult.getTimestamp(DOWNLOAD_END);
+		metadata.interrupted = sqlResult.getBoolean(INTERRUPTED);
+		metadata.missedSnapshots = StringOps.CSVAsIds(sqlResult.getString(MISSED_SNAPSHOTS));
+		metadata.bytes = sqlResult.getLong(SIZE);
+		
+		return metadata;
+	}
+
+	public static Query fromResultSet(ResultSet sqlResult) throws SQLException
+	{
+		Query query = new Query(
+				sqlResult.getString(EXPERIMENT),
+				sqlResult.getString(BARCODE),
+				sqlResult.getString(MEASUREMENT),
+				sqlResult.getTimestamp(START_TIME),
+				sqlResult.getTimestamp(END_TIME),
+				sqlResult.getBoolean(WATERING),
+				sqlResult.getBoolean(VISIBLE),
+				sqlResult.getBoolean(FLUORESCENT),
+				sqlResult.getBoolean(INFRARED) );
+		
+		query.id = sqlResult.getInt(QUERY_ID);
+		query.metadata = QueryDaoImpl.fromResultSetMetadata(sqlResult);
+		
+		return query;
+	}
 }

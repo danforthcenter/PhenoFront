@@ -1,51 +1,18 @@
 package src.ddpsc.database.queries;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import src.ddpsc.utility.StringOps;
+import src.ddpsc.utility.Time;
 
 import com.google.gson.Gson;
 
 
 public class Query
 {
-	private static final DateTimeFormatter javascriptTimePickerFormat = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm");
-	private static final DateTimeFormatter javascriptTimeJSONFormat = DateTimeFormat.forPattern("MMM dd, yyyy hh:mm:ss aa");
-	
-	// CSV labels
-	public static String QUERY_ID = "query id";
-	
-	public static String EXPERIMENT = "experiment";
-	public static String BARCODE = "barcode regex";
-	public static String MEASUREMENT = "measurement regex";
-	public static String START_TIME = "start time";
-	public static String END_TIME = "end time";
-	
-	public static String WATERING = "include watering";
-	public static String VISIBLE = "include visible";
-	public static String FLUORESCENT = "include fluorescent";
-	public static String INFRARED = "include infrared";
-	
-	public static final String CSV_HEADER =
-					 QUERY_ID 
-			+ "," + EXPERIMENT 
-			+ "," + BARCODE 
-			+ "," + MEASUREMENT 
-			+ "," + START_TIME 
-			+ "," + END_TIME 
-			+ "," + WATERING
-			+ "," + VISIBLE
-			+ "," + FLUORESCENT
-			+ "," + INFRARED
-			+ "," + QueryMetadata.CSV_HEADER;
-	
 	public int id;
 	public final String experiment;
 	
@@ -61,28 +28,13 @@ public class Query
 	
 	public QueryMetadata metadata;
 	
-	public Query(
-			String experiment,
-			String barcode,
-			String measurementLabel,
-			String startTime,
-			String endTime,
-			boolean includeWatering,
-			boolean includeVisible,
-			boolean includeFluorescent,
-			boolean includeInfrared)
+	public Query(String experiment, String barcode, String measurementLabel,
+				String startTime, String endTime,
+				boolean includeWatering, boolean includeVisible, boolean includeFluorescent, boolean includeInfrared)
 	{
-		this.experiment = experiment == null ? "" : experiment;
-		
-		this.barcode = barcode == null ? "" : barcode;
-		this.measurementLabel = measurementLabel == null ? "" : measurementLabel;
-		this.startTime = interpretDateString(startTime);
-		this.endTime = interpretDateString(endTime);
-		
-		this.includeWatering = includeWatering;
-		this.includeVisible = includeVisible;
-		this.includeFluorescent = includeFluorescent;
-		this.includeInfrared = includeInfrared;
+		this(experiment, barcode, measurementLabel,
+			Time.parseJSTimeStampForms(startTime), Time.parseJSTimeStampForms(endTime),
+			includeWatering, includeVisible, includeFluorescent, includeInfrared);
 	}
 	
 	public Query(
@@ -135,72 +87,74 @@ public class Query
 		return json;
 	}
 	
-	public static String toCSV(List<Query> queries)
-	{
-		StringBuilder csv = new StringBuilder(CSV_HEADER);
-		
-		for (Query query : queries)
-			csv.append("\n" + query.toCSV(false));
-		
-		return csv.toString();
-	}
 	
-	public String toCSV(boolean includeHeader)
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Get / Set Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public int getId()
 	{
-		String values = ""
-					   + id
-				+ "," + experiment
-				+ "," + barcode
-				+ "," + measurementLabel
-				+ "," + (startTime != null	?startTime.toString()	:"null start")
-				+ "," + (endTime != null	?endTime.toString()		:"null end")
-				+ "," + includeWatering
-				+ "," + includeVisible
-				+ "," + includeFluorescent
-				+ "," + includeInfrared
-				+ "," + metadata.toCSV(false);
-		
-		if (includeHeader)
-			return CSV_HEADER + "\n" + values;
-		else
-			return values;
+		return id;
 	}
-	
-	public static Query fromResultSet(ResultSet sqlResult) throws SQLException
+
+	public void setId(int id)
 	{
-		Query query = new Query(
-				sqlResult.getString(QueryDaoImpl.EXPERIMENT),
-				sqlResult.getString(QueryDaoImpl.BARCODE),
-				sqlResult.getString(QueryDaoImpl.MEASUREMENT),
-				sqlResult.getTimestamp(QueryDaoImpl.START_TIME),
-				sqlResult.getTimestamp(QueryDaoImpl.END_TIME),
-				sqlResult.getBoolean(QueryDaoImpl.WATERING),
-				sqlResult.getBoolean(QueryDaoImpl.VISIBLE),
-				sqlResult.getBoolean(QueryDaoImpl.FLUORESCENT),
-				sqlResult.getBoolean(QueryDaoImpl.INFRARED) );
-		
-		query.id = sqlResult.getInt(QueryDaoImpl.QUERY_ID);
-		query.metadata = QueryMetadata.fromResultSet(sqlResult);
-		
-		return query;
+		this.id = id;
 	}
-	
-	private Timestamp interpretDateString(String timeString)
+
+	public QueryMetadata getMetadata()
 	{
-		if (timeString != null && ! timeString.equals("")) {
-			// DateTimeFormatter doesn't have a ".isParsable" method, so we have to do it the nasty way
-			try {
-				DateTime timeDate = javascriptTimePickerFormat.parseDateTime(timeString);
-				return new Timestamp(timeDate.getMillis());
-			}
-			
-			catch (IllegalArgumentException e) { // Try the other format
-				DateTime timeDate = javascriptTimeJSONFormat.parseDateTime(timeString);
-				return new Timestamp(timeDate.getMillis());
-			}
-		}
-		
-		else
-			return null;
+		return metadata;
+	}
+
+	public void setMetadata(QueryMetadata metadata)
+	{
+		this.metadata = metadata;
+	}
+
+	public String getExperiment()
+	{
+		return experiment;
+	}
+
+	public String getBarcode()
+	{
+		return barcode;
+	}
+
+	public String getMeasurementLabel()
+	{
+		return measurementLabel;
+	}
+
+	public Timestamp getStartTime()
+	{
+		return startTime;
+	}
+
+	public Timestamp getEndTime()
+	{
+		return endTime;
+	}
+
+	public boolean isIncludeWatering()
+	{
+		return includeWatering;
+	}
+
+	public boolean isIncludeVisible()
+	{
+		return includeVisible;
+	}
+
+	public boolean isIncludeFluorescent()
+	{
+		return includeFluorescent;
+	}
+
+	public boolean isIncludeInfrared()
+	{
+		return includeInfrared;
 	}
 }

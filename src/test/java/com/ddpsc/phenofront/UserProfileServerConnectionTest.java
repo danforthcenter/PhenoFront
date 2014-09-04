@@ -9,12 +9,10 @@ import javax.sql.DataSource;
 
 import junitx.framework.ListAssert;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import src.ddpsc.config.Config;
-import src.ddpsc.database.tagging.TaggingDaoImpl;
 import src.ddpsc.database.user.Group;
 import src.ddpsc.database.user.User;
 import src.ddpsc.exceptions.MalformedConfigException;
