@@ -64,11 +64,9 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 	`number_tiles`			INT,
 	
 	PRIMARY KEY (`metadata_id`),
-	INDEX (`comment`(2)), 			-- To check for commented / not commented
-	FOREIGN KEY (`query_id`) REFERENCES `queries` (`query_id`) ON DELETE CASCADE,
-	FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+	INDEX (`comment`(2)) 			-- To check for commented / not commented
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
-	
+
 
 --
 -- Table structure for table `tags`
@@ -96,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
 -- Dumping data for table `groups`
 --
 
-INSERT INTO `groups` (`group_id`, `owner_id`, `group_name`) VALUES
+INSERT IGNORE INTO `groups` (`group_id`, `owner_id`, `group_name`) VALUES
 (1, 2, 'Bioinfo'),
 (3, 2, 'empty');
 
@@ -122,20 +120,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`USER_ID`, `USERNAME`, `PASSWORD`, `ENABLED`, `GROUP_ID`, `AUTHORITY`) VALUES
+INSERT IGNORE INTO `users` (`USER_ID`, `USERNAME`, `PASSWORD`, `ENABLED`, `GROUP_ID`, `AUTHORITY`) VALUES
 (2, 'admin', '6a6f5cd3015c185a2a76e9a7b3eb75136ffbe977155a2fedcd8400d6ca6b6268b4f9c4191ae27026', 1, 1, 'ROLE_ADMIN');
 
---
--- Constraints for table `groups`
---
-ALTER TABLE `groups`
-  ADD CONSTRAINT `FK_OWNER_ID` FOREIGN KEY (`owner_id`) REFERENCES `users` (`USER_ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `FK_GROUP_ID` FOREIGN KEY (`GROUP_ID`) REFERENCES `groups` (`group_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
