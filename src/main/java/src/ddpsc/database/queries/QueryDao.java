@@ -20,5 +20,6 @@ public interface QueryDao
 	void setDownloadStart(int queryId, Timestamp time);
 	void setDownloadEnd(int queryId, Timestamp time);
 	void setInterrupted(int queryId, boolean wasInterrupted);
+	void setMissedSnapshots(int queryId, List<Integer> missedSnapshots);
 	void setQuerySize(int queryId, long bytes);
 }

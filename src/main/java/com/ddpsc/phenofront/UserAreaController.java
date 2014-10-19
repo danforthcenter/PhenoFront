@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +61,7 @@ import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.NotImplementedException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.exceptions.UserException;
+import src.ddpsc.results.DownloadZipResult;
 import src.ddpsc.results.ResultsBuilder;
 
 import com.google.gson.Gson;
@@ -106,9 +108,11 @@ public class UserAreaController
 	 * 
 	 * @param model			Internal system model to interact with the view
 	 * @return 				An experiment selection page, or error page
+	 * @throws IOException 
+	 * @throws MalformedConfigException 
 	 */
 	@RequestMapping(value = "/selectexperiment", method = RequestMethod.GET)
-	public String selectAction(Model model)
+	public String selectAction(Model model) throws MalformedConfigException, IOException
 	{
 		String username = ControllerHelper.currentUsername();
 		log.info("Selecting experiments for user " + username);
@@ -129,6 +133,8 @@ public class UserAreaController
 		
 		try {
 			Set<Experiment> allExperiments = experimentData.findAll();
+			experimentData.generateExperimentMetadata(allExperiments);
+			taggingData.setExperimentMetadata(allExperiments);
 			
 			user.setAllowedExperiments(allExperiments);
 			Set<Experiment> allowedExperiments = user.getAllowedExperiments();
@@ -319,9 +325,6 @@ public class UserAreaController
 				Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
 				List<Snapshot> snapshots = snapshotData.executeCustomQuery(query);
 				
-				int numberTiles = 0;
-				for (Snapshot snapshot : snapshots)
-					numberTiles += snapshot.getTiles().size();
 				
 				// Gather information on the query
 				QueryMetadata metadata = new QueryMetadata(
@@ -329,7 +332,7 @@ public class UserAreaController
 						user.getUsername(),
 						timeOfQuery,
 						snapshots.size(),
-						numberTiles,
+						Snapshot.getTiles(snapshots).size(),
 						"");
 				query.metadata = metadata;
 				
@@ -397,19 +400,20 @@ public class UserAreaController
 			
 			@RequestParam(value = "experiment",			required = false) String experiment,
 			
-			@RequestParam(value = "plantBarcode",		required = false,	defaultValue = "") String plantBarcode,
+			@RequestParam(value = "barcode",			required = false,	defaultValue = "") String plantBarcode,
 			@RequestParam(value = "measurementLabel",	required = false,	defaultValue = "") String measurementLabel,
 			@RequestParam(value = "startTime",			required = false,	defaultValue = "") String startTime,
 			@RequestParam(value = "endTime",			required = false,	defaultValue = "") String endTime,
 			
-			@RequestParam(value = "tags",			required = false,	defaultValue = "")		String tags,
-			@RequestParam(value = "tagRequirements",required = false, 	defaultValue = "None")	String tagRequirements,
+			@RequestParam(value = "includeWatering",	required = false,	defaultValue = "false")	boolean includeWatering,
 			
-			@RequestParam(value = "watering",	required = false,		defaultValue = "false")	boolean includeWatering,
+			@RequestParam(value = "includeVisible",		required = false,	defaultValue = "false")	boolean includeVisibleLightImages,
+			@RequestParam(value = "includeFluorescent",	required = false,	defaultValue = "false")	boolean includeFluorescentImages,
+			@RequestParam(value = "includeInfrared",	required = false,	defaultValue = "false")	boolean includeNearInfraredImages,
 			
-			@RequestParam(value = "vis",		defaultValue = "false")	boolean includeVisibleLightImages,
-			@RequestParam(value = "fluo",		defaultValue = "false")	boolean includeFluorescentImages,
-			@RequestParam(value = "nir",		defaultValue = "false")	boolean includeNearInfraredImages)
+			@RequestParam(value = "logQuery",			required = false,	defaultValue = "false")	boolean logQuery,
+			
+			@RequestParam(value = "convertJPEG",		required = false,	defaultValue = "false")	boolean convertJPEG )
 					throws IOException
 	{
 		log.info("Requesting a mass download for download key ='" + downloadKey + "': "
@@ -462,9 +466,11 @@ public class UserAreaController
 			}
 			
 			// Begin download response
+			Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
+			
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots " + timeOfQuery + ".zip\"");
 			response.flushBuffer();
 			
 		    log.info("Querying database for snapshots and tiles.");
@@ -479,12 +485,8 @@ public class UserAreaController
 					includeFluorescentImages,
 					includeNearInfraredImages);
 		    
-		    Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
 			List<Snapshot> snapshots = snapshotData.executeCustomQuery(query);
 			
-			int numberTiles = 0;
-			for (Snapshot snapshot : snapshots)
-				numberTiles += snapshot.getTiles().size();
 			
 			// Gather information on the query
 			QueryMetadata metadata = new QueryMetadata(
@@ -492,40 +494,50 @@ public class UserAreaController
 					user.getUsername(),
 					timeOfQuery,
 					snapshots.size(),
-					numberTiles,
+					Snapshot.getTiles(snapshots).size(),
 					"");
 			query.metadata = metadata;
 			
-			int queryId = queryData.addQuery(query);
-			query.id = queryId;
+			int queryId = -1;
+			if (logQuery) {
+				queryId = queryData.addQuery(query);
+				query.id = queryId;
+			}
 			
 			Timestamp timeOfDownloadStart = new Timestamp(DateTime.now().getMillis());
-			queryData.setDownloadStart(queryId, timeOfDownloadStart);
+			DownloadZipResult downloadedZip = new DownloadZipResult(-1, new ArrayList<Integer>(), false);
 			
 			try {
 			    log.info("Got snapshots and tiles. Building results.");
 				ResultsBuilder results = new ResultsBuilder(
 						response.getOutputStream(),
 						snapshots,
-						activeExperiment);
+						activeExperiment,
+						convertJPEG);
 				
 			    log.info("Writing zip archive.");
-				long size_bytes = results.writeZipArchive();
+				downloadedZip = results.writeZipArchive();
+				
 				response.flushBuffer();
-				queryData.setQuerySize(queryId, size_bytes);
-				
-				Timestamp timeOfDownloadEnd = new Timestamp(DateTime.now().getMillis());
-				queryData.setDownloadEnd(queryId, timeOfDownloadEnd);
-				queryData.setInterrupted(queryId, false);
-				
-				log.info("The mass download for user " + username + " with active experiment " + experiment + " is successful.");
 			}
 			
-			catch (IOException e)
-			{
+			catch (IOException e) {
 				log.info("The mass download for user " + username + " was interrupted because the connection was lost.");
-				queryData.setInterrupted(queryId, true);
 			}
+			
+			Timestamp timeOfDownloadEnd = new Timestamp(DateTime.now().getMillis());
+			
+			// Permanently log the query
+			if (logQuery) {
+				queryData.setQuerySize(queryId, downloadedZip.size);
+				queryData.setDownloadStart(queryId, timeOfDownloadStart);
+				queryData.setDownloadEnd(queryId, timeOfDownloadEnd);
+				queryData.setInterrupted(queryId, ! downloadedZip.succeeded);
+				queryData.setMissedSnapshots(queryId, downloadedZip.missedSnapshots);
+			}
+			
+			log.info("The mass download for user " + username + " with active experiment " + experiment + " is successful.");
+			
 		}
 		
 		catch (Exception e) {
@@ -567,8 +579,8 @@ public class UserAreaController
 			Model model,
 			@RequestParam(value = "downloadKey",		required = true)	String downloadKey,
 			@RequestParam(value = "experiment",			required = true)	String experiment,
-			@RequestParam(value = "snapshotIds",		required = true)	List<Integer> snapshotIds
-			)
+			@RequestParam(value = "snapshotIds",		required = true)	List<Integer> snapshotIds,
+			@RequestParam(value = "convertJPEG",	required = false,	defaultValue = "false")	boolean convertJPEG )
 				throws IOException
 	{
 		log.info("Attempting to execute snapshots defined download for download key ='" + downloadKey + "'.");
@@ -611,10 +623,12 @@ public class UserAreaController
 				return;
 			}
 			
+			Timestamp timeOfQuery = new Timestamp(DateTime.now().getMillis());
+			
 			// Begin download response
 			response.setHeader("Transfer-Encoding", "chunked");
 			response.setHeader("Content-type", "text/plain");
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots" + downloadKey + ".zip\"");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + "Snapshots " + timeOfQuery + ".zip\"");
 			response.flushBuffer();
 			
 		    log.info("Querying database for snapshots and tiles.");
@@ -625,7 +639,8 @@ public class UserAreaController
 			ResultsBuilder results = new ResultsBuilder(
 					response.getOutputStream(),
 					snapshots,
-					activeExperiment);
+					activeExperiment,
+					convertJPEG);
 			
 		    log.info("Writing zip archive.");
 			results.writeZipArchive();
@@ -664,13 +679,13 @@ public class UserAreaController
 					throws IOException
 	{
 		String username = user.getUsername();
-		String experiment = user.getActiveExperiment().getExperimentName();
+		String experiment = user.getActiveExperiment().name;
 		log.info("Attempting to retrieve snapshot with id='" + snapshotId + "' for user " + username);
 		
 		// Begin response
 		response.setHeader("Transfer-Encoding", "chunked");
 		response.setHeader("Content-type", "text/plain");
-		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot" + snapshotId + ".zip\"");
+		response.setHeader("Content-Disposition", "attachment; filename=\"Snapshot " + snapshotId + ".zip\"");
 		response.flushBuffer();
 		
 		try {
@@ -680,7 +695,8 @@ public class UserAreaController
 			ResultsBuilder results = new ResultsBuilder(
 					response.getOutputStream(),
 					Arrays.asList(new Snapshot[]{snapshot}),
-					user.getActiveExperiment());
+					user.getActiveExperiment(),
+					false);
 			
 			results.writeZipArchive();
 			
@@ -719,7 +735,7 @@ public class UserAreaController
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
-		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		model.addAttribute("experiment", activeExperiment.name);
 		
 		return "userarea-querybuilder";
 	}
@@ -730,10 +746,13 @@ public class UserAreaController
 		String username = user.getUsername();
 		log.info("Accessing the query history page for user " + username);
 		
+		String downloadKey = DownloadManager.generateRandomKey(user);
+		model.addAttribute("downloadKey", downloadKey);
+		
 		List<User> users = userData.findAllUsers();
 		model.addAttribute("allUsers", users);
 		
-		model.addAttribute("experiment", user.getActiveExperiment().getExperimentName());
+		model.addAttribute("experiment", user.getActiveExperiment().name);
 		
 		log.info("Retrieved queries for query history page for user " + username);
 		return "userarea-queryexplorer";
@@ -914,7 +933,7 @@ public class UserAreaController
 		model.addAttribute("downloadKey", downloadKey);
 		
 		Experiment activeExperiment = user.getActiveExperiment();
-		model.addAttribute("experiment", activeExperiment.getExperimentName());
+		model.addAttribute("experiment", activeExperiment.name);
 		
 		return "userarea-resumedownload";
 	}

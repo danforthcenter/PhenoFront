@@ -31,14 +31,14 @@ public class User
 	// ////////////////////////////////////////////////
 	// ////////////////////////////////////////////////
 	// The user table
-	public static String TABLE = "users";	// Table name
+	public static final String TABLE = "users";	// Table name
 	
-	public static String USER_ID = "USER_ID";
-	public static String USERNAME = "USERNAME";
-	public static String PASSWORD = "PASSWORD";
-	public static String ENABLED = "ENABLED";
-	public static String GROUP_ID = "GROUP_ID";
-	public static String AUTHORITY = "AUTHORITY";
+	public static final String USER_ID = "USER_ID";
+	public static final String USERNAME = "USERNAME";
+	public static final String PASSWORD = "PASSWORD";
+	public static final String ENABLED = "ENABLED";
+	public static final String GROUP_ID = "GROUP_ID";
+	public static final String AUTHORITY = "AUTHORITY";
 	
 	public static final String ADMIN_AUTHORITY = "ROLE_ADMIN";
 	public static final String USER_AUTHORITY  = "ROLE_USER";
@@ -314,7 +314,7 @@ public class User
 	public Experiment getExperimentByExperimentName(String experimentName) throws ExperimentNotAllowedException
 	{
 		for (Experiment experiment : getAllowedExperiments()) {
-			if (experiment.getExperimentName().equals(experimentName)) {
+			if (experiment.name.equals(experimentName)) {
 				return experiment;
 			}
 		}
@@ -380,6 +380,12 @@ public class User
 			allowedExperiments = experiments;
 	}
 	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Get / Set Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	public String getUsername()
 	{
 		return username;

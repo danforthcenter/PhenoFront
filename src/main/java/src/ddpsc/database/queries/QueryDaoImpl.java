@@ -59,6 +59,7 @@ import src.ddpsc.utility.StringOps;
  *			`date_download_begin`	DATETIME,				when the query began downloading
  *			`date_download_complete`DATETIME,				when the download finished
  *			`interrupted`			BOOL,					whether the download was interrupted
+ *			`missed_snapshots`		TEXT,					a list of snapshot ids that didn't get downloaded
  *		
  *			`bytes`					BIGINT,					how large the download was
  *			`number_snapshots`		INT,					how many snapshots the query contained
@@ -112,6 +113,7 @@ public class QueryDaoImpl implements QueryDao
 	public static String DOWNLOAD_BEGIN	= "date_download_begin";
 	public static String DOWNLOAD_END	= "date_download_complete";
 	public static String INTERRUPTED	= "interrupted";
+	public static String MISSED_SNAPSHOTS= "missed_snapshots";
 	
 	public static String SIZE			= "bytes";
 	public static String NUM_SNAPSHOTS	= "number_snapshots";
@@ -247,7 +249,8 @@ public class QueryDaoImpl implements QueryDao
 	@Override
 	public void setQueryComment(int queryId, String newComment)
 	{
-		setQueryComments(Arrays.asList(new Integer[]{queryId}), newComment);
+		if (queryId != -1)
+			setQueryComments(Arrays.asList(new Integer[]{queryId}), newComment);
 	}
 	
 	@Override
@@ -255,7 +258,8 @@ public class QueryDaoImpl implements QueryDao
 	{
 		log.info("Attempting to change the interruption status on the query ID='" + queryId + "' to: '" + time + "'.");
 		
-		setMetadataVariable(queryId, DOWNLOAD_BEGIN, time.toString());
+		if (queryId != -1)
+			setMetadataVariable(queryId, DOWNLOAD_BEGIN, time.toString());
 		
 		log.info("Changed the interruption status on the query ID='" + queryId + "' to: '" + time + "'.");
 	}
@@ -265,7 +269,8 @@ public class QueryDaoImpl implements QueryDao
 	{
 		log.info("Attempting to change the download finished time on the query ID='" + queryId + "' to: '" + time + "'.");
 		
-		setMetadataVariable(queryId, DOWNLOAD_END, time.toString());
+		if (queryId != -1)
+			setMetadataVariable(queryId, DOWNLOAD_END, time.toString());
 		
 		log.info("Changed the download finished time on the query ID='" + queryId + "' to: '" + time + "'.");
 	}
@@ -276,9 +281,29 @@ public class QueryDaoImpl implements QueryDao
 		String wasInterrupedString = wasInterrupted ? "true" : "false";
 		log.info("Attempting to change the interruption status on the query ID='" + queryId + "' to: '" + wasInterrupedString + "'.");
 		
-		setMetadataVariable(queryId, INTERRUPTED, wasInterrupedString);
+		if (queryId != -1) {
+			String changeVariable = "UPDATE " + METADATA_TABLE
+					+ " SET " + INTERRUPTED + " = " + wasInterrupted + ""
+					+ " WHERE " + QUERY_ID + " ='" + queryId + "'"
+					+ " LIMIT 1";
+			
+			log.info("Set metadata variable: [" + changeVariable + "]");
+			modifyQuerySystem(changeVariable);
+		}
 		
 		log.info("Changed the interruption status on the query ID='" + queryId + "' to: '" + wasInterrupedString + "'.");
+	}
+	
+	@Override
+	public void setMissedSnapshots(int queryId, List<Integer> missedSnapshots)
+	{
+		log.info("Attempting to change the missing snapshots on the query ID='" + queryId + "' to " + missedSnapshots + ".");
+		
+		String missedSnapshots_CSV = StringOps.idsAsCSV(missedSnapshots, false);
+		if (queryId != -1)
+			setMetadataVariable(queryId, MISSED_SNAPSHOTS, missedSnapshots_CSV);
+		
+		log.info("Changed the missing snapshots on the query ID='" + queryId + "' to " + missedSnapshots + ".");
 	}
 	
 	@Override
@@ -287,7 +312,8 @@ public class QueryDaoImpl implements QueryDao
 		String bytesString = Long.toString(bytes);
 		log.info("Attempting to change query size on the query ID='" + queryId + "' to: '" + bytesString + "'.");
 		
-		setMetadataVariable(queryId, SIZE, bytesString);
+		if (queryId != -1)
+			setMetadataVariable(queryId, SIZE, bytesString);
 		
 		log.info("Changed the query size on the query ID='" + queryId + "' to: '" + bytesString + "'.");
 	}
@@ -328,6 +354,7 @@ public class QueryDaoImpl implements QueryDao
 				+ " m."+DOWNLOAD_BEGIN + ", "
 				+ " m."+DOWNLOAD_END + ", "
 				+ " m."+INTERRUPTED + ", "
+				+ " m."+MISSED_SNAPSHOTS + ", "
 				+ " m."+SIZE + ", "
 				+ " m."+NUM_SNAPSHOTS + ", "
 				+ " m."+NUM_TILES + ", "
@@ -376,5 +403,43 @@ public class QueryDaoImpl implements QueryDao
 		
 		log.info("Set metadata variable: [" + changeVariable + "]");
 		modifyQuerySystem(changeVariable);
+	}
+
+	public static QueryMetadata fromResultSetMetadata(ResultSet sqlResult) throws SQLException
+	{
+		QueryMetadata metadata = new QueryMetadata(
+				sqlResult.getInt(METADATA_ID),
+				sqlResult.getString(User.USERNAME),
+				sqlResult.getTimestamp("date"),
+				sqlResult.getInt(NUM_SNAPSHOTS),
+				sqlResult.getInt(NUM_TILES),
+				sqlResult.getString(COMMENT));
+		
+		metadata.downloadBegin = sqlResult.getTimestamp(DOWNLOAD_BEGIN);
+		metadata.downloadEnd = sqlResult.getTimestamp(DOWNLOAD_END);
+		metadata.interrupted = sqlResult.getBoolean(INTERRUPTED);
+		metadata.missedSnapshots = StringOps.CSVAsIds(sqlResult.getString(MISSED_SNAPSHOTS));
+		metadata.bytes = sqlResult.getLong(SIZE);
+		
+		return metadata;
+	}
+
+	public static Query fromResultSet(ResultSet sqlResult) throws SQLException
+	{
+		Query query = new Query(
+				sqlResult.getString(EXPERIMENT),
+				sqlResult.getString(BARCODE),
+				sqlResult.getString(MEASUREMENT),
+				sqlResult.getTimestamp(START_TIME),
+				sqlResult.getTimestamp(END_TIME),
+				sqlResult.getBoolean(WATERING),
+				sqlResult.getBoolean(VISIBLE),
+				sqlResult.getBoolean(FLUORESCENT),
+				sqlResult.getBoolean(INFRARED) );
+		
+		query.id = sqlResult.getInt(QUERY_ID);
+		query.metadata = QueryDaoImpl.fromResultSetMetadata(sqlResult);
+		
+		return query;
 	}
 }

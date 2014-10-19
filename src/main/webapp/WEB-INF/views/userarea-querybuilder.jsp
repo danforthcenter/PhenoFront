@@ -20,8 +20,9 @@
 		<form role="form" id ="query-builder" class="select-data" method="GET" action="<c:url context="/phenofront" value="/massdownload" />" >
 			<div class="form-group">
 				
-				<input type="hidden" value="${experiment}" name="experiment"/>
-	 			
+				<input type="hidden" name="downloadKey" value="${downloadKey}" id="downloadKey" />
+				<input type="hidden" name="experiment" value="${experiment}" />
+	 			<input type="hidden" name="logQuery" value="true" />
 	 			
 				<label for="barcode">
 					Barcode Regex Search (DB.+, D[A]{3,}, .+AA, etc.)
@@ -86,7 +87,12 @@
 					</label>
 				</div>
 				
-				<input type="hidden" name="downloadKey" value="${ downloadKey }">
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" name="convertJPEG" value="true" checked />
+						Convert Images to JPEG Format
+					</label>
+				</div>
 			</div>
 			
 			<div class="downloadLink hidden"></div>
@@ -96,36 +102,12 @@
 			
 			<br />
 			
-<!--
-			<label for="newTag">
-					Add/Remove Tag:
-			</label>
-			<input type="text" name="newTag" id="newTag"
-				class="form-control" placeholder="my_new_tag1"
-				title="A new tag to add or remove from the database. Tags can only be composed of underscores or alphanumeric characters." />
 			
-			<div class="checkbox">
-				<label>
-					<input type="radio" name="addTag" value="true" checked />
-					Add tag
-				</label>
-			</div>
-			<div class="checkbox">
-				<label>
-					<input type="radio" name="addTag" value="false" />
-					Remove tag
-				</label>
-			</div>
-			
-			<a id="changeTag" class="btn btn-default btn-block btn-large">
-				Change Tag
-			</a>
-			
-			<br />
--->
-			
-			<a id="previewQuery" class="btn btn-default btn-block btn-large">
-				Preview Query
+			<a id="previewQuery" class="btn btn-default btn-block ladda-button"
+				data-size="l"
+				data-style="slide-left"
+				data-spinner-color="#FF0000">
+				<span class="ladda-label">Preview Query</span>
 			</a>
 			
 			<br />
@@ -161,7 +143,7 @@ $(document).ready(function(){
     
     // Helper methods for the preview operations
  	function displayQuery(query, snapshots) {
- 		var query = queryElement(query, snapshots);
+ 		var query = queryElement(query, snapshots, $('#downloadKey'));
  		$("#queryPreview").empty();
  		$("#queryPreview").show();
  		
@@ -171,15 +153,19 @@ $(document).ready(function(){
  	}
     
  	// Query preview
-    $("#previewQuery").click(function() {
-    	console.log('<c:url context="/phenofront" value="/userarea/querypreview" />');
-    	var form = $(this);
+ 	Ladda.bind("#previewQuery");
+    $("#previewQuery").click(function(e) {
+    	e.preventDefault();
+    	var laddaEffect = Ladda.create(this);
+    	laddaEffect.start();
+    	
 		$.ajax({
 			type: "POST",
 			url: '<c:url context="/phenofront" value="/userarea/querypreview" />',
 			data: $("#query-builder").serialize(),
 			success: function(queryJSON) {
 				displayQuery(queryJSON["query"], queryJSON["snapshots"]);
+				laddaEffect.stop();
 			},
 			error: function(xhr, status, error) {
 				$("#queryPreview").empty();
@@ -189,6 +175,7 @@ $(document).ready(function(){
 				$("#queryPreview").addClass("alert alert-danger");
 				
 				$("#queryPreview").text(xhr.responseText);
+				laddaEffect.stop();
 			}
 		});
     });

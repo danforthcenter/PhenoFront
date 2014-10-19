@@ -1,9 +1,11 @@
 package src.ddpsc.database.tagging;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import src.ddpsc.database.experiment.Experiment;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.tile.Tile;
 
@@ -35,4 +37,8 @@ public interface TaggingDao
 	void changeTileTags(List<Integer> tileIds, String experiment, String newTag);
 	
 	void removeTileTags(List<Integer> tileIds, String experiment);
+	
+	// Experiments
+	void loadExperimentsWithTags(Collection<Experiment> experiments);
+	int setExperimentMetadata(Collection<Experiment> experiments);
 }

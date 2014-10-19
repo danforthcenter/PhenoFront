@@ -33,6 +33,7 @@ import src.ddpsc.exceptions.MalformedConfigException;
  *			`measurement_regex`		VARCHAR(255)
  *			`start_time`			DATETIME
  *			`end_time`				DATETIME
+ *			`missed_snapshots`		TEXT
  *
  *			`include_watering`		BOOL NOT NULL
  *			`include_visible`		BOOL NOT NULL
@@ -145,6 +146,7 @@ public class QueryServerConnectionTest
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.DOWNLOAD_BEGIN,	MySQLColumn.DATETIME,			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.DOWNLOAD_END,	MySQLColumn.DATETIME,			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.INTERRUPTED,	MySQLColumn.TINYINT(1),			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.MISSED_SNAPSHOTS,MySQLColumn.TEXT,				MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.SIZE,			MySQLColumn.BIGINT(20),			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.NUM_SNAPSHOTS,	MySQLColumn.INT(11),			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));
 			ListAssert.assertContains(columns, new MySQLColumn(QueryDaoImpl.NUM_TILES,		MySQLColumn.INT(11),			MySQLColumn.CAN_NULL,	MySQLColumn.NOT_KEY));

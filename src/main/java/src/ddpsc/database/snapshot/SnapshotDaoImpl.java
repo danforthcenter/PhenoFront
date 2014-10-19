@@ -48,6 +48,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 	// From tiled_image table
 	public static final String CAMERA			= "camera_label";
 	// From tile table
+	public static final String TILE_TABLE		= "tile";
 	public static final String TILE_ID			= "id";
 	public static final String RAW_IMAGE_OID	= "raw_image_oid";
 	public static final String NULL_IMAGE_OID	= "raw_null_image_oid";
@@ -74,8 +75,9 @@ public class SnapshotDaoImpl implements SnapshotDao
 			+ "tile." + TILE_ID + " "
 			+ "FROM tiled_image, tile ";
 	
+	public static final String SNAPSHOT_TABLE		= "snapshot";
 	public static final String SNAPSHOT_ID			= "id";
-	public static final String ID_TAG				= "id_tag";
+	public static final String BARCODE				= "id_tag";
 	public static final String CAR_TAG				= "car_tag";
 	public static final String MEASUREMENT_LABEL	= "measurement_label";
 	public static final String TIMESTAMP			= "time_stamp";
@@ -306,7 +308,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryAfterTime_HELPER(final Query querySettings)
@@ -332,7 +334,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryAnyTime_HELPER(final Query querySettings)
@@ -356,7 +358,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	private List<Snapshot> findCustomQueryBetweenTime_HELPER(final Query querySettings)
@@ -384,7 +386,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			}
 		};
 		
-		return snapshotQuery(sqlStatement, statementSetter);
+		return snapshotQuery(sqlStatement, statementSetter, querySettings);
 	}
 	
 	/**
@@ -399,13 +401,13 @@ public class SnapshotDaoImpl implements SnapshotDao
 	 * 
 	 * @throws	CannotGetJdbcConnectionException	Thrown if the database is not accessible
 	 */
-	private List<Snapshot> snapshotQuery(String sqlStatement, PreparedStatementSetter statementSetter)
+	private List<Snapshot> snapshotQuery(String sqlStatement, PreparedStatementSetter statementSetter, Query querySettings)
 			throws CannotGetJdbcConnectionException
 	{
 		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
-		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper());
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlStatement, statementSetter, new SnapshotRowMapper(experiment));
 		
-		doPost(snapshots);
+		doPost(snapshots, querySettings.includeVisible, querySettings.includeFluorescent, querySettings.includeInfrared);
 		
 		return snapshots;
 	}
@@ -423,7 +425,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 			throws CannotGetJdbcConnectionException
 	{
 		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
-		List<Snapshot> snapshots = snapshotDatabase.query(sqlQuery, new SnapshotRowMapper());
+		List<Snapshot> snapshots = snapshotDatabase.query(sqlQuery, new SnapshotRowMapper(experiment));
 		
 		doPost(snapshots);
 		
@@ -444,10 +446,13 @@ public class SnapshotDaoImpl implements SnapshotDao
 		if (snapshots == null || snapshots.size() == 0)
 			return new ArrayList<Tile>();
 		
-		String experiment = snapshots.get(0).getExperiment();
+		if (includeVisible == false && includeFluorescent == false && includeInfrared == false)
+			return new ArrayList<Tile>();
+		
+		String experiment = snapshots.get(0).experiment;
 		
 		String getTiles = TILE_QUERY_VARIABLES
-				+ " WHERE tiled_image.snapshot_id in (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
+				+ " WHERE tiled_image.snapshot_id IN (" + StringOps.idsAsCSV(Snapshot.getIds(snapshots)) + ") "
 				+ " AND tile.tiled_image_id = tiled_image.id "
 				+ " AND tile."+DATA_FORMAT + " IN ";
 		
@@ -498,11 +503,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 	
 	private void doPost(List<Snapshot> snapshots, boolean includeVisible, boolean includeFluorescent, boolean includeInfrared)
 	{
-		for (Snapshot snapshot : snapshots)
-			snapshot.setExperiment(experiment);
-		
 		loadTags(snapshots);
-		
 		loadTiles(snapshots, includeVisible, includeFluorescent, includeInfrared);
 	}
 	

@@ -72,55 +72,34 @@ public final class Bayer2Rgb {
 	/**
 	 * Returns a png of the converted bayer raw image. The output is in RGB space.
 	 * @see convertRawImage
-	 * @param is Open InputStream to read the raw image from. Closes the InputStream on completion. Leaves output open.
+	 * @param input Open InputStream to read the raw image from. Closes the InputStream on completion. Leaves output open.
 	 * @param width
 	 * @param height
-	 * @param out
+	 * @param output
 	 * @throws IOException
 	 */
-	public static void convertRawImage(InputStream is, int width, int height, OutputStream out) throws IOException{
-		byte[] bayer= IOUtils.toByteArray(is); //raw image
-		is.close();
-	    int outSize = width * height * (bpp / 8) * 3 + tHeaderSize;		
-		byte[] rgb = dc1394_bayer_Bilinear(bayer, width, height, bpp);
+	public static BufferedImage convertRawImage(InputStream input, int width, int height) throws IOException
+	{
+		byte[] bayer= IOUtils.toByteArray(input); //raw image
+		input.close();
+	    
+		int outSize = width * height * (bpp / 8) * 3 + tHeaderSize;		
+	    byte[] rgb = dc1394_bayer_Bilinear(bayer, width, height, bpp);
 		byte[] tiff = new byte[outSize];
+		
 		putTiff(tiff, width, height, 8);
 		System.arraycopy(rgb, 0, tiff, tHeaderSize, rgb.length);			
         ByteArrayInputStream bytes = new ByteArrayInputStream(tiff);
-        if (! ImageIO.getImageReadersBySuffix("tiff").hasNext()){
+        
+        if (! ImageIO.getImageReadersBySuffix("tiff").hasNext()) {
         	System.err.println("[WARNING]: Bayer2Rgb Manually loaded Tiff reader.");
 	        ImageIO.scanForPlugins();
 	        IIORegistry.getDefaultInstance().registerApplicationClasspathSpis();
         }
-        BufferedImage img = ImageIO.read(bytes);
-        ImageIO.write( img, "png", out);
-        out.flush();
+        
+        return ImageIO.read(bytes);
 	}
 	
-	/**
-	 * @see convertRawImage
-	 * @param tile	Tile object from the database. Assumes the tile's imagePath is correct. 
-	 * @param out
-	 * @throws IOException
-	 */
-	public static void convertRawImage(Tile tile, OutputStream out) throws IOException{
-		int width = tile.getWidth();
-		int height = tile.getHeight();
-		String path = tile.getImagePath();
-		InputStream is = new FileInputStream(new File(path));
-		byte[] bayer= IOUtils.toByteArray(is); //raw image
-		is.close();
-	    int outSize = width * height * (bpp / 8) * 3 + tHeaderSize;		
-		byte[] rgb = dc1394_bayer_Bilinear(bayer, width, height, bpp);
-		byte[] tiff = new byte[outSize];
-		putTiff(tiff, width, height, 8);
-		System.arraycopy(rgb, 0, tiff, tHeaderSize, rgb.length);			
-        ByteArrayInputStream bytes = new ByteArrayInputStream(tiff);
-        BufferedImage img = ImageIO.read(bytes);
-        ImageIO.write( img, "png", out);
-        out.flush();
-	}
-        
 	/**
 	 * Code ported from OpenCV C code. Converts a raw BGGR bayer image to RGB format.
 	 * Explanation of bayer interpolation: http://www.unc.edu/~rjean/demosaicing/demosaicing.pdf

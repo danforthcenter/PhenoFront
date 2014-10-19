@@ -13,6 +13,10 @@ package src.ddpsc.database.user;
 public class Group
 {
 	
+	public static final String GROUP_ID =	"group_id";
+	public static final String OWNER_ID =	"owner_id";
+	public static final String GROUP_NAME =	"group_name";
+	
 	private int		groupId;
 	private String	groupName;
 	private User	owner;

@@ -19,37 +19,30 @@ import org.springframework.jdbc.core.RowMapper;
  */
 public class SnapshotRowMapper implements RowMapper<Snapshot>{
 
+	private final String experiment;
+	public SnapshotRowMapper(String experiment)
+	{
+		this.experiment = experiment;
+	}
+	
 	@Override
 	public Snapshot mapRow(ResultSet resultSet, int line) throws SQLException
 	{
-		// The order of the columns in the database is:
-		//			id
-		//			propagated
-		//			configurationid
-		//			idtag
-		//			colour
-		//			visited
-		//			creator
-		//			comment
-		//			cartag
-		//			measurementlabel
-		//			timestanp
-		//			weightbefore
-		//			weightafter
-		//			wateramount
-		//			completed
+		Snapshot snapshot = new Snapshot(
+				resultSet.getInt(SnapshotDaoImpl.SNAPSHOT_ID),
+				experiment,
+				
+				resultSet.getString(SnapshotDaoImpl.BARCODE),
+				resultSet.getString(SnapshotDaoImpl.MEASUREMENT_LABEL),
+				resultSet.getString(SnapshotDaoImpl.CAR_TAG),
+				resultSet.getTimestamp(SnapshotDaoImpl.TIMESTAMP),
+				
+				resultSet.getFloat(SnapshotDaoImpl.WEIGHT_BEFORE),
+				resultSet.getFloat(SnapshotDaoImpl.WEIGHT_AFTER),
+				resultSet.getFloat(SnapshotDaoImpl.WATER_AMOUNT),
+				
+				resultSet.getBoolean(SnapshotDaoImpl.COMPLETED) );
 		
-		Snapshot snapshot = new Snapshot();
-		
-		snapshot.setId(resultSet.getInt(SnapshotDaoImpl.SNAPSHOT_ID));
-		snapshot.setPlantBarcode(resultSet.getString(SnapshotDaoImpl.ID_TAG));
-		snapshot.setCarTag(resultSet.getString(SnapshotDaoImpl.CAR_TAG));
-		snapshot.setMeasurementLabel(resultSet.getString(SnapshotDaoImpl.MEASUREMENT_LABEL));
-		snapshot.setTimeStamp(resultSet.getTimestamp(SnapshotDaoImpl.TIMESTAMP));
-		snapshot.setWeightBefore(resultSet.getFloat(SnapshotDaoImpl.WEIGHT_BEFORE));
-		snapshot.setWeightAfter(resultSet.getFloat(SnapshotDaoImpl.WEIGHT_AFTER));
-		snapshot.setWaterAmount(resultSet.getFloat(SnapshotDaoImpl.WATER_AMOUNT));
-		snapshot.setCompleted(resultSet.getBoolean(SnapshotDaoImpl.COMPLETED));
 		return snapshot;
 	}
 } 

@@ -1,11 +1,13 @@
 package src.ddpsc.results;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -15,12 +17,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
+import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.FileHeader;
 import src.ddpsc.database.experiment.Experiment;
-import src.ddpsc.database.queries.Query;
 import src.ddpsc.database.snapshot.Snapshot;
 import src.ddpsc.database.tile.Tile;
 import src.ddpsc.database.tile.TileFileLTSystemUtil;
+import src.ddpsc.utility.Tuple;
 
 /**
  * Manages the results and conversion of images. 
@@ -51,17 +55,21 @@ public class ResultsBuilder
 	private List<Snapshot> snapshots;
 	private Experiment experiment;
 	
+	private boolean convertJPEG;
+	
 	private HashMap<String, InputStream> threadStreams;
 	private ThreadGroup group;
 	
 	public ResultsBuilder(
 			OutputStream out,
 			List<Snapshot> snapshots,
-			Experiment experiment)
+			Experiment experiment,
+			boolean convertJPEG)
 	{
 		this.requestStream = out;
-		this.snapshots = snapshots;
+		this.snapshots = new ArrayList<Snapshot>(snapshots);
 		this.experiment = experiment;
+		this.convertJPEG = convertJPEG;
 		this.threadStreams = new HashMap<String, InputStream>();
 		this.group = new ThreadGroup("Image Processors");
 	}
@@ -73,68 +81,93 @@ public class ResultsBuilder
 	 * 
 	 * @throws IOException
 	 */
-	public long writeZipArchive() throws IOException
+	public DownloadZipResult writeZipArchive()
 	{
 		long size_bytes = 0;
-		ZipOutputStream archive = new ZipOutputStream(this.requestStream);
+		List<Snapshot> downloadedSnapshots = new ArrayList<Snapshot>();
 		
-		// Add CSV file
-		String entryName = "SnapshotInfo.csv";
-		archive.putNextEntry(new ZipEntry(entryName));
-		archive.write(Snapshot.toCSV(snapshots, true).getBytes());
-		log.info("CSV data added to the zip archive.");
-		
-		for (Snapshot snapshot : snapshots) {
+		try {
+			ZipOutputStream archive = new ZipOutputStream(this.requestStream);
 			
-			log.info("Adding snapshot " + snapshot.getId() + " to the zip archive.");
-			String prefixName = "snapshot" + snapshot.getId() + "/";
-			this.threadStreams.clear(); // Reset from previous snapshot processing
+			// Add snapshots CSV file
+			String snapshotCSV = "SnapshotInfo.csv";
+			archive.putNextEntry(new ZipEntry(snapshotCSV));
+			archive.write(Snapshot.toCSV(snapshots, true).getBytes());
+			log.info("Snapshot CSV data added to the zip archive.");
 			
-			this.processImages(
-					snapshot.getTiles(),
-					new DateTime(snapshot.getTimeStamp()),
-					this.experiment,
-					prefixName);
+			// Add tiles CSV file
+			List<Tile> tiles = Snapshot.getTiles(snapshots);
+			String tileCSV = "TileInfo.csv";
+			archive.putNextEntry(new ZipEntry(tileCSV));
+			archive.write(Tile.toCSV(tiles, true).getBytes());
+			log.info("Tile CSV data added to the zip archive.");
 			
-			for (String imageName : this.threadStreams.keySet()){
-				try{
-					ZipEntry nextImage = new ZipEntry(imageName);
-					size_bytes += nextImage.getSize();
-					archive.putNextEntry(nextImage);
-					log.info("Waiting to write " + imageName + " to zip.");
-					archive.write(IOUtils.toByteArray(this.threadStreams.get(imageName)));
-					log.info(imageName + " written to zip.");
-					archive.flush();
+			// Add images
+			for (Snapshot snapshot : snapshots) {
+				
+				log.info("Adding snapshot " + snapshot.id + " to the zip archive.");
+				String prefixName = "snapshot" + snapshot.id + "/";
+				this.threadStreams.clear(); // Reset from previous snapshot processing
+				
+				this.processImages(
+						snapshot.getTiles(),
+						new DateTime(snapshot.timestamp),
+						this.experiment,
+						prefixName);
+				
+				for (String imageName : this.threadStreams.keySet()){
+					try{
+						ZipEntry nextImage = new ZipEntry(imageName);
+						archive.putNextEntry(nextImage);
+						
+						log.info("Waiting to write " + imageName + " to zip.");
+						byte[] imageBytes = IOUtils.toByteArray(this.threadStreams.get(imageName));
+						archive.write(imageBytes);
+						size_bytes += imageBytes.length;
+						
+						log.info(imageName + " written to zip.");
+						archive.flush();
+					}
+					
+					catch(java.util.zip.ZipException e){
+						// TODO: Determine why this is thrown and how to handle it
+						log.error("Uncaught zip error " + e.getMessage());
+						System.err.println(e.getMessage());
+					}
 				}
 				
-				catch(java.util.zip.ZipException e){
-					// TODO: Determine why this is thrown and how to handle it
-					log.error("Uncaught zip error " + e.getMessage());
-					System.err.println(e.getMessage());
+				// Pauses all the open threads
+				// TODO: Why are there any open threads
+				try {
+					log.info("Accessing this thread group.");
+					synchronized (this.group) {
+						log.info("In thread group for snapshot " + snapshot.id + " there are " + group.activeCount() + " open threads.");
+						if (group.activeCount() > 0)
+							group.wait();
+					}
 				}
-			}
-			
-			// Pauses all the open threads
-			// TODO: Why are there any open threads
-			try {
-				log.info("Accessing this thread group.");
-				synchronized (this.group) {
-					log.info("In thread group for snapshot " + snapshot.getId() + " there are " + group.activeCount() + " open threads.");
-					if (group.activeCount() > 0)
-						group.wait();
+				
+				catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			}
+				
+				downloadedSnapshots.add(snapshot);
+			}		
+			log.info("All snapshots added the zip archive.");
 			
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}		
-		log.info("All snapshots added the zip archive.");
+			archive.finish();
+			log.info("Archive finished.");
+			
+			snapshots.removeAll(downloadedSnapshots);
+			return new DownloadZipResult(size_bytes, Snapshot.getIds(snapshots), true);
+		}
 		
-		archive.finish();
-		log.info("Archive finished.");
-		
-		return size_bytes;
+		catch (IOException e) {
+			log.info("Building zip file for download cancelled prematurely.");
+			
+			snapshots.removeAll(downloadedSnapshots);
+			return new DownloadZipResult(size_bytes, Snapshot.getIds(snapshots), false);
+		}
 	}
 	
 	/**
@@ -160,14 +193,14 @@ public class ResultsBuilder
 		if (tiles == null)
 			return;
 		
+		ImageService imageConverter = new ImageService(convertJPEG);
+		
 		for (Tile tile : tiles) {
 			
 			PipedInputStream input = new PipedInputStream();
-			OutputStream threadedOutput = new PipedOutputStream(input);
+			PipedOutputStream threadedOutput = new PipedOutputStream(input);
 			
-			String imageName = namePrefix 
-					+ tile.getCameraLabel() + "_"
-					+ tile.getRawImageOid() + ".png";
+			String imageName = namePrefix + tile.getName() + (convertJPEG ? ".jpg" : ".png");
 			
 			this.threadStreams.put(imageName, input);
 			
@@ -175,11 +208,12 @@ public class ResultsBuilder
 			log.info("Beginning image processing for tile " + imageName);
 			ImageProcessor imageProcessor = new ImageProcessor(
 					group,
-					"name",
+					"Process Image",
 					threadedOutput,
 					tile,
 					datetime,
-					experiment);
+					experiment,
+					imageConverter);
 			imageProcessor.start();
 		}
 	}
@@ -196,22 +230,25 @@ class ImageProcessor extends Thread
 {
 	private static final Logger log = Logger.getLogger(ImageProcessor.class);
 	
-	private OutputStream output;
 	private Tile tile;
-	private ImageService imageService;
 	private DateTime date;
 	private Experiment experiment;
+	
+	private OutputStream output;
+	private ImageService imageConvert;
+	
 	public ImageProcessor(
 			ThreadGroup group,
 			String name,
 			OutputStream output,
 			Tile tile,
 			DateTime date,
-			Experiment experiment)
+			Experiment experiment,
+			ImageService imageConverter)
 	{
 		super(group, name);
 		
-		this.imageService = new ImageServiceImpl();
+		this.imageConvert = imageConverter;
 		
 		this.output = output;
 		
@@ -223,36 +260,38 @@ class ImageProcessor extends Thread
 	@Override
 	public void run()
 	{
-		String filename = TileFileLTSystemUtil.getTileFilename(tile, date, experiment);
+		log.info("Converting " + tile.getSpectrum() + " tile, " + tile.getName() + ".");
 		
-		log.info("Converting tile " + filename + " to PNG.");
 		try{
-			if (tile.getDataFormat() == 0) {
-				log.info("Tile " + filename + " is NearIR.");
-				this.imageService.nir2Png(filename, output);
-			}
-			else if (tile.getDataFormat() == 1) {
-				log.info("Tile " + filename + " is Visible Light.");
-				this.imageService.vis2Png(filename, output);
-			}
-			else if (tile.getDataFormat() == 6) {
-				log.info("Tile " + filename + " is Fluorescent.");
-				this.imageService.flou2Png(filename, output);
-			}
+			String filename = TileFileLTSystemUtil.getTileFilename(tile, date, experiment);
 			
-			this.output.flush();
+			if (! new File(filename).exists())
+				throw new FileNotFoundException(filename + " is not found.");
+			
+			InputStream input = readZipImageEntry(filename);
+			
+			if (tile.dataFormat == 0)
+				imageConvert.toInfrared(input, output);
+			
+			else if (tile.dataFormat == 1)
+				imageConvert.toVisible(input, output);
+			
+			else if (tile.dataFormat == 6)
+				imageConvert.toFluorescent(input, output);
+			
+			
+			output.flush();
 			log.info("Tile " + filename + " has completed processing.");
 		}
+		
+		
 		
 		catch (ZipException e) {
 			e.printStackTrace();
 		}
-		catch(FileNotFoundException e) {
-			System.err.println("File not found: " + filename);
-		}
 		catch(NullPointerException e) {
 			e.printStackTrace();
-			System.err.println("Tile does not exist on file system: " + filename);
+			System.err.println("Tile " + tile.getName() + " does not exist on file system.");
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -269,6 +308,21 @@ class ImageProcessor extends Thread
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	
+	/**
+	 * Utility function which handles the 3 lines of code for reading the raw image located in the
+	 * LemnaTec Blob. This is a DDPSC LemnaTec system specific function.
+	 * @param filename
+	 * @return
+	 * @throws ZipException
+	 */
+	private static InputStream readZipImageEntry(String filename) throws ZipException
+	{
+		ZipFile zipFile = new ZipFile(filename);
+		FileHeader entry = zipFile.getFileHeader("data");
 		
+		return zipFile.getInputStream(entry);
 	}
 }

@@ -25,6 +25,21 @@ USE `PhenoFront`;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `experiment_metadata`
+--
+CREATE TABLE IF NOT EXISTS `experiment_metadata` (
+	`experiment_id`			INT(10) UNSIGNED NOT NULL,
+	`experiment_name`		VARCHAR(45) NOT NULL,
+
+	`number_snapshots`		INT(10) UNSIGNED NOT NULL,
+	`number_tiles`			INT(10) UNSIGNED NOT NULL,
+	`last_synchronized`		DATETIME,
+
+	PRIMARY KEY(`experiment_id`),
+	UNIQUE KEY(`experiment_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `queries`
 --
 CREATE TABLE IF NOT EXISTS `queries` (
@@ -41,6 +56,7 @@ CREATE TABLE IF NOT EXISTS `queries` (
 	`include_visible`		BOOL NOT NULL,
 	`include_fluorescent`	BOOL NOT NULL,
 	`include_infrared`		BOOL NOT NULL,
+
 	PRIMARY KEY (`query_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
@@ -58,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 	`date_download_begin`	DATETIME,
 	`date_download_complete`DATETIME,
 	`interrupted`			BOOL,
+	`missed_snapshots`		TEXT,
 
 	`bytes`					BIGINT,
 	`number_snapshots`		INT,
@@ -72,8 +89,9 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 -- Table structure for table `tags`
 --
 CREATE TABLE IF NOT EXISTS `tags` (
-	`tag_id`   INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`tag_name` VARCHAR(255),
+	`tag_id`		INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`tag_name`		VARCHAR(255),
+
 	PRIMARY KEY (`tag_id`),
 	KEY (`tag_name`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -82,9 +100,10 @@ CREATE TABLE IF NOT EXISTS `tags` (
 -- Table structure for table `groups`
 --
 CREATE TABLE IF NOT EXISTS `groups` (
-  `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `owner_id` int(10) unsigned NOT NULL,
-  `group_name` varchar(45) NOT NULL,
+  `group_id`		int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `owner_id`		int(10) unsigned NOT NULL,
+  `group_name`		varchar(45) NOT NULL,
+
   PRIMARY KEY (`group_id`),
   UNIQUE KEY `group_name` (`group_name`),
   KEY `owner_id` (`owner_id`)
@@ -105,12 +124,13 @@ INSERT IGNORE INTO `groups` (`group_id`, `owner_id`, `group_name`) VALUES
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `USER_ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `USERNAME` varchar(45) NOT NULL,
-  `PASSWORD` varchar(256) NOT NULL,
-  `ENABLED` tinyint(1) NOT NULL,
-  `GROUP_ID` int(10) unsigned DEFAULT NULL,
-  `AUTHORITY` varchar(25) NOT NULL,
+  `USER_ID`			int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `USERNAME`		varchar(45) NOT NULL,
+  `PASSWORD`		varchar(256) NOT NULL,
+  `ENABLED`			tinyint(1) NOT NULL,
+  `GROUP_ID`		int(10) unsigned DEFAULT NULL,
+  `AUTHORITY`		varchar(25) NOT NULL,
+
   PRIMARY KEY (`USER_ID`),
   UNIQUE KEY `USERNAME` (`USERNAME`),
   KEY `GROUP_ID` (`GROUP_ID`)

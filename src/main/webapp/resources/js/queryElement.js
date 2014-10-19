@@ -25,9 +25,16 @@ var  WATER_AMOUNT	= "water amount";
 var  TILES			= "tiles";
 var  TAG			= "tag";
 
-function queryElement(query, snapshots)
+function queryElement(query, snapshots, downloadKey)
 {
-	var panel = $('<form />', {
+	var downloadKey_clone = $('<input />', {
+		'type': 'hidden',
+		'name': 'downloadKey',
+		'value': downloadKey.val(),
+		'id': 'downloadKey_clone'
+	});
+	
+	var panelForm = $('<form />', {
 		'class': 'panel-default query-panel',
 		'role': 'form'
 	});
@@ -36,7 +43,7 @@ function queryElement(query, snapshots)
 	var queryId = $('<input />', {
 		'type': 'hidden',
 		'name': 'ids',
-		'value': query.id,
+		'value': query.id
 	});
 	
 	var queryExperiment = $('<input />', {
@@ -67,22 +74,30 @@ function queryElement(query, snapshots)
 		'id': 'collapseQuery' + query.id
 	});
 	
+	// The primary form containing the entire query and all associated data
+	panelForm.append(header)
+		 	 .append(body)
+		 	 .append(downloadKey_clone)
+		 	 .append(queryId)
+		 	 .append(queryExperiment)
+		 	 .append(queryTypeMetadata);
+	
+	// Header of the query form, brief summary that expands the body
 	header.append(queryTitle(query));
 	
-	body.append(queryTable(query))
+	// The body of the query form, all the data of the query
+	var table = queryTable(query);
+	var queryMetadataTable = metadataTable(query, downloadKey_clone);
+	
+	body.append(queryTable)
 		.append($('<hr />'))
-		.append(metadataTable(query.metadata))
-		.append(queryComment(query, panel))
+		.append(queryMetadataTable)
+		.append(queryComment(query, panelForm))
 		.append($('<br />'))
 		.append(snapshotsButton(query, snapshots));
 	
-	panel.append(header)
-		 .append(body)
-		 .append(queryId)
-		 .append(queryExperiment)
-		 .append(queryTypeMetadata);
 	
-	return panel;
+	return panelForm;
 }
 
 function queryTitle(query)
@@ -125,27 +140,49 @@ function queryTable(query)
 	return table;
 }
 
-function metadataTable(metadata)
+function metadataTable(query, downloadKey)
 {
+	var metadata = query.metadata;
+	
 	var userRow			= plainRow('User',					requiredVariable(metadata.username));
 	var dateRow			= plainRow('Date Issued',			requiredVariable(metadata.dateMade));
 	
-	var sizeRow			= plainRow('Size',					metadata.bytes);
+	var sizeRow			= plainRow('Approximate Size',		metadata.bytes);
 	var snapshotsRow	= plainRow('Number of Snapshots',	metadata.numberSnapshots);
 	var tilesRow		= plainRow('Number of Tiles',		metadata.numberTiles);
 	var imagesRow		= plainRow('Number of Images',		metadata.numberTiles);
 	
 	var initializedRow	= plainRow('Download Initialized',	metadata.downloadBegin);
 	var completedRow	= plainRow('Download Completed',	metadata.downloadEnd);
-	var incompleteRow	= plainRow('Download Status',		'Incomplete');
 	var interruptedRow	= plainRow('Download Status',		'Interrupted');
-	var neverDownloadRow= plainRow('Download Status',		'Never downloaded');
+	
+	// Generated download link that serializes this form and provides the user with
+	// the ability to execute a download of this query
+	var fullURL = '/phenofront/massdownload'
+		+ '?' + decodeURIComponent($.param(query))
+		+ '&' + 'logQuery=false'
+		+ '&' + downloadKey.serialize();
+	var fullDownloadLinkRow = $('<div />', {'class': 'row' })
+		.append($('<div />', {'class': 'col-sm-4', 'text': 'Download Link' }))
+		.append($('<a />',   {'class': 'col-sm-8', 'text': 'Full Download', 'href': fullURL }));
+	
+	// Generated download link that lists the missing snapshots if the download was interrupted
+	var replaceURL = '/phenofront/snapshots'
+		+ '?' + 'snapshotIds=' + listAsCSV(metadata.missedSnapshots)
+		+ '&' + 'experiment=' + query.experiment
+		+ '&' + downloadKey.serialize();
+	var replaceDownloadLinkRow = $('<div />', {'class': 'row' })
+		.append($('<div />', {'class': 'col-sm-4', 'text': 'Replacement Link' }))
+		.append($('<a />',   {'class': 'col-sm-8', 'text': 'Missing part of interrupted download', 'href': replaceURL }));
+	
+	
 	
 	var table = $('<div />', {
 		'class': 'data-packed'
-	})
-		.append(userRow)
-		.append(dateRow);
+	});
+	
+	table.append(userRow)
+		 .append(dateRow);
 	
 	if (metadata.bytes != 0)
 		table.append(sizeRow);
@@ -156,20 +193,17 @@ function metadataTable(metadata)
 	if (metadata.numberTiles != -1)
 		table.append(imagesRow);
 	
-	if (metadata.downloadBegin != null) {
+	if (metadata.downloadBegin != null)
 		table.append(initializedRow);
 	
-		if (metadata.downloadEnd != null)
-			table.append(completedRow);
-		
-		else if (metadata.interrupted == true)
-			table.append(interruptedRow);
-		
-		else
-			table.append(incompleteRow);
-	}
-	else {
-		table.append(neverDownloadRow);
+	if (metadata.downloadEnd != null)
+		table.append(completedRow);
+	
+	table.append(fullDownloadLinkRow);
+	
+	if (metadata.interrupted == true) {
+		table.append(interruptedRow);
+		table.append(replaceDownloadLinkRow);
 	}
 	
 	return table;
@@ -716,8 +750,8 @@ function imageType(dataFormat)
 function plainRow(rowLabel, rowValue)
 {
 	var row = $('<div />', {'class': 'row' })
-		.append($('<div />', {'class': 'col-sm-3', 'text': rowLabel }))
-		.append($('<div />', {'class': 'col-sm-3', 'text': rowValue }));
+		.append($('<div />', {'class': 'col-sm-4', 'text': rowLabel }))
+		.append($('<div />', {'class': 'col-sm-8', 'text': rowValue }));
 	
 	return row;
 }
@@ -730,6 +764,23 @@ function splitRow(columnLeft, columnRight)
 	
 	return row;
 }
+
+function listAsCSV(stringList)
+{
+	if (stringList == null)
+		return "";
+	
+	var csv = "";
+	
+	for (var i = 0; i < stringList.length; i++) {
+		if (i != 0)
+			csv += ",";
+		csv += stringList[i];
+	}
+	
+	return csv;	
+}
+
 function timeRangeVariable(startTime, endTime)
 {
 	if (startTime == null && endTime == null)

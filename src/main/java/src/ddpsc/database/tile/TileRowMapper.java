@@ -32,7 +32,7 @@ public class TileRowMapper implements RowMapper<Tile>
 	{
 		for (int index = 0; index < snapshots.size(); index++) {
 			Snapshot snapshot = snapshots.get(index);
-			if (snapshot.getId() == id)
+			if (snapshot.id == id)
 				return index;
 		}
 		
@@ -42,30 +42,22 @@ public class TileRowMapper implements RowMapper<Tile>
 	@Override
 	public Tile mapRow(ResultSet resultSet, int line) throws SQLException
 	{
-		// Order and name of queried tile columns
-		//		camera_label 
-		//		raw_image_oid
-		//		raw_null_image_oid
-		//		dataformat
-		//		width
-		//		height 
-		//		rotate_flip_type
-		//		frame
-		//		tile_image_id
-		
-		Tile tile = new Tile();
-		
-		tile.setId(resultSet.getInt(SnapshotDaoImpl.TILE_ID));
-		tile.setCameraLabel(resultSet.getString(SnapshotDaoImpl.CAMERA));
-		tile.setRawImageOid(resultSet.getInt(SnapshotDaoImpl.RAW_IMAGE_OID));
-		tile.setRawNullImageOid(resultSet.getInt(SnapshotDaoImpl.NULL_IMAGE_OID));
-		tile.setDataFormat(resultSet.getInt(SnapshotDaoImpl.DATA_FORMAT));
-		tile.setWidth(resultSet.getInt(SnapshotDaoImpl.WIDTH));
-		tile.setHeight(resultSet.getInt(SnapshotDaoImpl.HEIGHT));
-		tile.setRotateFlipType(resultSet.getInt(SnapshotDaoImpl.FLIP_TYPE));
-		tile.setFrame(resultSet.getInt(SnapshotDaoImpl.FRAME));
-		
 		int snapshotId = resultSet.getInt("snapshot_id");
+		
+		Tile tile = new Tile(
+		
+				snapshotId,
+			resultSet.getInt(SnapshotDaoImpl.TILE_ID),
+			
+			resultSet.getString(SnapshotDaoImpl.CAMERA),
+			resultSet.getInt(SnapshotDaoImpl.RAW_IMAGE_OID),
+			resultSet.getInt(SnapshotDaoImpl.NULL_IMAGE_OID),
+			resultSet.getInt(SnapshotDaoImpl.WIDTH),
+			resultSet.getInt(SnapshotDaoImpl.HEIGHT),
+			resultSet.getInt(SnapshotDaoImpl.DATA_FORMAT),
+			resultSet.getInt(SnapshotDaoImpl.FRAME),
+			resultSet.getInt(SnapshotDaoImpl.FLIP_TYPE) );
+		
 		int index = indexById(snapshotId, snapshots);
 		if (index != -1)
 			snapshots.get(index).addTile(tile);

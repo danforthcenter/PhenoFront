@@ -1,31 +1,73 @@
 package src.ddpsc.database.experiment;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class which holds the database Experiment object.
- * 
- * Has associated Dao, DaoImpl, and RowMapper classes. Users can access experiments, and the 
- * objects will be accessed mostly from that point.
  * 
  * This class should be used to load a list of experiments that exist within the LemnaTec system.
  * That is, it loads rows directly from the LTSystem database. Once loaded, authenticated users
  * should be connected to the correct database.
  * 
+ * @see ExperimentDaoImpl
+ * 
  * @author shill, cjmcentee
  */
 public class Experiment
 {
-	private String experimentName;
-	private String databaseName;
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Fields
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public final int id;
+	public final String name;
 	
-	public Experiment()
+	public int numberSnapshots = -1;
+	public int numberTiles = -1;
+	public Timestamp lastUpdated;
+	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Constructor
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public Experiment(int experimentId, String experimentName)
 	{
+		id = experimentId;
+		name = experimentName;
 	}
 	
-	/**
-	 * Static method turns a list of experiments into a string describing each one.
-	 */
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Static List Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public static Map<Integer, Experiment> getExperimentIdMap(Collection<Experiment> experiments)
+	{
+		Map<Integer, Experiment> experimentsMap = new HashMap<Integer, Experiment>();
+		for (Experiment experiment : experiments)
+			experimentsMap.put(experiment.id, experiment);
+		
+		return experimentsMap;
+	}
+	
+	public static List<Integer> getIds(Collection<Experiment> experiments)
+	{
+		List<Integer> ids = new ArrayList<Integer>();
+		for (Experiment experiment : experiments)
+			ids.add(experiment.id);
+		
+		return ids;
+	}
+	
 	public static String toString(Collection<Experiment> experiments)
 	{
 		StringBuilder itemizedList = new StringBuilder();
@@ -41,10 +83,16 @@ public class Experiment
 		return itemizedList.toString();
 	}
 	
+	
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Object Overrides
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
 	@Override
 	public String toString()
 	{
-		return "Experiment [experimentName=" + experimentName + ", databaseName=" + databaseName + "]";
+		return name;
 	}
 	
 	@Override
@@ -58,33 +106,64 @@ public class Experiment
 	
 	public boolean equals(Experiment experiment)
 	{
-		return this.experimentName.equals(experiment.experimentName);
+		return name.equals(experiment.name);
 	}
 	
 	@Override
 	public int hashCode()
 	{
-		return (experimentName == null ? 0 : experimentName.hashCode())
-			 + (databaseName == null   ? 0 : databaseName.hashCode() * 7);
+		return name.hashCode();
 	}
-	
-	public String getExperimentName()
+
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	// Get / Set Methods
+	// ////////////////////////////////////////////////
+	// ////////////////////////////////////////////////
+	public int getNumberSnapshots()
 	{
-		return experimentName;
+		return numberSnapshots;
 	}
-	
-	public void setExperimentName(String experimentName)
+
+
+	public void setNumberSnapshots(int numberSnapshots)
 	{
-		this.experimentName = experimentName;
+		this.numberSnapshots = numberSnapshots;
 	}
-	
-	public String getDatabaseName()
+
+
+	public int getNumberTiles()
 	{
-		return databaseName;
+		return numberTiles;
 	}
-	
-	public void setDatabaseName(String databaseName)
+
+
+	public void setNumberTiles(int numberTiles)
 	{
-		this.databaseName = databaseName;
+		this.numberTiles = numberTiles;
+	}
+
+
+	public Timestamp getLastUpdated()
+	{
+		return lastUpdated;
+	}
+
+
+	public void setLastUpdated(Timestamp lastUpdated)
+	{
+		this.lastUpdated = lastUpdated;
+	}
+
+
+	public int getId()
+	{
+		return id;
+	}
+
+
+	public String getName()
+	{
+		return name;
 	}
 }

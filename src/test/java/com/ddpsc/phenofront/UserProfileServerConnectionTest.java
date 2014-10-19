@@ -9,11 +9,12 @@ import javax.sql.DataSource;
 
 import junitx.framework.ListAssert;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import src.ddpsc.config.Config;
+import src.ddpsc.database.user.Group;
+import src.ddpsc.database.user.User;
 import src.ddpsc.exceptions.MalformedConfigException;
 
 public class UserProfileServerConnectionTest
@@ -55,7 +56,6 @@ public class UserProfileServerConnectionTest
 		}
 	}
 	
-	@Ignore
 	@Test
 	public void UsersTablesHasCorrectColumns() throws IOException
 	{
@@ -65,21 +65,20 @@ public class UserProfileServerConnectionTest
 			String getColumns = "DESCRIBE users";
 			
 			JdbcTemplate jdbcTemplate = new JdbcTemplate(userProfileDatabase);
-			List<MySQLColumn> columnNames = jdbcTemplate.query(getColumns, new ParseMySQLColumns());
+			List<MySQLColumn> columns = jdbcTemplate.query(getColumns, new ParseMySQLColumns());
 			
-			ListAssert.assertContains(columnNames, "USER_ID");
-			ListAssert.assertContains(columnNames, "USERNAME");
-			ListAssert.assertContains(columnNames, "PASSWORD");
-			ListAssert.assertContains(columnNames, "ENABLED");
-			ListAssert.assertContains(columnNames, "GROUP_ID");
-			ListAssert.assertContains(columnNames, "AUTHORITY");
+			ListAssert.assertContains(columns, new MySQLColumn(User.USER_ID,	MySQLColumn.INT_UNSIGNED(10),	MySQLColumn.NEVER_NULL,	MySQLColumn.PRIMARY_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.USERNAME,	MySQLColumn.VARCHAR(45),		MySQLColumn.NEVER_NULL,	MySQLColumn.UNIQUE_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.PASSWORD,	MySQLColumn.VARCHAR(256),		MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.ENABLED,	MySQLColumn.TINYINT(1),			MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.GROUP_ID,	MySQLColumn.INT_UNSIGNED(10),	MySQLColumn.CAN_NULL,	MySQLColumn.MULTIPLE_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(User.AUTHORITY,	MySQLColumn.VARCHAR(25),		MySQLColumn.NEVER_NULL,	MySQLColumn.NOT_KEY));
 		}
 		catch (MalformedConfigException e) {
 			fail("Configuration file missing fields.");
 		}
 	}
 	
-	@Ignore
 	@Test
 	public void GroupsTablesHasCorrectColumns() throws IOException
 	{
@@ -89,11 +88,11 @@ public class UserProfileServerConnectionTest
 			String getColumns = "DESCRIBE groups";
 			
 			JdbcTemplate jdbcTemplate = new JdbcTemplate(userProfileDatabase);
-			List<MySQLColumn> columnNames = jdbcTemplate.query(getColumns, new ParseMySQLColumns());
+			List<MySQLColumn> columns = jdbcTemplate.query(getColumns, new ParseMySQLColumns());
 			
-			ListAssert.assertContains(columnNames, "group_id");
-			ListAssert.assertContains(columnNames, "owner_id");
-			ListAssert.assertContains(columnNames, "group_name");
+			ListAssert.assertContains(columns, new MySQLColumn(Group.GROUP_ID,	MySQLColumn.INT_UNSIGNED(10),	MySQLColumn.NEVER_NULL,	MySQLColumn.PRIMARY_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(Group.OWNER_ID,	MySQLColumn.INT_UNSIGNED(10),	MySQLColumn.NEVER_NULL,	MySQLColumn.MULTIPLE_KEY));
+			ListAssert.assertContains(columns, new MySQLColumn(Group.GROUP_NAME,MySQLColumn.VARCHAR(45),		MySQLColumn.NEVER_NULL,	MySQLColumn.UNIQUE_KEY));
 		}
 		catch (MalformedConfigException e) {
 			fail("Configuration file missing fields.");
