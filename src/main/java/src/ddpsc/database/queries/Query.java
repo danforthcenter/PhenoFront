@@ -13,6 +13,11 @@ import com.google.gson.Gson;
 
 public class Query
 {
+	// These variable names are encoded into the JSON that is used to communicate with the
+	// client. If you change any of these variable names, the JavaScript client will also
+	// have to have its corresponding variable names modified.
+	// Particularly queryElement.js
+	// This may seem cruel and unusual, but GSON is too easy to not use.
 	public int id;
 	public final String experiment;
 	

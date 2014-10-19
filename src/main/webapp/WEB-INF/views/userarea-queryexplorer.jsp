@@ -109,6 +109,22 @@ $(function () {
 
 $(document).ready(function() {
 	
+	$('#queryUsername').tooltip();
+	$('#onlyCommented').tooltip();
+	
+	/************************************
+	 *		Tagging File Behavior
+	 ************************************/
+	// Button click download instructions for tagging file
+	$('#getInstructions').click(function () {
+		$.ajax({
+			url: '<c:url context="/phenofront/userarea" value="/changemetadatainstructions" />',
+		});
+		var downloadURL = '<c:url context="/phenofront" value="/changemetadatainstructions" />';
+        $(".downloadLink").html("<a href='"+ downloadURL + "'>Your Download Link </a>This link may only be used once.");
+	});
+	
+	// Model dialog for uploading a tagging file
 	$(function() {
 	    $(document).on("click", "a.fileDownloadCustomRichExperience", function() {
 	 
@@ -131,143 +147,138 @@ $(document).ready(function() {
 	    });
 	});
 	
-	$('#queryUsername').tooltip();
-	$('#onlyCommented').tooltip();
-	
-	$('#getInstructions').click(function () {
-		$.ajax({
-			url: '<c:url context="/phenofront/userarea" value="/changemetadatainstructions" />',
-		});
-		var downloadURL = '<c:url context="/phenofront" value="/changemetadatainstructions" />';
-        $(".downloadLink").html("<a href='"+ downloadURL + "'>Your Download Link </a>This link may only be used once.");
-	});
-	
-	var currentQueries = [];
-	var previousQuery = {};
-	$('#loadMoreQueries').click(function () {
-		$.ajax({
-			type: 'POST',
-			url: '<c:url context="/phenofront/userarea" value="/queries" />',
-			data: previousQuery,
-			success: function(queriesJSON) {
-				addDisplayQueries(queriesJSON);
-				previousQuery = $('#queryFilter').serialize(); // save the query for the load more queries button
-			},
-			error: function(xhr, status, error) {
-				addQueryFailure(xhr.responseText);
-			}
-		});
-	});
-	
+	/************************************
+	 *		Query Explorer Behavior
+	 ************************************/
+	var loadedQueryIDs = [];		// The IDs of the currently displayed queries, sent to the server
+									// when more queries are asked to be loaded so the server knows which ones
+									// the user already has. This array is kept in sync/stored in with #currentQueries
+	//
+	// SEARCH:
+	// The initial search for queries button behavior
+	//
 	$('#getQueries').click(function() {
-		getQueries();
-	});
-	
-	
-	function getQueries() {
-		var currentQueries = []; // Clear current queries
-		$('#currentQueries').val(currentQueries);
-		console.log($('#queryFilter').serialize());
+		
+		clearCurrentQueries();		// New search clears the screen, success or failure
+		
+		// The actual request to the server
 		$.ajax({
 			type: 'POST',
 			url: '<c:url context="/phenofront/userarea" value="/queries" />',
 			data: $('#queryFilter').serialize(),
 			success: function(queriesJSON) {
-				querySuccess();
-				displayQueries(queriesJSON);
-				previousQuery = $('#queryFilter').serialize(); // save the query for the load more queries button
+				notifyAjaxSuccess();
+				addQueriesToDocument(queriesJSON);
+				handleShowLoadButton();
 			},
 			error: function(xhr, status, error) {
-				queryFailure(xhr.responseText);
+				notifyAjaxFailure(xhr.responseText);
+				clearCurrentQueries();
+				hideLoadQueriesElements();
 			}
 		});
-	}
-	
-	function querySuccess() {
-		$('#queries').removeClass('hidden');
-		$('#queries').removeClass('alert alert-danger');
 		
-		// empty the current queries
-		currentQueries = [];
-		$('#currentQueries').val(currentQueries);
-	}
-	
-	function displayQueries(queries) {
-		$('#queries').empty();
+		//
+		// Helper methods to handle the request & result
+		//
 		
-		queries.forEach(function (query) {
-			var queryDiv = queryElement(query, '', $('#downloadKey'));
-			$('#queries').append(queryDiv);
+		// Successful search notification
+		function notifyAjaxSuccess() {
+			$('#queries').removeClass('hidden');
+			$('#queries').removeClass('alert alert-danger');
+		}
+		
+		// Clear the old queries on a successful search
+		function clearCurrentQueries() {
+			loadedQueryIDs = [];
+			$('#currentQueries').val(loadedQueryIDs);
+			$('#queries').empty();
+		}
+		
+		// Only show load more queries button if queries were actually returned
+		function handleShowLoadButton() {
+			if (loadedQueryIDs.length > 0) {
+				$('#loadMoreQueries').removeClass('hidden');
+				$('#noMoreQueries').addClass('hidden');
+			}
+			else {
+				$('#loadMoreQueries').addClass('hidden');
+				$('#noMoreQueries').removeClass('hidden');
+			}
+		}
+		
+		// Failed search notification
+		function notifyAjaxFailure(errorMessage) {
+			$('#queries').removeClass('hidden');
+			$('#queries').addClass('alert alert-danger');
 			
-			// repopulate current queries
-			currentQueries.push(query.id);
-		});
+			$('#queries').text(errorMessage);
+		}
 		
-		$('#currentQueries').val(currentQueries);
-		
-		// Only show loadmore button if queries were actually returned
-		if (queries.length > 0) {
-			$('#loadMoreQueries').removeClass('hidden');
+		function hideLoadQueriesElements() {
+			$('#loadMoreQueries').addClass('hidden');
 			$('#noMoreQueries').addClass('hidden');
 		}
-		else {
-			$('#loadMoreQueries').addClass('hidden');
-			$('#noMoreQueries').removeClass('hidden');
-		}
-			
-	}
+	});
 	
-	function queryFailure(message) {
-		$('#queries').removeClass('hidden');
-		$('#queries').addClass('alert alert-danger');
-		$('#queries').text(message);
+	// Adds the JSON queries to the currently displayed queries
+	// Returns the queries in an array
+	function addQueriesToDocument(queries_JSON) {
 		
-		$('#loadMoreQueries').addClass('hidden');
-		$('#noMoreQueries').addClass('hidden');
-		
-		currentQueries = [];
-		$('#currentQueries').val(currentQueries); // empty the current queries
-	}
-	
-	function addDisplayQueries(queries) {
-		
-		queries.forEach(function (query) {
-			var queryDiv = queryElement(query, '', $('#downloadKey'));
-			$('#queries').append(queryDiv);
+		queries_JSON.forEach(function (query) {
+			var query_element = queryElement(query, '', $('#downloadKey'));
+			$('#queries').append(query_element);
 			
-			// repopulate current queries
-			currentQueries.push(query.id);
+			// Track which queries have been added to the document
+			loadedQueryIDs.push(query.id);
 		});
 		
-		$('#currentQueries').val(currentQueries);
+		$('#currentQueries').val(loadedQueryIDs);
+	}
+	
+	
+	//
+	// LOAD:
+	// Load more queries button behavior (appears after a non-zero result search or a non-zero load)
+	//
+	$('#loadMoreQueries').click(function () {
 		
-		// Only show loadmore button if queries were actually returned
-		if (queries.length > 0) {
-			$('#loadMoreQueries').removeClass('hidden');
+		// Server request for more queries
+		$.ajax({
+			type: 'POST',
+			url: '<c:url context="/phenofront/userarea" value="/queries" />',
+			data: $('#queryFilter').serialize(),	// Indicates which queries are already displayed
+			success: function(queriesJSON) {
+				addQueriesToDocument(queriesJSON);
+			},
+			error: function(xhr, status, error) {
+				notifyLoadMoreQueriesAjaxFailure(xhr.responseText);
+			}
+		});
+		
+		function parseQueries(queries) {
+			
+		}
+		
+		function notifyLoadMoreQueriesAjaxFailure(message) {
+			var queryFailureElement = $('<div />', {
+				'class': 'alert alert-danger'
+			});
+			
+			var failureMessage = $('<h3 />', {
+				'text': message
+			});
+			
+			queryFailureElement.append(failureMessage);
+			
+			$('#queries').append($('<br />'))
+						 .append(queryFailureElement);
+			
+			$('#loadMoreQueries').addClass('hidden');
 			$('#noMoreQueries').addClass('hidden');
 		}
-		else {
-			$('#loadMoreQueries').addClass('hidden');
-			$('#noMoreQueries').removeClass('hidden');
-		}
-	}
+	});
 	
-	function addQueryFailure(message) {
-		var queryFailure = $('<div />', {
-			'class': 'alert alert-danger'
-		});
-		
-		var failureMessage = $('<h3 />', {
-			'text': message
-		});
-		
-		queryFailure.append(failureMessage);
-		
-		$('#queries').append($('<br />'))
-					 .append(queryFailure);
-		
-		$('#loadMoreQueries').addClass('hidden');
-		$('#noMoreQueries').addClass('hidden');
-	}
+	
 });
 </script>

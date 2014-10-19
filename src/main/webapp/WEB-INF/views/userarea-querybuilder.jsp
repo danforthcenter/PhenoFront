@@ -86,22 +86,13 @@
 						Include Watering Snapshots
 					</label>
 				</div>
-				
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" name="convertJPEG" value="true" checked />
-						Convert Images to JPEG Format
-					</label>
-				</div>
 			</div>
 			
-			<div class="downloadLink hidden"></div>
-			<a id ="generateDownloadLink" class="btn btn-default btn-block btn-large">
-				Generate Download Link
-			</a>
+			<br>
 			
-			<br />
+			<p>The download link can be found under preview query</p>
 			
+			<br>
 			
 			<a id="previewQuery" class="btn btn-default btn-block ladda-button"
 				data-size="l"
@@ -109,9 +100,7 @@
 				data-spinner-color="#FF0000">
 				<span class="ladda-label">Preview Query</span>
 			</a>
-			
-			<br />
-			
+			<br>
 			<div id="queryPreview" class ="hidden"></div>
 			
 		</form>
@@ -133,23 +122,17 @@ $(document).ready(function(){
 	
 	$("#startTime").datetimepicker();
 	$("#endTime").datetimepicker();
-	
-    // Generate download link
-    $("#generateDownloadLink").click(function() {
-        $(".downloadLink").removeClass("hidden").show().addClass("alert alert-success");
-        var downloadURL = '<c:url context="/phenofront" value="/massdownload" />' + "?" + $("#query-builder").serialize();
-        $(".downloadLink").html("<a href='"+ downloadURL + "'>Your Download Link </a>This link may only be used once.");
-    });
     
     // Helper methods for the preview operations
  	function displayQuery(query, snapshots) {
- 		var query = queryElement(query, snapshots, $('#downloadKey'));
+ 		var query_element = queryElement(query, snapshots, $('#downloadKey'));
  		$("#queryPreview").empty();
  		$("#queryPreview").show();
  		
  		$("#queryPreview").removeClass("hidden alert alert-danger");
  		
- 		$("#queryPreview").append(query);
+ 		$("#queryPreview").append(query_element);
+ 		$("#collapseQuery" + query.id).collapse('show'); // Show query preview by default
  	}
     
  	// Query preview

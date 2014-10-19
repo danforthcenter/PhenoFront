@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS `query_metadata` (
 	`number_tiles`			INT,
 	
 	PRIMARY KEY (`metadata_id`),
+    KEY (`query_id`),
+    KEY (`user_id`),
 	INDEX (`comment`(2)) 			-- To check for commented / not commented
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 

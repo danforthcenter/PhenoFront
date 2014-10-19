@@ -1,5 +1,10 @@
 /**
- * Nightmarish spagetti code.
+ * This processes a query JSON file returned from the webserver into HTML and returns it
+ * as a single well formatted bootstrap div.
+ * 
+ * Appends to the document with jQuery. Ugh.
+ * 
+ * 
  * 
  * Below here you enter into the city of woes
  * Below here you enter into eternal pain
@@ -8,25 +13,22 @@
  * Abandon all hope, you who enter here
  */
 
-var  ID				= "id";
-var  EXPERIMENT		= "experiment";
-
-var  BARCODE		= "plant barcode";
-var  MEASUREMENT	= "measurement label";
-var  TIMESTAMP		= "timestamp";
-
-var  CAR_TAG		= "car tag";
-var  COMPLETED		= "completed";
-
-var  WEIGHT_BEFORE	= "weight before";
-var  WEIGHT_AFTER	= "weight after";
-var  WATER_AMOUNT	= "water amount";
-
-var  TILES			= "tiles";
-var  TAG			= "tag";
+var ID	= "id";
+var EXPERIMENT	= "experiment";
+var BARCODE	= "plant barcode";
+var MEASUREMENT	= "measurement label";
+var TIMESTAMP	= "timestamp";
+var CAR_TAG	= "car tag";
+var COMPLETED	= "completed";
+var WEIGHT_BEFORE	= "weight before";
+var WEIGHT_AFTER	= "weight after";
+var WATER_AMOUNT	= "water amount";
+var TILES	= "tiles";
+var TAG	= "tag";
 
 function queryElement(query, snapshots, downloadKey)
 {
+	// Just attaching the downloadKey to this element would remove it from the parent element, duplicate first
 	var downloadKey_clone = $('<input />', {
 		'type': 'hidden',
 		'name': 'downloadKey',
@@ -62,6 +64,7 @@ function queryElement(query, snapshots, downloadKey)
 	// Contains a quick summary of the query
 	var header = $('<div />', {
 		'class': 'query-panel-heading',
+		'id': 'query' + query.id,
 		'type': 'button',
 		'data-toggle': 'collapse',
 		'data-target': '#collapseQuery' + query.id
@@ -89,7 +92,7 @@ function queryElement(query, snapshots, downloadKey)
 	var table = queryTable(query);
 	var queryMetadataTable = metadataTable(query, downloadKey_clone);
 	
-	body.append(queryTable)
+	body.append(table)
 		.append($('<hr />'))
 		.append(queryMetadataTable)
 		.append(queryComment(query, panelForm))
@@ -158,13 +161,38 @@ function metadataTable(query, downloadKey)
 	
 	// Generated download link that serializes this form and provides the user with
 	// the ability to execute a download of this query
-	var fullURL = '/phenofront/massdownload'
+	var jpegURL = '/phenofront/massdownload'
 		+ '?' + decodeURIComponent($.param(query))
 		+ '&' + 'logQuery=false'
+		+ '&' + 'convertJPEG=true'
 		+ '&' + downloadKey.serialize();
+	
+	var pngURL = '/phenofront/massdownload'
+		+ '?' + decodeURIComponent($.param(query))
+		+ '&' + 'logQuery=false'
+		+ '&' + 'convertJPEG=false'
+		+ '&' + downloadKey.serialize();
+	
+	var csvURL = '/phenofront/massdownload'
+		+ '?' + 'experiment=' + query.experiment
+		+ '&' + 'includeWatering=' + query.includeWatering
+		+ '&' + 'logQuery=false'
+		+ '&' + 'convertJPEG=false'
+		+ '&' + downloadKey.serialize();
+	if ( ! emptyString(query.barcode))
+		csvURL += '&' + 'barcode=' + query.barcode;
+	if ( ! emptyString(query.measurementLabel))
+		csvURL += '&' + 'measurementLabel=' + query.measurementLabel;
+	if ( ! emptyString(query.startTime))
+		csvURL += '&' + 'startTime=' + query.startTime;
+	if ( ! emptyString(query.endTime))
+		csvURL += '&' + 'endTime=' + query.endTime;
+	
 	var fullDownloadLinkRow = $('<div />', {'class': 'row' })
 		.append($('<div />', {'class': 'col-sm-4', 'text': 'Download Link' }))
-		.append($('<a />',   {'class': 'col-sm-8', 'text': 'Full Download', 'href': fullURL }));
+		.append($('<a />',   {'class': 'col-sm-2', 'text': 'JPEG Download', 'href': jpegURL }))
+		.append($('<a />',   {'class': 'col-sm-2', 'text': 'PNG Download', 'href': pngURL }))
+		.append($('<a />',   {'class': 'col-sm-4', 'text': 'CSV Download', 'href': csvURL }));
 	
 	// Generated download link that lists the missing snapshots if the download was interrupted
 	var replaceURL = '/phenofront/snapshots'
@@ -801,9 +829,14 @@ function inclusionVariable(includeX)
 		return "Not Included";
 }
 
+function emptyString(string)
+{
+	return string == undefined || string == null || string == "";
+}
+
 function requiredVariable(requiredString)
 {
-	if (requiredString == null || requiredString == "")
+	if (emptyString(requiredString))
 		return "ERROR NOT FOUND";
 	else
 		return requiredString;
@@ -811,7 +844,8 @@ function requiredVariable(requiredString)
 
 function regexVariable(regexString)
 {
-	if (regexString == null || regexString == "")
+	console.log("regexVariable " + regexString)
+	if (emptyString(regexString))
 		return "<ANY>";
 	else
 		return regexString;
@@ -819,7 +853,7 @@ function regexVariable(regexString)
 
 function possiblyEmptyVariable(notRequiredString)
 {
-	if (notRequiredString == null || notRequiredString == "")
+	if (emptyString(notRequiredString))
 		return "";
 	else
 		return notRequiredString;
