@@ -2,13 +2,11 @@ package src.ddpsc.database.snapshot;
 
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.EnumSet;
 import java.util.List;
 
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 import src.ddpsc.database.queries.Query;
-import src.ddpsc.database.tagging.TaggingDao;
 import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 
@@ -24,6 +22,7 @@ public interface SnapshotDao
 {
 	public void setSnapshotExperiment(String experimentName) 	throws MalformedConfigException, IOException;
 	
+	public List<String> getAllMeasurementLabels() throws CannotGetJdbcConnectionException;
 	
 	public Snapshot findById(int id) throws CannotGetJdbcConnectionException, ObjectNotFoundException;
 	public List<Snapshot> findById(List<Integer> ids) throws CannotGetJdbcConnectionException, ObjectNotFoundException;

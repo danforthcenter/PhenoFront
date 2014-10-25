@@ -33,12 +33,15 @@
 				
 				
 				<label for="measurementLabel">
-					Measurement Label Regex Search
+					Measurement Label Selection
 				</label>
-				<input type="text" name="measurementLabel" id="measurementLabel"
-					class="form-control" placeholder=""
-					title="Find Snapshots where the measurement(experiment) label matches the input string. Supports POSIX Extended Regex." />
-				
+				<select class="form-control" name="measurementLabel" id="measurementLabel"
+						title="Find Snapshots where the measurement(experiment) label matches the selection.">
+					<option value="">ANY</option>
+			      	<c:forEach var='measurementLabel' items='${measurementLabels}'>
+			      		<option value="${measurementLabel}">${measurementLabel}</option>
+			      	</c:forEach>
+				</select>
 				
 				<label for="startTime">
 					Snapshots Start Time:

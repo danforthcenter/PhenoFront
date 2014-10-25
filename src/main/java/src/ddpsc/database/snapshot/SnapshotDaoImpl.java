@@ -23,6 +23,7 @@ import src.ddpsc.database.tile.TileRowMapper;
 import src.ddpsc.exceptions.MalformedConfigException;
 import src.ddpsc.exceptions.ObjectNotFoundException;
 import src.ddpsc.utility.StringOps;
+import src.ddpsc.utility.StringRowMapper;
 
 /**
  * This class is responsible for building snapshot queries. Each user request should be defined in here.
@@ -86,7 +87,7 @@ public class SnapshotDaoImpl implements SnapshotDao
 	public static final String WATER_AMOUNT			= "water_amount";
 	public static final String COMPLETED			= "completed";
 	
-	private static final String SNAPSHOT_QUERY_VARIABLES = "SELECT * FROM snapshot ";
+	private static final String SNAPSHOT_QUERY_VARIABLES = "SELECT * FROM " + SNAPSHOT_TABLE + " ";
 	
 	private String experiment;
 	private DataSource snapshotDataSource;
@@ -260,6 +261,21 @@ public class SnapshotDaoImpl implements SnapshotDao
 		
 		log.info("Custom snapshot query fulfilled. " + snapshots.size() + "-many snapshots found. Variables: " + querySettings + ".");
 		return snapshots;
+	}
+	
+	
+	@Override
+	public List<String> getAllMeasurementLabels() throws CannotGetJdbcConnectionException {
+		
+		log.info("Attempting to get a list of all measurement labels in experiment: " + experiment);
+		
+		String getLabels = "SELECT DISTINCT " + MEASUREMENT_LABEL + " FROM " + SNAPSHOT_TABLE;
+		
+		JdbcTemplate snapshotDatabase = new JdbcTemplate(snapshotDataSource);
+		List<String> labels = snapshotDatabase.query(getLabels, new StringRowMapper());
+		
+		log.info("Successfully retrieved all " + labels.size() + " measurement labels for the experiment: " + experiment);
+		return labels;
 	}
 	
 	
